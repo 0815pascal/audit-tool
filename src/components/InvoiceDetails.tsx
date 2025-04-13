@@ -80,10 +80,6 @@ const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({
         ))}
       </div>
       
-      <div className="mb-4">
-        <h3>Total Amount: ${invoice.totalAmount.toFixed(2)}</h3>
-      </div>
-      
       <div>
         {!allStepsProcessed ? (
           <p style={{ color: 'var(--primary-color)' }}>
@@ -94,7 +90,7 @@ const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({
             <button 
               onClick={() => onVerifyInvoice(false)}
               style={{ 
-                backgroundColor: hasIncorrectSteps ? '#ffb300' : '#00c853',
+                backgroundColor: '#00008f',
                 color: 'white',
                 padding: '10px 20px',
                 border: 'none',
@@ -103,7 +99,7 @@ const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({
                 marginRight: '10px'
               }}
             >
-              ✓ Verification Complete
+              ⏳ Mark as In Progress
             </button>
           </div>
         ) : (
@@ -111,7 +107,7 @@ const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({
             <button 
               onClick={() => onVerifyInvoice(true)}
               style={{ 
-                backgroundColor: hasIncorrectSteps ? '#ffb300' : '#2196f3',
+                backgroundColor: '#d24723',
                 color: 'white',
                 padding: '10px 20px',
                 border: 'none',
@@ -121,7 +117,10 @@ const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({
               disabled={!allStepsProcessed}
             >
               {hasIncorrectSteps ? 
-                "Complete Verification with Errors" : 
+                <span>
+                  <span style={{ fontSize: '1.25em', marginRight: '5px' }}>⛆</span>
+                  Complete Verification with Errors
+                </span> : 
                 "Complete Verification"}
             </button>
           </div>
@@ -169,9 +168,9 @@ const CalculationStepItem: React.FC<CalculationStepItemProps> = ({
   return (
     <div className="mb-4" style={{ 
       padding: '10px', 
-      border: '1px solid var(--border-color)', 
+      border: '1px solid', 
       borderRadius: '4px',
-      backgroundColor: step.isIncorrect ? 'rgba(211, 47, 47, 0.05)' : (step.isVerified ? 'rgba(0, 200, 83, 0.05)' : 'transparent')
+      borderColor: step.isIncorrect ? '#c91432' : (step.isVerified ? '#138636' : 'transparent')
     }}>
       <div className="flex" style={{ justifyContent: 'space-between' }}>
         <div>
@@ -203,7 +202,7 @@ const CalculationStepItem: React.FC<CalculationStepItemProps> = ({
       </div>
       
       <div className="mt-4">
-        <label htmlFor={`comment-${step.id}`}>Audit Comment:</label>
+        <label style={{ display: 'flex', marginLeft: '.5rem' }} htmlFor={`comment-${step.id}`}>Audit Comment</label>
         <textarea
           id={`comment-${step.id}`}
           value={step.comment}

@@ -53,6 +53,9 @@ const VerifiedInvoicesTable: React.FC<VerifiedInvoicesTableProps> = ({
           .filter(stepId => verification.steps[stepId].isIncorrect)
           .length;
         
+        // Calculate the number of actively processed steps (verified or incorrect)
+        const processedSteps = verifiedSteps + incorrectSteps;
+        
         // Employee quarterly verification status
         const employeeId = invoice.employeeId;
         const quarterlyStatus = employeeQuarterlyStatus[employeeId]?.[currentQuarter] || { verified: false };
@@ -70,8 +73,8 @@ const VerifiedInvoicesTable: React.FC<VerifiedInvoicesTableProps> = ({
           isFullyVerified: verification.isVerified,
           hasIncorrectCalculations: incorrectSteps > 0,
           verificationDate: verification.verificationDate,
-          progress: `${verifiedSteps + incorrectSteps}/${totalSteps}`,
-          progressPercent: Math.round(((verifiedSteps + incorrectSteps) / totalSteps) * 100),
+          progress: `${processedSteps}/${totalSteps}`,
+          progressPercent: Math.round((processedSteps / totalSteps) * 100),
           quarterlyStatus,
         };
       })

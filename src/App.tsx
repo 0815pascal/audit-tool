@@ -168,8 +168,6 @@ function App() {
   const handleVerifyInvoice = (isVerified: boolean) => {
     if (!currentInvoice || !selectedEmployee) return
     
-    // Removed condition: Allow verification even with incorrect steps
-    
     // Dispatch action to Redux
     dispatch(verifyInvoice({ 
       invoiceId: currentInvoice.id, 
@@ -183,7 +181,18 @@ function App() {
       isVerified
     }
     
+    // Update the current invoice state
     setCurrentInvoice(updatedInvoice)
+    
+    // Trigger a re-render of the EmployeeList to update the status indicator
+    setTimeout(() => {
+      // Using setTimeout to ensure Redux state is updated before the re-render
+      setSelectedEmployee(prevEmployee => {
+        // Force React to see this as a state change by creating a new value
+        // even though it's the same string
+        return String(prevEmployee);
+      });
+    }, 50);
   }
   
   // Function to select a new random invoice for the currently selected employee

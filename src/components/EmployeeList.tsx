@@ -1,8 +1,8 @@
 import React from 'react';
 import { Employee } from '../types';
-import { department } from '../mockData';
+import { department, invoices } from '../mockData';
 import { useAppSelector } from '../store/hooks';
-import { selectVerificationData } from '../store/verificationSlice';
+import { selectVerificationData, getCurrentQuarter } from '../store/verificationSlice';
 
 interface EmployeeListProps {
   employees: Employee[];
@@ -42,32 +42,67 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
 
   // Helper function to get verification status indicator
   const getVerificationStatus = (employeeId: string): VerificationStatus => {
-    const status = employeeQuarterlyStatus[employeeId]?.[currentQuarter];
+    // Get the current quarter and year
+    const { quarter: currentQuarterNum, year: currentYear } = getCurrentQuarter();
     
-    // If verified in the current quarter
-    if (status?.verified) {
-      // Check if any of the employee's verified invoices have errors
-      const employeeInvoices = Object.values(verificationData).filter(
-        invoice => invoice.employeeId === employeeId && invoice.isVerified
+    // Filter invoices to only include those from the current employee AND current quarter
+    const employeeInvoices = Object.entries(verificationData)
+      .map(([id, data]) => ({
+        id,
+        ...data
+      }))
+      .filter(invoice => 
+        invoice.employeeId === employeeId && 
+        invoice.quarter === currentQuarterNum && 
+        invoice.year === currentYear
       );
-      
-      // Check if any verified invoices have incorrect calculations
-      const hasErrors = employeeInvoices.some(invoice => {
-        return Object.values(invoice.steps).some(step => step.isIncorrect);
-      });
-      
-      return hasErrors ? 'verified-with-errors' : 'verified';
+    
+    // If no invoices are found for this employee in the current quarter, they are unverified
+    if (employeeInvoices.length === 0) {
+      return 'unverified';
     }
     
-    // Check if there's any in-progress verification for this employee
-    const hasInProgress = Object.values(verificationData).some(
-      invoice => 
-        invoice.employeeId === employeeId && 
-        !invoice.isVerified && 
-        Object.values(invoice.steps).some(step => step.isVerified || step.isIncorrect)
+    // Check if there are any steps actively verified or marked incorrect in current quarter
+    const hasAnyActiveSteps = employeeInvoices.some(invoice => 
+      Object.values(invoice.steps).some(step => step.isVerified || step.isIncorrect)
     );
     
-    return hasInProgress ? 'in-progress' : 'unverified';
+    // If no steps are actively processed at all, the status is unverified
+    if (!hasAnyActiveSteps) {
+      return 'unverified';
+    }
+    
+    // Check if all steps in all current quarter invoices are fully processed and the invoice is verified
+    const allStepsProcessed = employeeInvoices.every(invoice => {
+      // Get the invoice from the invoices array to know how many steps it should have
+      const invoiceData = invoices.find(inv => inv.id === invoice.id);
+      if (!invoiceData) return false;
+      
+      const totalSteps = invoiceData.calculationSteps.length;
+      
+      // Check if ALL steps have been processed (either verified or marked incorrect)
+      const allStepsVerifiedOrMarkedIncorrect = invoiceData.calculationSteps.every(step => {
+        const stepVerification = invoice.steps[step.id];
+        return stepVerification && (stepVerification.isVerified || stepVerification.isIncorrect);
+      });
+      
+      // All steps must be actively verified or marked incorrect AND the invoice marked as verified
+      return allStepsVerifiedOrMarkedIncorrect && invoice.isVerified;
+    });
+    
+    // If not all steps are processed, the status is in-progress
+    if (!allStepsProcessed) {
+      return 'in-progress';
+    }
+    
+    // At this point, all steps for current quarter are processed and all invoices are verified
+    // Check if any verified invoices have incorrect calculations
+    const hasErrors = employeeInvoices.some(invoice => {
+      return Object.values(invoice.steps).some(step => step.isIncorrect);
+    });
+    
+    // Return verified-with-errors if there are errors, otherwise verified
+    return hasErrors ? 'verified-with-errors' : 'verified';
   };
 
   // Style for the select element to make it more prominent

@@ -33,6 +33,61 @@ export const invoices: Invoice[] = [
     isVerified: false
   },
   {
+    id: '1-A',
+    employeeId: '1',
+    date: '2025-04-15',
+    clientName: 'Caroline Weber',
+    policyNumber: 'LI-54321',
+    caseNumber: 10053,
+    dossierRisk: 123457,
+    dossierName: 'Swiss Financial Partners',
+    calculationSteps: [
+      { id: '1A-1', description: 'Base premium', value: 750, isVerified: false, isIncorrect: false, comment: '' },
+      { id: '1A-2', description: 'Family plan adjustment', value: 1.5, isVerified: false, isIncorrect: false, comment: '' },
+      { id: '1A-3', description: 'Non-smoker discount', value: -120, isVerified: false, isIncorrect: false, comment: '' },
+      { id: '1A-4', description: 'Annual payment discount', value: -50, isVerified: false, isIncorrect: false, comment: '' }
+    ],
+    totalAmount: 955,
+    isVerified: false
+  },
+  {
+    id: '1-B',
+    employeeId: '1',
+    date: '2025-04-22',
+    clientName: 'Martin Schneider',
+    policyNumber: 'LI-98765',
+    caseNumber: 10054,
+    dossierRisk: 123458,
+    dossierName: 'Alpine Investment Trust',
+    calculationSteps: [
+      { id: '1B-1', description: 'Base premium', value: 600, isVerified: false, isIncorrect: false, comment: '' },
+      { id: '1B-2', description: 'Senior citizen factor', value: 0.8, isVerified: false, isIncorrect: false, comment: '' },
+      { id: '1B-3', description: 'Long-term customer discount', value: -70, isVerified: false, isIncorrect: false, comment: '' },
+      { id: '1B-4', description: 'Special coverage add-on', value: 100, isVerified: false, isIncorrect: false, comment: '' }
+    ],
+    totalAmount: 510,
+    isVerified: false
+  },
+  {
+    id: '1-C',
+    employeeId: '1',
+    date: '2025-04-28',
+    clientName: 'Elena Müller',
+    policyNumber: 'LI-36925',
+    caseNumber: 10055,
+    dossierRisk: 123459,
+    dossierName: 'Zurich Medical Association',
+    calculationSteps: [
+      { id: '1C-1', description: 'Base premium', value: 850, isVerified: false, isIncorrect: false, comment: '' },
+      { id: '1C-2', description: 'Occupation risk factor', value: 1.3, isVerified: false, isIncorrect: false, comment: '' },
+      { id: '1C-3', description: 'Health assessment bonus', value: -95, isVerified: false, isIncorrect: false, comment: '' },
+      { id: '1C-4', description: 'Multi-policy discount', value: -75, isVerified: false, isIncorrect: false, comment: '' },
+      { id: '1C-5', description: 'Premium service fee', value: 25, isVerified: false, isIncorrect: false, comment: '' }
+    ],
+    totalAmount: 960,
+    isVerified: false
+  },
+  {
     id: '2',
     employeeId: '2',
     date: '2025-04-16',

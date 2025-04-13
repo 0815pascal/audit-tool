@@ -27,7 +27,7 @@ const VerificationStatus: React.FC<VerificationStatusProps> = ({
             <h3 style={{ margin: 0, textAlign: 'start' }}>{currentQuarter} Quarterly Verification</h3>
             <p style={{ margin: '0.5rem 0 0 0' }}>
               {employeesNeedingVerification > 0 ? (
-                <span style={{ color: '#f57c00' }}>
+                <span style={{ color: '#ffbc11' }}>
                   <strong>{employeesNeedingVerification}</strong> employee(s) still need verification this quarter
                 </span>
               ) : (
@@ -43,7 +43,7 @@ const VerificationStatus: React.FC<VerificationStatusProps> = ({
             borderRadius: '4px',
             textAlign: 'center'
           }}>
-            <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: employeesNeedingVerification > 0 ? '#f57c00' : '#4caf50' }}>
+            <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: employeesNeedingVerification > 0 ? '#ffbc11' : '#4caf50' }}>
               {completionPercentage}%
             </div>
             <div style={{ fontSize: '0.8rem' }}>
@@ -58,7 +58,7 @@ const VerificationStatus: React.FC<VerificationStatusProps> = ({
               position: 'absolute', 
               height: '100%', 
               width: `${completionPercentage}%`, 
-              backgroundColor: completionPercentage < 100 ? '#f57c00' : '#4caf50',
+              backgroundColor: completionPercentage < 100 ? '#ffbc11' : '#4caf50',
               borderRadius: '4px',
               transition: 'width 0.5s ease-in-out'
             }} 
