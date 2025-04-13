@@ -1,6 +1,6 @@
 import React from 'react';
 import { Employee } from '../types';
-import { department, invoices } from '../mockData';
+import { invoices } from '../mockData';
 import { useAppSelector } from '../store/hooks';
 import { selectVerificationData, getCurrentQuarter } from '../store/verificationSlice';
 
@@ -76,7 +76,6 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
       const invoiceData = invoices.find(inv => inv.id === invoice.id);
       if (!invoiceData) return false;
       
-      const totalSteps = invoiceData.calculationSteps.length;
       
       // Check if ALL steps have been processed (either verified or marked incorrect)
       const allStepsVerifiedOrMarkedIncorrect = invoiceData.calculationSteps.every(step => {
