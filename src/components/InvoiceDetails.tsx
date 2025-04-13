@@ -107,7 +107,7 @@ const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({
             <button 
               onClick={() => onVerifyInvoice(true)}
               style={{ 
-                backgroundColor: '#d24723',
+                backgroundColor: hasIncorrectSteps ? '#d24723' : 'var(--success-color)',
                 color: 'white',
                 padding: '10px 20px',
                 border: 'none',
@@ -121,7 +121,7 @@ const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({
                   <span style={{ fontSize: '1.25em', marginRight: '5px' }}>⛆</span>
                   Complete Verification with Errors
                 </span> : 
-                "Complete Verification"}
+                "Validate Verification"}
             </button>
           </div>
         )}

@@ -107,20 +107,24 @@ const VerifiedInvoicesTable: React.FC<VerifiedInvoicesTableProps> = ({
   }
   
   return (
-    <div className="card mb-4">
+    <div className="mb-4">
       <h2>Verified Invoices</h2>
       <div style={{ overflowX: 'auto' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <table style={{ 
+          width: '100%', 
+          borderCollapse: 'collapse',
+          textAlign: 'left'
+        }}>
           <thead>
             <tr style={{ backgroundColor: 'var(--primary-color)', color: 'white' }}>
-              <th style={tableHeaderStyle}>Client</th>
-              <th style={tableHeaderStyle}>Policy #</th>
-              <th style={tableHeaderStyle}>Case #</th>
-              <th style={tableHeaderStyle}>Dossier</th>
-              <th style={tableHeaderStyle}>Employee</th>
-              <th style={tableHeaderStyle}>Amount</th>
-              <th style={tableHeaderStyle}>Progress</th>
-              <th style={tableHeaderStyle}>Date</th>
+              <th style={{...tableHeaderStyle, textAlign: 'left'}} align="left">Case #</th>
+              <th style={{...tableHeaderStyle, textAlign: 'left'}} align="left">Client</th>
+              <th style={{...tableHeaderStyle, textAlign: 'left'}} align="left">Policy #</th>
+              <th style={{...tableHeaderStyle, textAlign: 'left'}} align="left">Dossier</th>
+              <th style={{...tableHeaderStyle, textAlign: 'left'}} align="left">Employee</th>
+              <th style={{...tableHeaderStyle, textAlign: 'left'}} align="left">Amount</th>
+              <th style={{...tableHeaderStyle, textAlign: 'left'}} align="left">Progress</th>
+              <th style={{...tableHeaderStyle, textAlign: 'left'}} align="left">Date</th>
             </tr>
           </thead>
           <tbody>
@@ -129,18 +133,15 @@ const VerifiedInvoicesTable: React.FC<VerifiedInvoicesTableProps> = ({
                 key={invoice.id}
                 style={{ 
                   cursor: onSelectInvoice ? 'pointer' : 'default',
-                  backgroundColor: invoice.hasIncorrectCalculations 
-                    ? 'rgba(211, 47, 47, 0.1)' 
-                    : (invoice.isFullyVerified ? 'rgba(0, 200, 83, 0.1)' : 'transparent'),
                 }}
                 onClick={() => onSelectInvoice && onSelectInvoice(invoice.id)}
               >
-                <td style={tableCellStyle}>{invoice.clientName}</td>
-                <td style={tableCellStyle}>{invoice.policyNumber}</td>
-                <td style={tableCellStyle}>{invoice.caseNumber}</td>
-                <td style={tableCellStyle}>{invoice.dossierName}</td>
-                <td style={tableCellStyle}>{invoice.employeeName}</td>
-                <td style={tableCellStyle}>${invoice.totalAmount.toFixed(2)}</td>
+                <td style={tableCellStyle} align="left">{invoice.caseNumber}</td>
+                <td style={tableCellStyle} align="left">{invoice.clientName}</td>
+                <td style={tableCellStyle} align="left">{invoice.policyNumber}</td>
+                <td style={tableCellStyle} align="left">{invoice.dossierName}</td>
+                <td style={tableCellStyle} align="left">{invoice.employeeName}</td>
+                <td style={tableCellStyle} align="left">${invoice.totalAmount.toFixed(2)}</td>
                 <td style={tableCellStyle}>
                   <div style={{ position: 'relative', height: '20px', width: '100%', backgroundColor: '#f0f0f0', borderRadius: '4px' }}>
                     <div 
@@ -156,7 +157,8 @@ const VerifiedInvoicesTable: React.FC<VerifiedInvoicesTableProps> = ({
                       style={{ 
                         position: 'absolute', 
                         width: '100%', 
-                        textAlign: 'center', 
+                        textAlign: 'start', 
+                        paddingLeft: '5px',
                         color: invoice.progressPercent > 50 ? 'white' : 'var(--text-color)',
                         lineHeight: '20px',
                         fontSize: '0.8rem'
@@ -166,7 +168,7 @@ const VerifiedInvoicesTable: React.FC<VerifiedInvoicesTableProps> = ({
                     </div>
                   </div>
                 </td>
-                <td style={tableCellStyle}>{invoice.verificationDate 
+                <td style={tableCellStyle} align="left">{invoice.verificationDate 
                   ? new Date(invoice.verificationDate).toLocaleDateString() 
                   : 'In progress'
                 }</td>
@@ -182,12 +184,15 @@ const VerifiedInvoicesTable: React.FC<VerifiedInvoicesTableProps> = ({
 const tableHeaderStyle: React.CSSProperties = {
   padding: '0.75rem',
   textAlign: 'left',
+  verticalAlign: 'top',
   fontWeight: 'bold',
   borderBottom: '2px solid var(--border-color)'
 };
 
 const tableCellStyle: React.CSSProperties = {
   padding: '0.75rem',
+  textAlign: 'left !important' as any,
+  verticalAlign: 'top',
   borderBottom: '1px solid var(--border-color)'
 };
 

@@ -110,7 +110,7 @@ const PastQuarterVerificationsTable: React.FC<PastQuarterVerificationsTableProps
   }
   
   return (
-    <div className="card mb-4">
+    <div className="mb-4">
       <h2>Past Quarter Verifications</h2>
       <div style={{ overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -133,9 +133,6 @@ const PastQuarterVerificationsTable: React.FC<PastQuarterVerificationsTableProps
                 key={invoice.id}
                 style={{ 
                   cursor: onSelectInvoice ? 'pointer' : 'default',
-                  backgroundColor: invoice.hasIncorrectCalculations 
-                    ? 'rgba(211, 47, 47, 0.1)' 
-                    : (invoice.isFullyVerified ? 'rgba(0, 200, 83, 0.1)' : 'transparent'),
                 }}
                 onClick={() => onSelectInvoice && onSelectInvoice(invoice.id)}
               >

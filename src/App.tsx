@@ -239,7 +239,7 @@ function App() {
           totalEmployees={employees.length}
           key={Object.keys(verificationData).join(',')}
         />
-      <main className="container">
+      
         
         {activeTab === 'overview' ? (
           // Overview Tab - Show verified invoices table
@@ -257,7 +257,7 @@ function App() {
           </>
         ) : (
           // Verification Tab - Show verification interface
-          <>
+          <main className="container">
             <div className="mb-4">
               <EmployeeList 
                 employees={employees}
@@ -280,9 +280,8 @@ function App() {
                 />
               </div>
             )}
-          </>
+           </main>
         )}
-      </main>
     </div>
   )
 }
