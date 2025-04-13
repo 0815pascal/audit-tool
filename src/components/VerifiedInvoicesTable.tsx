@@ -99,7 +99,7 @@ const VerifiedInvoicesTable: React.FC<VerifiedInvoicesTableProps> = ({
   
   if (verifiedInvoices.length === 0) {
     return (
-      <div className="card mb-4">
+      <div className="mb-8 left">
         <h2>Verified Invoices</h2>
         <p>No invoices have been verified yet.</p>
       </div>

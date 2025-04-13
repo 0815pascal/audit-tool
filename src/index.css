@@ -108,6 +108,14 @@ input, select, textarea {
   margin-bottom: 1rem;
 }
 
+.mb-8 {
+  margin-bottom: 2rem;
+}
+
 .mt-4 {
   margin-top: 1rem;
+}
+
+.left{
+  text-align: left;
 }

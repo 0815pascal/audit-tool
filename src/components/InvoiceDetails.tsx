@@ -41,17 +41,38 @@ const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({
     <div className="card">
       <h2>Claim Examination</h2>
       
-      <div className="mb-4">
-        <div><strong>Client:</strong> {invoice.clientName}</div>
-        <div><strong>Policy Number:</strong> {invoice.policyNumber}</div>
-        <div><strong>Case Number:</strong> {invoice.caseNumber}</div>
-        <div><strong>Dossier Risk:</strong> {invoice.dossierRisk}</div>
-        <div><strong>Dossier Name:</strong> {invoice.dossierName}</div>
-        <div><strong>Date:</strong> {invoice.date}</div>
-        <div><strong>Employee:</strong> {employee.name}</div>
+      <div className="mb-4" style={{ maxWidth: '500px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', margin: '4px 0' }}>
+          <strong>Claim Manager</strong> 
+          <span style={{ textAlign: 'right' }}>{employee.name}</span>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', margin: '4px 0' }}>
+          <strong>Client</strong> 
+          <span style={{ textAlign: 'right' }}>{invoice.clientName}</span>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', margin: '4px 0' }}>
+          <strong>Policy Number</strong> 
+          <span style={{ textAlign: 'right' }}>{invoice.policyNumber}</span>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', margin: '4px 0' }}>
+          <strong>Case Number</strong> 
+          <span style={{ textAlign: 'right' }}>{invoice.caseNumber}</span>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', margin: '4px 0' }}>
+          <strong>Dossier Risk</strong> 
+          <span style={{ textAlign: 'right' }}>{invoice.dossierRisk}</span>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', margin: '4px 0' }}>
+          <strong>Dossier Name</strong> 
+          <span style={{ textAlign: 'right' }}>{invoice.dossierName}</span>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', margin: '4px 0' }}>
+          <strong>Date</strong> 
+          <span style={{ textAlign: 'right' }}>{invoice.date}</span>
+        </div>
       </div>
       
-      <div style={{ display: 'flex', marginBottom: '1rem' }}>
+      <div style={{ display: 'flex', marginBottom: '1rem', justifyContent: 'space-between' }}>
         <button
           onClick={() => window.dispatchEvent(new CustomEvent('selectRandomInvoice'))}
           style={{
@@ -86,7 +107,7 @@ const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({
             Please verify all calculation steps before completing the verification.
           </p>
         ) : invoice.isVerified ? (
-          <div>
+          <div style={{ display: 'flex', justifyContent: 'end' }}>
             <button 
               onClick={() => onVerifyInvoice(false)}
               style={{ 
@@ -96,14 +117,13 @@ const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({
                 border: 'none',
                 borderRadius: '4px',
                 cursor: 'pointer',
-                marginRight: '10px'
               }}
             >
               ⏳ Mark as In Progress
             </button>
           </div>
         ) : (
-          <div>
+          <div style={{ display: 'flex', justifyContent: 'end' }}>
             <button 
               onClick={() => onVerifyInvoice(true)}
               style={{ 
@@ -118,7 +138,7 @@ const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({
             >
               {hasIncorrectSteps ? 
                 <span>
-                  <span style={{ fontSize: '1.25em', marginRight: '5px' }}>⛆</span>
+                  <span style={{ fontSize: '1em', marginRight: '5px' }}>⛆</span>
                   Complete Verification with Errors
                 </span> : 
                 "Validate Verification"}

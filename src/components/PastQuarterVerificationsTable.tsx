@@ -110,7 +110,7 @@ const PastQuarterVerificationsTable: React.FC<PastQuarterVerificationsTableProps
   }
   
   return (
-    <div className="mb-4">
+    <div className="mb-4 left">
       <h2>Past Quarter Verifications</h2>
       <div style={{ overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
