@@ -323,10 +323,27 @@ export const verificationSlice = createSlice({
           lastVerified: new Date().toISOString()
         };
       } else {
+        // If marking as unverified/in progress
         state.verifiedInvoices[invoiceId].verificationDate = null;
         
-        // DON'T remove quarterly verification when unmarking an invoice
-        // This allows employees to remain verified even if a specific invoice is unmarked
+        // Check if all current quarter invoices for this employee are verified
+        const employeeCurrentQuarterInvoices = Object.values(state.verifiedInvoices)
+          .filter(invoice => 
+            invoice.employeeId === employeeId && 
+            invoice.quarter === quarter && 
+            invoice.year === year
+          );
+        
+        const anyRemainingVerifiedInvoices = employeeCurrentQuarterInvoices.some(
+          invoice => Object.keys(state.verifiedInvoices).includes(invoiceId) && 
+            invoice !== state.verifiedInvoices[invoiceId] && 
+            invoice.isVerified
+        );
+        
+        // Only update employee status if there are no other verified invoices
+        if (!anyRemainingVerifiedInvoices && state.employeeQuarterlyStatus[employeeId]?.[quarterKey]) {
+          state.employeeQuarterlyStatus[employeeId][quarterKey].verified = false;
+        }
       }
     }
   }
@@ -361,17 +378,43 @@ export const selectEmployeeVerificationStatus = (
 
 // Memoized selector for employees needing verification
 export const selectEmployeesNeedingVerification = createSelector(
-  [(state: { verification: VerificationState }) => state.verification.employeeQuarterlyStatus, 
-   (_state, employees: { id: string }[]) => employees],
-  (employeeQuarterlyStatus, employees) => {
+  [
+    (state: { verification: VerificationState }) => state.verification.verifiedInvoices,
+    (state: { verification: VerificationState }) => state.verification.employeeQuarterlyStatus, 
+    (_state, employees: { id: string }[]) => employees
+  ],
+  (verifiedInvoices, employeeQuarterlyStatus, employees) => {
     const { quarter, year } = getCurrentQuarter();
     const quarterKey = formatQuarterYear(quarter, year);
     
     return employees.filter(employee => {
-      const employeeStatus = employeeQuarterlyStatus[employee.id];
-      // Consider an employee verified if they have a status for the current quarter 
-      // and that status is marked as verified, regardless of errors
-      return !employeeStatus || !employeeStatus[quarterKey] || !employeeStatus[quarterKey].verified;
+      const employeeId = employee.id;
+      
+      // First approach: check employeeQuarterlyStatus
+      const employeeStatus = employeeQuarterlyStatus[employeeId];
+      if (!employeeStatus || !employeeStatus[quarterKey] || !employeeStatus[quarterKey].verified) {
+        return true; // Employee needs verification
+      }
+      
+      // Double-check: ensure all current quarter invoices are verified
+      // Find all invoices for this employee from the current quarter
+      const employeeInvoices = Object.values(verifiedInvoices)
+        .filter(invoice => 
+          invoice.employeeId === employeeId && 
+          invoice.quarter === quarter && 
+          invoice.year === year
+        );
+      
+      // If there are no invoices for this quarter, they need verification
+      if (employeeInvoices.length === 0) {
+        return true;
+      }
+      
+      // Check if all invoices are verified
+      const allInvoicesVerified = employeeInvoices.every(invoice => invoice.isVerified);
+      
+      // If any current quarter invoice is not fully verified, this employee needs verification
+      return !allInvoicesVerified;
     });
   }
 );

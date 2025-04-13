@@ -188,30 +188,6 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
           })}
         </select>
       </div>
-      
-      <div className="mt-4">
-        <h3>Quarterly Verification Summary</h3>
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'space-between',
-          backgroundColor: '#f5f5f5',
-          padding: '12px',
-          borderRadius: '4px',
-          marginTop: '10px'
-        }}>
-          <div>
-            <strong>{currentQuarter}</strong>
-          </div>
-          <div>
-            <span style={{ color: '#00c853', fontWeight: 'bold' }}>
-              {verifiedCount}
-            </span>
-            &nbsp;/&nbsp;
-            <span>{employees.length}</span>
-            &nbsp;verified
-          </div>
-        </div>
-      </div>
     </div>
   );
 };

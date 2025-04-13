@@ -4,6 +4,9 @@
   --text-color: #343c3d;
   --border-color: #e5e7eb;
   --hover-color: #0000af;
+  --info-color: #4976ba;
+  --warning-color: #ffbc11;
+  --success-color: #4caf50;
 }
 
 * {

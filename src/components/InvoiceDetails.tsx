@@ -82,7 +82,7 @@ const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({
       
       <div>
         {!allStepsProcessed ? (
-          <p style={{ color: 'var(--primary-color)' }}>
+          <p style={{ color: 'var(--info-color)', fontSize: '.9rem', fontWeight: 'bold' }}>
             Please verify all calculation steps before completing the verification.
           </p>
         ) : invoice.isVerified ? (
@@ -170,7 +170,7 @@ const CalculationStepItem: React.FC<CalculationStepItemProps> = ({
       padding: '10px', 
       border: '1px solid', 
       borderRadius: '4px',
-      borderColor: step.isIncorrect ? '#c91432' : (step.isVerified ? '#138636' : 'transparent')
+      borderColor: '#f0f0f0'
     }}>
       <div className="flex" style={{ justifyContent: 'space-between' }}>
         <div>
@@ -186,7 +186,7 @@ const CalculationStepItem: React.FC<CalculationStepItemProps> = ({
               onChange={handleVerifyChange}
               disabled={step.isIncorrect}
             />
-            <label htmlFor={`verify-step-${step.id}`}>Verify</label>
+            <label htmlFor={`verify-step-${step.id}`}>Validate</label>
           </div>
           <div className="checkbox-container">
             <input
@@ -196,7 +196,7 @@ const CalculationStepItem: React.FC<CalculationStepItemProps> = ({
               onChange={handleIncorrectChange}
               disabled={step.isVerified}
             />
-            <label htmlFor={`incorrect-step-${step.id}`} style={{ color: '#d32f2f' }}>Incorrect</label>
+            <label htmlFor={`incorrect-step-${step.id}`}>Incorrect</label>
           </div>
         </div>
       </div>

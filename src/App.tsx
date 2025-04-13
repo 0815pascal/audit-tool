@@ -237,6 +237,7 @@ function App() {
           currentQuarter={currentQuarterFormatted}
           employeesNeedingVerification={employeesNeedingVerification.length}
           totalEmployees={employees.length}
+          key={Object.keys(verificationData).join(',')}
         />
       <main className="container">
         
