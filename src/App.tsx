@@ -258,29 +258,38 @@ function App() {
         ) : (
           // Verification Tab - Show verification interface
           <main className="container">
-            <div className="mb-4">
-              <EmployeeList 
-                employees={employees}
-                selectedEmployee={selectedEmployee}
-                onSelectEmployee={handleSelectEmployee}
-                employeeQuarterlyStatus={employeeQuarterlyStatus}
-                currentQuarter={currentQuarterFormatted}
-              />
-            </div>
-            
-            {selectedEmployee && (
-              <div className="mb-4">
-                <InvoiceDetails 
-                  invoice={currentInvoice}
-                  onVerifyStep={handleVerifyStep}
-                  onMarkStepIncorrect={handleMarkStepIncorrect}
-                  onAddComment={handleAddComment}
-                  onVerifyInvoice={handleVerifyInvoice}
+            <div style={{ display: 'flex', gap: '20px', flexDirection: 'row-reverse' }}>
+              {/* Employee List (right side - 30% width) */}
+              <div style={{ flex: '0 0 30%' }}>
+                <EmployeeList 
+                  employees={employees}
+                  selectedEmployee={selectedEmployee}
+                  onSelectEmployee={handleSelectEmployee}
+                  employeeQuarterlyStatus={employeeQuarterlyStatus}
                   currentQuarter={currentQuarterFormatted}
                 />
               </div>
-            )}
-           </main>
+              
+              {/* Invoice Details (left side - 70% width) */}
+              <div style={{ flex: '1 1 70%' }}>
+                {selectedEmployee ? (
+                  <InvoiceDetails 
+                    invoice={currentInvoice}
+                    onVerifyStep={handleVerifyStep}
+                    onMarkStepIncorrect={handleMarkStepIncorrect}
+                    onAddComment={handleAddComment}
+                    onVerifyInvoice={handleVerifyInvoice}
+                    currentQuarter={currentQuarterFormatted}
+                  />
+                ) : (
+                  <div className="card">
+                    <h2>Claim Information</h2>
+                    <p>Select an employee from the right panel to begin verification.</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </main>
         )}
     </div>
   )

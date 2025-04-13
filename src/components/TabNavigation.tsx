@@ -50,7 +50,7 @@ const TabButton: React.FC<TabButtonProps> = ({ label, isActive, onClick }) => {
         border: 'none',
         borderBottom: isActive ? '3px solid var(--primary-color)' : 'none',
         cursor: 'pointer',
-        fontWeight: 500,
+        fontWeight: 'bold',
         marginRight: '1rem',
         borderRadius: isActive ? '4px 4px 0 0' : '4px',
         transition: 'all 0.2s'

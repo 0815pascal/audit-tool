@@ -26,15 +26,13 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
   employees,
   selectedEmployee,
   onSelectEmployee,
-  employeeQuarterlyStatus,
-  currentQuarter
 }) => {
   const verificationData = useAppSelector(selectVerificationData);
   
   if (employees.length === 0) {
     return (
       <div className="card">
-        <h2>{department.name} Employees</h2>
+        <h2>Employee Selector</h2>
         <p>No employees found in this department.</p>
       </div>
     );
@@ -153,20 +151,10 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
     }
   };
 
-  // Count verified employees (including those with errors)
-  const verifiedCount = employees.filter(emp => {
-    const status = getVerificationStatus(emp.id);
-    return status === 'verified' || status === 'verified-with-errors';
-  }).length;
-
   return (
-    <div className="card">
-      <h2>{department.name} Employees</h2>
+    <div className="card" style={{ minWidth: '20rem' }}>
+      <h2>Claim Manager</h2>
       <div className="form-group">
-        <label htmlFor="employee-select">Select Employee for Audit</label>
-        <p className="text-muted" style={{ fontSize: '0.85rem', marginTop: '5px' }}>
-          🟢 = Verified &nbsp;|&nbsp; 🟡 = Verified with errors &nbsp;|&nbsp; ⏳ = In progress &nbsp;|&nbsp; 🔴 = Not verified
-        </p>
         <select
           id="employee-select"
           value={selectedEmployee}
@@ -187,6 +175,9 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
             );
           })}
         </select>
+        <p className="text-muted" style={{ fontSize: '0.85rem', marginTop: '5px', textAlign: 'left', paddingLeft: '1.1rem' }}>
+          🟢 = Verified &nbsp;<br/>  🟡 = Verified with errors &nbsp;<br/> 🔴 = Not verified &nbsp;<br/> ⏳ = In progress
+        </p>
       </div>
     </div>
   );

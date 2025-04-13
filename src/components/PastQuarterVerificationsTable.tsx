@@ -117,9 +117,9 @@ const PastQuarterVerificationsTable: React.FC<PastQuarterVerificationsTableProps
           <thead>
             <tr style={{ backgroundColor: 'var(--primary-color)', color: 'white' }}>
               <th style={tableHeaderStyle}>Quarter</th>
-              <th style={tableHeaderStyle}>Case #</th>
+              <th style={tableHeaderStyle}>Case</th>
               <th style={tableHeaderStyle}>Client</th>
-              <th style={tableHeaderStyle}>Policy #</th>
+              <th style={tableHeaderStyle}>Policy</th>
               <th style={tableHeaderStyle}>Dossier</th>
               <th style={tableHeaderStyle}>Employee</th>
               <th style={tableHeaderStyle}>Amount</th>

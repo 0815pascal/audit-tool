@@ -39,9 +39,9 @@ const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({
 
   return (
     <div className="card">
-      <h2>Claim Examination</h2>
+      <h2>Claim Information</h2>
       
-      <div className="mb-4" style={{ maxWidth: '500px' }}>
+      <div className="mb-4" >
       <div style={{ display: 'flex', justifyContent: 'space-between', margin: '4px 0' }}>
           <strong>Claim Manager</strong> 
           <span style={{ textAlign: 'right' }}>{employee.name}</span>
@@ -72,7 +72,7 @@ const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({
         </div>
       </div>
       
-      <div style={{ display: 'flex', marginBottom: '1rem', justifyContent: 'space-between' }}>
+      <div style={{ display: 'flex', marginBottom: '2rem', justifyContent: 'start' }}>
         <button
           onClick={() => window.dispatchEvent(new CustomEvent('selectRandomInvoice'))}
           style={{
@@ -81,14 +81,15 @@ const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({
             padding: '8px 16px',
             border: 'none',
             borderRadius: '4px',
-            cursor: 'pointer'
+            cursor: 'pointer',
+            fontWeight: 'bold'
           }}
         >
           Select Another Random Invoice
         </button>
       </div>
       
-      <h3>Calculation Steps</h3>
+      <h3 className="left">Calculation Steps</h3>
       <div className="mb-4">
         {invoice.calculationSteps.map((step) => (
           <CalculationStepItem 
