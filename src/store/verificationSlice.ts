@@ -1,5 +1,5 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { Invoice, CalculationStep } from '../types';
+import { createSlice, PayloadAction, createSelector } from '@reduxjs/toolkit';
+import { Invoice } from '../types';
 
 // Get current quarter and year
 export const getCurrentQuarter = (): { quarter: number; year: number } => {
@@ -51,9 +51,7 @@ const initialState: VerificationState = {
 };
 
 // This function will run on initialization to migrate any legacy data format
-const migrateEmployeeQuarterlyStatus = (state: VerificationState): VerificationState => {
-  const updatedState = { ...state };
-  
+const migrateEmployeeQuarterlyStatus = (state: VerificationState): void => {
   // Check if we have any employee quarterly status data
   if (Object.keys(state.employeeQuarterlyStatus).length > 0) {
     // Loop through each employee
@@ -67,7 +65,7 @@ const migrateEmployeeQuarterlyStatus = (state: VerificationState): VerificationS
           
           // If the quarterly status is a boolean, convert it to the new object format
           if (typeof quarterStatus === 'boolean') {
-            updatedState.employeeQuarterlyStatus[employeeId][quarterKey] = {
+            state.employeeQuarterlyStatus[employeeId][quarterKey] = {
               verified: quarterStatus,
               lastVerified: quarterStatus ? new Date().toISOString() : undefined
             };
@@ -76,8 +74,6 @@ const migrateEmployeeQuarterlyStatus = (state: VerificationState): VerificationS
       }
     });
   }
-  
-  return updatedState;
 };
 
 export const verificationSlice = createSlice({
@@ -86,8 +82,80 @@ export const verificationSlice = createSlice({
   reducers: {
     // Initialize the state with migrated data if needed
     initializeState: (state) => {
-      const migratedState = migrateEmployeeQuarterlyStatus(state);
-      return migratedState;
+      // Apply any migrations for backward compatibility
+      migrateEmployeeQuarterlyStatus(state);
+      
+      // Create some sample data for past quarters if none exists
+      if (Object.keys(state.verifiedInvoices).length === 0) {
+        // Sample data for a past quarter
+        const { quarter, year } = getCurrentQuarter();
+        let pastQuarter = quarter - 1;
+        let pastYear = year;
+        
+        if (pastQuarter < 1) {
+          pastQuarter = 4;
+          pastYear = year - 1;
+        }
+        
+        // Add a sample past invoice verification for E001
+        state.verifiedInvoices['INV001-PAST'] = {
+          isVerified: true,
+          verifiedBy: 'Supervisor',
+          verificationDate: new Date(pastYear, (pastQuarter - 1) * 3 + 2, 15).toISOString(),
+          employeeId: '1',
+          quarter: pastQuarter,
+          year: pastYear,
+          steps: {
+            'S1': { isVerified: true, isIncorrect: false, comment: '' },
+            'S2': { isVerified: true, isIncorrect: false, comment: '' }
+          }
+        };
+        
+        // Add sample for a second past quarter (two quarters ago)
+        let pastQuarter2 = pastQuarter - 1;
+        let pastYear2 = pastYear;
+        
+        if (pastQuarter2 < 1) {
+          pastQuarter2 = 4;
+          pastYear2 = pastYear - 1;
+        }
+        
+        state.verifiedInvoices['INV002-PAST'] = {
+          isVerified: true,
+          verifiedBy: 'Supervisor',
+          verificationDate: new Date(pastYear2, (pastQuarter2 - 1) * 3 + 2, 10).toISOString(),
+          employeeId: '2',
+          quarter: pastQuarter2,
+          year: pastYear2,
+          steps: {
+            'S1': { isVerified: true, isIncorrect: false, comment: '' },
+            'S2': { isVerified: true, isIncorrect: false, comment: '' }
+          }
+        };
+        
+        // Update the quarterly status for these employees
+        const quarterKey1 = formatQuarterYear(pastQuarter, pastYear);
+        const quarterKey2 = formatQuarterYear(pastQuarter2, pastYear2);
+        
+        // Initialize if needed
+        if (!state.employeeQuarterlyStatus['1']) {
+          state.employeeQuarterlyStatus['1'] = {};
+        }
+        if (!state.employeeQuarterlyStatus['2']) {
+          state.employeeQuarterlyStatus['2'] = {};
+        }
+        
+        // Set as verified
+        state.employeeQuarterlyStatus['1'][quarterKey1] = {
+          verified: true,
+          lastVerified: new Date(pastYear, (pastQuarter - 1) * 3 + 2, 15).toISOString()
+        };
+        
+        state.employeeQuarterlyStatus['2'][quarterKey2] = {
+          verified: true,
+          lastVerified: new Date(pastYear2, (pastQuarter2 - 1) * 3 + 2, 10).toISOString()
+        };
+      }
     },
     verifyStep: (
       state, 
@@ -257,15 +325,8 @@ export const verificationSlice = createSlice({
       } else {
         state.verifiedInvoices[invoiceId].verificationDate = null;
         
-        // Remove quarterly verification if it matches this quarter
-        if (
-          state.employeeQuarterlyStatus[employeeId] &&
-          state.employeeQuarterlyStatus[employeeId][quarterKey]
-        ) {
-          state.employeeQuarterlyStatus[employeeId][quarterKey] = {
-            verified: false
-          };
-        }
+        // DON'T remove quarterly verification when unmarking an invoice
+        // This allows employees to remain verified even if a specific invoice is unmarked
       }
     }
   }
@@ -298,16 +359,22 @@ export const selectEmployeeVerificationStatus = (
   return employeeStatus ? employeeStatus[quarterKey] || false : false;
 };
 
-// Check which employees need verification this quarter
-export const selectEmployeesNeedingVerification = (state: { verification: VerificationState }, employees: { id: string }[]) => {
-  const { quarter, year } = getCurrentQuarter();
-  const quarterKey = formatQuarterYear(quarter, year);
-  
-  return employees.filter(employee => {
-    const employeeStatus = state.verification.employeeQuarterlyStatus[employee.id];
-    return !employeeStatus || !employeeStatus[quarterKey];
-  });
-};
+// Memoized selector for employees needing verification
+export const selectEmployeesNeedingVerification = createSelector(
+  [(state: { verification: VerificationState }) => state.verification.employeeQuarterlyStatus, 
+   (_state, employees: { id: string }[]) => employees],
+  (employeeQuarterlyStatus, employees) => {
+    const { quarter, year } = getCurrentQuarter();
+    const quarterKey = formatQuarterYear(quarter, year);
+    
+    return employees.filter(employee => {
+      const employeeStatus = employeeQuarterlyStatus[employee.id];
+      // Consider an employee verified if they have a status for the current quarter 
+      // and that status is marked as verified, regardless of errors
+      return !employeeStatus || !employeeStatus[quarterKey] || !employeeStatus[quarterKey].verified;
+    });
+  }
+);
 
 // Apply verification data to an invoice
 export const applyVerificationDataToInvoice = (

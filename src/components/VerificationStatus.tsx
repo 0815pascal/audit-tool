@@ -8,7 +8,6 @@ interface VerificationStatusProps {
 }
 
 const VerificationStatus: React.FC<VerificationStatusProps> = ({ 
-  verifiedInvoicesCount,
   currentQuarter,
   employeesNeedingVerification,
   totalEmployees
@@ -16,8 +15,7 @@ const VerificationStatus: React.FC<VerificationStatusProps> = ({
   const completionPercentage = Math.round(((totalEmployees - employeesNeedingVerification) / totalEmployees) * 100);
   
   return (
-    <div className="card mb-4">
-      <h2>Verification Status</h2>
+    <div className="mb-4">
       <div style={{ marginTop: '1rem' }}>
         <div style={{ 
           display: 'flex', 
@@ -26,7 +24,7 @@ const VerificationStatus: React.FC<VerificationStatusProps> = ({
           marginBottom: '1rem' 
         }}>
           <div>
-            <h3 style={{ margin: 0 }}>{currentQuarter} Quarterly Verification</h3>
+            <h3 style={{ margin: 0, textAlign: 'start' }}>{currentQuarter} Quarterly Verification</h3>
             <p style={{ margin: '0.5rem 0 0 0' }}>
               {employeesNeedingVerification > 0 ? (
                 <span style={{ color: '#f57c00' }}>
@@ -66,20 +64,6 @@ const VerificationStatus: React.FC<VerificationStatusProps> = ({
             }} 
           />
         </div>
-        
-        <p>
-          {verifiedInvoicesCount > 0 ? (
-            <>
-              <strong>{verifiedInvoicesCount}</strong> invoice(s) have verification data.
-              Data is stored in your browser using Redux state.
-            </>
-          ) : (
-            <>
-              No invoices have been verified yet. 
-              Start by selecting an employee and verifying invoice steps.
-            </>
-          )}
-        </p>
       </div>
     </div>
   );

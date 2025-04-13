@@ -1,9 +1,9 @@
 import React, { useMemo } from 'react';
 import { useAppSelector } from '../store/hooks';
-import { selectVerificationData, getCurrentQuarter } from '../store/verificationSlice';
+import { selectVerificationData, formatQuarterYear, getCurrentQuarter } from '../store/verificationSlice';
 import { invoices, employees } from '../mockData';
 
-interface VerifiedInvoicesTableProps {
+interface PastQuarterVerificationsTableProps {
   onSelectInvoice?: (invoiceId: string) => void;
   employeeQuarterlyStatus: {
     [employeeId: string]: {
@@ -16,23 +16,21 @@ interface VerifiedInvoicesTableProps {
   currentQuarter: string;
 }
 
-const VerifiedInvoicesTable: React.FC<VerifiedInvoicesTableProps> = ({ 
+const PastQuarterVerificationsTable: React.FC<PastQuarterVerificationsTableProps> = ({ 
   onSelectInvoice,
-  employeeQuarterlyStatus,
-  currentQuarter
+  employeeQuarterlyStatus
 }) => {
   const verificationData = useAppSelector(selectVerificationData);
   const { quarter: currentQuarterNum, year: currentYear } = getCurrentQuarter();
   
-  // Get all verified invoices with their verification data for the current quarter only
-  const verifiedInvoices = useMemo(() => {
+  // Memoize the list of past quarter verifications
+  const pastQuarterVerifications = useMemo(() => {
     return Object.keys(verificationData)
       .filter(invoiceId => {
         const verification = verificationData[invoiceId];
-        // Only include invoices from the current quarter that have verification data
-        const isCurrentQuarter = verification.quarter === currentQuarterNum && verification.year === currentYear;
-        return isCurrentQuarter && (verification.isVerified || 
-          Object.values(verification.steps).some(step => step.isVerified || step.isIncorrect));
+        // Only include invoices from past quarters that are fully verified
+        const isPastQuarter = verification.quarter !== currentQuarterNum || verification.year !== currentYear;
+        return isPastQuarter && verification.isVerified;
       })
       .map(invoiceId => {
         const invoice = invoices.find(inv => inv.id === invoiceId);
@@ -43,6 +41,9 @@ const VerifiedInvoicesTable: React.FC<VerifiedInvoicesTableProps> = ({
         // Get employee name
         const employee = employees.find(emp => emp.id === invoice.employeeId) || 
                          { id: invoice.employeeId, name: 'Unknown Employee', department: '' };
+        
+        // Format the quarter
+        const quarterKey = formatQuarterYear(verification.quarter, verification.year);
         
         // Count verified steps and incorrect steps
         const totalSteps = invoice.calculationSteps.length;
@@ -55,7 +56,7 @@ const VerifiedInvoicesTable: React.FC<VerifiedInvoicesTableProps> = ({
         
         // Employee quarterly verification status
         const employeeId = invoice.employeeId;
-        const quarterlyStatus = employeeQuarterlyStatus[employeeId]?.[currentQuarter] || { verified: false };
+        const quarterlyStatus = employeeQuarterlyStatus[employeeId]?.[quarterKey] || { verified: false };
         
         return {
           id: invoice.id,
@@ -70,6 +71,7 @@ const VerifiedInvoicesTable: React.FC<VerifiedInvoicesTableProps> = ({
           isFullyVerified: verification.isVerified,
           hasIncorrectCalculations: incorrectSteps > 0,
           verificationDate: verification.verificationDate,
+          quarter: quarterKey,
           progress: `${verifiedSteps + incorrectSteps}/${totalSteps}`,
           progressPercent: Math.round(((verifiedSteps + incorrectSteps) / totalSteps) * 100),
           quarterlyStatus,
@@ -88,31 +90,33 @@ const VerifiedInvoicesTable: React.FC<VerifiedInvoicesTableProps> = ({
         isFullyVerified: boolean;
         hasIncorrectCalculations: boolean;
         verificationDate: string | null;
+        quarter: string;
         progress: string;
         progressPercent: number;
         quarterlyStatus: { verified: boolean };
       }[];
-  }, [verificationData, employeeQuarterlyStatus, currentQuarter, currentQuarterNum, currentYear]);
+  }, [verificationData, currentQuarterNum, currentYear, employeeQuarterlyStatus]);
   
-  if (verifiedInvoices.length === 0) {
+  if (pastQuarterVerifications.length === 0) {
     return (
       <div className="card mb-4">
-        <h2>Verified Invoices</h2>
-        <p>No invoices have been verified yet.</p>
+        <h2>Past Quarter Verifications</h2>
+        <p>No verified invoices from past quarters.</p>
       </div>
     );
   }
   
   return (
     <div className="card mb-4">
-      <h2>Verified Invoices</h2>
+      <h2>Past Quarter Verifications</h2>
       <div style={{ overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ backgroundColor: 'var(--primary-color)', color: 'white' }}>
+              <th style={tableHeaderStyle}>Quarter</th>
+              <th style={tableHeaderStyle}>Case #</th>
               <th style={tableHeaderStyle}>Client</th>
               <th style={tableHeaderStyle}>Policy #</th>
-              <th style={tableHeaderStyle}>Case #</th>
               <th style={tableHeaderStyle}>Dossier</th>
               <th style={tableHeaderStyle}>Employee</th>
               <th style={tableHeaderStyle}>Amount</th>
@@ -121,7 +125,7 @@ const VerifiedInvoicesTable: React.FC<VerifiedInvoicesTableProps> = ({
             </tr>
           </thead>
           <tbody>
-            {verifiedInvoices.map(invoice => (
+            {pastQuarterVerifications.map(invoice => (
               <tr 
                 key={invoice.id}
                 style={{ 
@@ -132,9 +136,10 @@ const VerifiedInvoicesTable: React.FC<VerifiedInvoicesTableProps> = ({
                 }}
                 onClick={() => onSelectInvoice && onSelectInvoice(invoice.id)}
               >
+                <td style={tableCellStyle}>{invoice.quarter}</td>
+                <td style={tableCellStyle}>{invoice.caseNumber}</td>
                 <td style={tableCellStyle}>{invoice.clientName}</td>
                 <td style={tableCellStyle}>{invoice.policyNumber}</td>
-                <td style={tableCellStyle}>{invoice.caseNumber}</td>
                 <td style={tableCellStyle}>{invoice.dossierName}</td>
                 <td style={tableCellStyle}>{invoice.employeeName}</td>
                 <td style={tableCellStyle}>${invoice.totalAmount.toFixed(2)}</td>
@@ -188,4 +193,4 @@ const tableCellStyle: React.CSSProperties = {
   borderBottom: '1px solid var(--border-color)'
 };
 
-export default VerifiedInvoicesTable; 
+export default PastQuarterVerificationsTable; 

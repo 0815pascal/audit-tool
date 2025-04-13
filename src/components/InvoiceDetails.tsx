@@ -1,5 +1,6 @@
 import React from 'react';
 import { Invoice, CalculationStep } from '../types';
+import { employees } from '../mockData';
 
 interface InvoiceDetailsProps {
   invoice: Invoice | null;
@@ -7,6 +8,7 @@ interface InvoiceDetailsProps {
   onMarkStepIncorrect: (stepId: string, incorrect: boolean) => void;
   onAddComment: (stepId: string, comment: string) => void;
   onVerifyInvoice: (verified: boolean) => void;
+  currentQuarter: string;
 }
 
 const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({
@@ -14,16 +16,21 @@ const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({
   onVerifyStep,
   onMarkStepIncorrect,
   onAddComment,
-  onVerifyInvoice
+  onVerifyInvoice,
+  currentQuarter
 }) => {
   if (!invoice) {
     return (
       <div className="card">
         <h2>Claim Examination</h2>
-        <p>Select an employee to view claim examination details.</p>
+        <p>Select an employee to view claim examination details for {currentQuarter}.</p>
       </div>
     );
   }
+
+  // Find employee name
+  const employee = employees.find(emp => emp.id === invoice.employeeId) || 
+                  { id: invoice.employeeId, name: 'Unknown Employee', department: '' };
 
   // Calculate if all steps are verified or marked as incorrect
   const allStepsProcessed = invoice.calculationSteps.every(step => step.isVerified || step.isIncorrect);
@@ -41,6 +48,23 @@ const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({
         <div><strong>Dossier Risk:</strong> {invoice.dossierRisk}</div>
         <div><strong>Dossier Name:</strong> {invoice.dossierName}</div>
         <div><strong>Date:</strong> {invoice.date}</div>
+        <div><strong>Employee:</strong> {employee.name}</div>
+      </div>
+      
+      <div style={{ display: 'flex', marginBottom: '1rem' }}>
+        <button
+          onClick={() => window.dispatchEvent(new CustomEvent('selectRandomInvoice'))}
+          style={{
+            backgroundColor: 'var(--primary-color)',
+            color: 'white',
+            padding: '8px 16px',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer'
+          }}
+        >
+          Select Another Random Invoice
+        </button>
       </div>
       
       <h3>Calculation Steps</h3>
@@ -61,27 +85,46 @@ const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({
       </div>
       
       <div>
-        <div className="checkbox-container">
-          <input
-            type="checkbox"
-            id="verify-invoice"
-            checked={invoice.isVerified}
-            onChange={(e) => onVerifyInvoice(e.target.checked)}
-            disabled={!allStepsProcessed || hasIncorrectSteps}
-          />
-          <label htmlFor="verify-invoice">
-            Verify entire invoice as correct
-          </label>
-        </div>
-        {!allStepsProcessed && (
-          <p className="mt-4" style={{ color: 'var(--primary-color)' }}>
-            Please verify all calculation steps before verifying the entire invoice.
+        {!allStepsProcessed ? (
+          <p style={{ color: 'var(--primary-color)' }}>
+            Please verify all calculation steps before completing the verification.
           </p>
-        )}
-        {hasIncorrectSteps && (
-          <p className="mt-4" style={{ color: '#d32f2f' }}>
-            This invoice cannot be verified because it contains incorrect calculations.
-          </p>
+        ) : invoice.isVerified ? (
+          <div>
+            <button 
+              onClick={() => onVerifyInvoice(false)}
+              style={{ 
+                backgroundColor: hasIncorrectSteps ? '#ffb300' : '#00c853',
+                color: 'white',
+                padding: '10px 20px',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                marginRight: '10px'
+              }}
+            >
+              ✓ Verification Complete
+            </button>
+          </div>
+        ) : (
+          <div>
+            <button 
+              onClick={() => onVerifyInvoice(true)}
+              style={{ 
+                backgroundColor: hasIncorrectSteps ? '#ffb300' : '#2196f3',
+                color: 'white',
+                padding: '10px 20px',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer'
+              }}
+              disabled={!allStepsProcessed}
+            >
+              {hasIncorrectSteps ? 
+                "Complete Verification with Errors" : 
+                "Complete Verification"}
+            </button>
+          </div>
         )}
       </div>
     </div>

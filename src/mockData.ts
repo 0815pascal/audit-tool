@@ -17,7 +17,7 @@ export const invoices: Invoice[] = [
   {
     id: '1',
     employeeId: '1',
-    date: '2023-10-15',
+    date: '2025-04-10',
     clientName: 'Thomas Anderson',
     policyNumber: 'LI-12345',
     caseNumber: 10045,
@@ -35,7 +35,7 @@ export const invoices: Invoice[] = [
   {
     id: '2',
     employeeId: '2',
-    date: '2023-10-16',
+    date: '2025-04-16',
     clientName: 'Alice Johnson',
     policyNumber: 'LI-67890',
     caseNumber: 10046,
@@ -52,7 +52,7 @@ export const invoices: Invoice[] = [
   {
     id: '3',
     employeeId: '3',
-    date: '2023-10-17',
+    date: '2025-04-25',
     clientName: 'Mark Wilson',
     policyNumber: 'AI-34567',
     caseNumber: 10047,
@@ -70,7 +70,7 @@ export const invoices: Invoice[] = [
   {
     id: '4',
     employeeId: '4',
-    date: '2023-10-18',
+    date: '2025-05-08',
     clientName: 'Sarah Miller',
     policyNumber: 'AI-89012',
     caseNumber: 10048,
@@ -87,7 +87,7 @@ export const invoices: Invoice[] = [
   {
     id: '5',
     employeeId: '5',
-    date: '2023-10-19',
+    date: '2025-05-19',
     clientName: 'David Brown',
     policyNumber: 'HI-45678',
     caseNumber: 10049,
@@ -105,7 +105,7 @@ export const invoices: Invoice[] = [
   {
     id: '6',
     employeeId: '6',
-    date: '2023-10-20',
+    date: '2025-05-28',
     clientName: 'Jennifer Taylor',
     policyNumber: 'HI-90123',
     caseNumber: 10050,
@@ -122,7 +122,7 @@ export const invoices: Invoice[] = [
   {
     id: '7',
     employeeId: '7',
-    date: '2023-10-21',
+    date: '2025-06-10',
     clientName: 'Robert Davis',
     policyNumber: 'PI-56789',
     caseNumber: 10051,
@@ -140,7 +140,7 @@ export const invoices: Invoice[] = [
   {
     id: '8',
     employeeId: '8',
-    date: '2023-10-22',
+    date: '2025-06-22',
     clientName: 'Michael Wilson',
     policyNumber: 'PI-01234',
     caseNumber: 10052,
@@ -153,11 +153,93 @@ export const invoices: Invoice[] = [
     ],
     totalAmount: 1170,
     isVerified: false
+  },
+  // Past invoices for our sample data
+  {
+    id: 'INV001-PAST',
+    employeeId: '1',
+    date: '2023-09-15',
+    clientName: 'Swiss Health Inc.',
+    policyNumber: 'POL-12345-PAST',
+    caseNumber: 98765,
+    dossierName: 'Medical Claim Past',
+    dossierRisk: 2,
+    totalAmount: 850.75,
+    isVerified: true,
+    calculationSteps: [
+      {
+        id: 'S1',
+        description: 'Base calculation',
+        value: 750.00,
+        comment: 'Base rate',
+        isVerified: false,
+        isIncorrect: false
+      },
+      {
+        id: 'S2',
+        description: 'Additional coverage',
+        value: 100.75,
+        comment: '750 * 0.1343',
+        isVerified: false,
+        isIncorrect: false
+      }
+    ]
+  },
+  {
+    id: 'INV002-PAST',
+    employeeId: '2',
+    date: '2023-06-10',
+    clientName: 'Alpine Insurance',
+    policyNumber: 'POL-67890-PAST',
+    caseNumber: 54321,
+    dossierName: 'Auto Claim Past',
+    dossierRisk: 3,
+    totalAmount: 1250.50,
+    isVerified: true,
+    calculationSteps: [
+      {
+        id: 'S1',
+        description: 'Base damage assessment',
+        value: 1000.00,
+        comment: 'Assessment value',
+        isVerified: false,
+        isIncorrect: false
+      },
+      {
+        id: 'S2',
+        description: 'Parts replacement',
+        value: 250.50,
+        comment: 'Additional parts',
+        isVerified: false,
+        isIncorrect: false
+      }
+    ]
   }
 ];
 
-export const getRandomInvoiceForEmployee = (employeeId: string): Invoice | undefined => {
-  const employeeInvoices = invoices.filter(invoice => invoice.employeeId === employeeId);
+export const getRandomInvoiceForEmployee = (
+  employeeId: string, 
+  quarter?: number, 
+  year?: number
+): Invoice | undefined => {
+  let employeeInvoices = invoices.filter(invoice => invoice.employeeId === employeeId);
+  
+  // If quarter and year are provided, filter for that quarter only
+  if (quarter !== undefined && year !== undefined) {
+    // Calculate quarter date range
+    const startMonth = (quarter - 1) * 3; // 0-based months (0 = January)
+    const endMonth = startMonth + 3;
+    
+    const startDate = new Date(year, startMonth, 1);
+    const endDate = new Date(year, endMonth, 0); // Last day of the end month
+    
+    // Filter invoices within the quarter date range
+    employeeInvoices = employeeInvoices.filter(invoice => {
+      const invoiceDate = new Date(invoice.date);
+      return invoiceDate >= startDate && invoiceDate <= endDate;
+    });
+  }
+  
   if (employeeInvoices.length === 0) return undefined;
   
   const randomIndex = Math.floor(Math.random() * employeeInvoices.length);

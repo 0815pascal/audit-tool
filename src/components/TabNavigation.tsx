@@ -9,10 +9,11 @@ interface TabNavigationProps {
 
 const TabNavigation: React.FC<TabNavigationProps> = ({ activeTab, onTabChange }) => {
   return (
-    <div className="card mb-4">
+    <div className="mb-8" style={{ width: '100%' }}>
       <div 
         style={{ 
           display: 'flex', 
+          width: '100%',
           borderBottom: '1px solid var(--border-color)',
           marginBottom: '1rem'
         }}
@@ -27,14 +28,6 @@ const TabNavigation: React.FC<TabNavigationProps> = ({ activeTab, onTabChange })
           isActive={activeTab === 'verification'} 
           onClick={() => onTabChange('verification')} 
         />
-      </div>
-      
-      <div>
-        {activeTab === 'overview' ? (
-          <p>View and manage all verified invoices</p>
-        ) : (
-          <p>Verify individual invoices and their calculation steps</p>
-        )}
       </div>
     </div>
   );

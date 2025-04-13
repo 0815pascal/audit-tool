@@ -6,6 +6,7 @@ import InvoiceDetails from './components/InvoiceDetails'
 import VerificationStatus from './components/VerificationStatus.tsx'
 import TabNavigation, { TabView } from './components/TabNavigation'
 import VerifiedInvoicesTable from './components/VerifiedInvoicesTable'
+import PastQuarterVerificationsTable from './components/PastQuarterVerificationsTable'
 import { employees, getRandomInvoiceForEmployee, invoices } from './mockData'
 import { Invoice } from './types'
 import { useAppSelector, useAppDispatch } from './store/hooks'
@@ -22,6 +23,7 @@ import {
   verifyInvoice,
   initializeState
 } from './store/verificationSlice'
+import React from 'react'
 
 function App() {
   const [activeTab, setActiveTab] = useState<TabView>('verification')
@@ -68,8 +70,8 @@ function App() {
   const handleSelectEmployee = (employeeId: string) => {
     setSelectedEmployee(employeeId)
     if (employeeId) {
-      // Get a random invoice for the employee
-      const invoice = getRandomInvoiceForEmployee(employeeId)
+      // Get a random invoice for the employee from the current quarter only
+      const invoice = getRandomInvoiceForEmployee(employeeId, quarter, year)
       
       // If we have an invoice, apply any existing verification data to it
       if (invoice) {
@@ -166,9 +168,7 @@ function App() {
   const handleVerifyInvoice = (isVerified: boolean) => {
     if (!currentInvoice || !selectedEmployee) return
     
-    // Check if any steps are marked as incorrect - invoice can't be verified if there are incorrect steps
-    const hasIncorrectSteps = currentInvoice.calculationSteps.some(step => step.isIncorrect)
-    if (isVerified && hasIncorrectSteps) return
+    // Removed condition: Allow verification even with incorrect steps
     
     // Dispatch action to Redux
     dispatch(verifyInvoice({ 
@@ -186,41 +186,65 @@ function App() {
     setCurrentInvoice(updatedInvoice)
   }
   
-  // Select a new random invoice for the current employee
+  // Function to select a new random invoice for the currently selected employee
   const handleSelectNewInvoice = () => {
-    if (selectedEmployee) {
-      const invoice = getRandomInvoiceForEmployee(selectedEmployee)
-      if (invoice) {
-        const updatedInvoice = applyVerificationDataToInvoice(invoice, verificationData)
-        setCurrentInvoice(updatedInvoice)
-      }
+    if (!selectedEmployee) return
+    
+    // Get a random invoice for the employee from the current quarter only
+    const invoice = getRandomInvoiceForEmployee(selectedEmployee, quarter, year)
+    
+    if (invoice) {
+      const updatedInvoice = applyVerificationDataToInvoice(invoice, verificationData)
+      setCurrentInvoice(updatedInvoice)
+    } else {
+      // Show a message if no invoices found for this employee in the current quarter
+      alert(`No invoices found for this employee in ${currentQuarterFormatted}`)
     }
   }
+
+  // Add event listener for the selectRandomInvoice custom event
+  React.useEffect(() => {
+    const handleSelectRandomInvoiceEvent = () => {
+      handleSelectNewInvoice();
+    };
+    
+    window.addEventListener('selectRandomInvoice', handleSelectRandomInvoiceEvent);
+    
+    return () => {
+      window.removeEventListener('selectRandomInvoice', handleSelectRandomInvoiceEvent);
+    };
+  }, [selectedEmployee, quarter, year, verificationData, currentQuarterFormatted]);
 
   return (
     <div className="app">
       <Header />
       
-      <main className="container">
-        <TabNavigation 
+      <TabNavigation 
           activeTab={activeTab}
           onTabChange={handleTabChange}
         />
-        
-        <VerificationStatus 
+         <VerificationStatus 
           verifiedInvoicesCount={Object.keys(verificationData).length}
           currentQuarter={currentQuarterFormatted}
           employeesNeedingVerification={employeesNeedingVerification.length}
           totalEmployees={employees.length}
         />
+      <main className="container">
         
         {activeTab === 'overview' ? (
           // Overview Tab - Show verified invoices table
-          <VerifiedInvoicesTable 
-            onSelectInvoice={handleSelectInvoiceFromTable}
-            employeeQuarterlyStatus={employeeQuarterlyStatus}
-            currentQuarter={currentQuarterFormatted}
-          />
+          <>
+            <VerifiedInvoicesTable 
+              onSelectInvoice={handleSelectInvoiceFromTable}
+              employeeQuarterlyStatus={employeeQuarterlyStatus}
+              currentQuarter={currentQuarterFormatted}
+            />
+            <PastQuarterVerificationsTable
+              onSelectInvoice={handleSelectInvoiceFromTable}
+              employeeQuarterlyStatus={employeeQuarterlyStatus}
+              currentQuarter={currentQuarterFormatted}
+            />
+          </>
         ) : (
           // Verification Tab - Show verification interface
           <>
@@ -242,10 +266,8 @@ function App() {
                   onMarkStepIncorrect={handleMarkStepIncorrect}
                   onAddComment={handleAddComment}
                   onVerifyInvoice={handleVerifyInvoice}
+                  currentQuarter={currentQuarterFormatted}
                 />
-                <div style={{ marginTop: '1rem', textAlign: 'center' }}>
-                  <button onClick={handleSelectNewInvoice}>Select Another Random Invoice</button>
-                </div>
               </div>
             )}
           </>
