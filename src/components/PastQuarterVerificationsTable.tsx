@@ -13,16 +13,15 @@ interface PastQuarterVerificationsTableProps {
       }
     }
   };
-  currentQuarter: string;
 }
 
-const PastQuarterVerificationsTable: React.FC<PastQuarterVerificationsTableProps> = ({ 
+const PastQuarterVerificationsTable: React.FC<PastQuarterVerificationsTableProps> = ({
   onSelectInvoice,
   employeeQuarterlyStatus
 }) => {
   const verificationData = useAppSelector(selectVerificationData);
   const { quarter: currentQuarterNum, year: currentYear } = getCurrentQuarter();
-  
+
   // Memoize the list of past quarter verifications
   const pastQuarterVerifications = useMemo(() => {
     return Object.keys(verificationData)
@@ -35,16 +34,18 @@ const PastQuarterVerificationsTable: React.FC<PastQuarterVerificationsTableProps
       .map(invoiceId => {
         const invoice = invoices.find(inv => inv.id === invoiceId);
         const verification = verificationData[invoiceId];
-        
-        if (!invoice) return null;
-        
+
+        if (!invoice) {
+          return null;
+        }
+
         // Get employee name
-        const employee = employees.find(emp => emp.id === invoice.employeeId) || 
+        const employee = employees.find(emp => emp.id === invoice.employeeId) ||
                          { id: invoice.employeeId, name: 'Unknown Employee', department: '' };
-        
+
         // Format the quarter
         const quarterKey = formatQuarterYear(verification.quarter, verification.year);
-        
+
         // Count verified steps and incorrect steps
         const totalSteps = invoice.calculationSteps.length;
         const verifiedSteps = Object.keys(verification.steps)
@@ -53,14 +54,14 @@ const PastQuarterVerificationsTable: React.FC<PastQuarterVerificationsTableProps
         const incorrectSteps = Object.keys(verification.steps)
           .filter(stepId => verification.steps[stepId].isIncorrect)
           .length;
-        
+
         // Calculate the number of actively processed steps (verified or incorrect)
         const processedSteps = verifiedSteps + incorrectSteps;
-        
+
         // Employee quarterly verification status
         const employeeId = invoice.employeeId;
         const quarterlyStatus = employeeQuarterlyStatus[employeeId]?.[quarterKey] || { verified: false };
-        
+
         return {
           id: invoice.id,
           employeeId: invoice.employeeId,
@@ -99,7 +100,7 @@ const PastQuarterVerificationsTable: React.FC<PastQuarterVerificationsTableProps
         quarterlyStatus: { verified: boolean };
       }[];
   }, [verificationData, currentQuarterNum, currentYear, employeeQuarterlyStatus]);
-  
+
   if (pastQuarterVerifications.length === 0) {
     return (
       <div className="card mb-4">
@@ -108,7 +109,7 @@ const PastQuarterVerificationsTable: React.FC<PastQuarterVerificationsTableProps
       </div>
     );
   }
-  
+
   return (
     <div className="mb-4 left">
       <h2>Past Quarter Verifications</h2>
@@ -129,9 +130,9 @@ const PastQuarterVerificationsTable: React.FC<PastQuarterVerificationsTableProps
           </thead>
           <tbody>
             {pastQuarterVerifications.map(invoice => (
-              <tr 
+              <tr
                 key={invoice.id}
-                style={{ 
+                style={{
                   cursor: onSelectInvoice ? 'pointer' : 'default',
                 }}
                 onClick={() => onSelectInvoice && onSelectInvoice(invoice.id)}
@@ -145,20 +146,20 @@ const PastQuarterVerificationsTable: React.FC<PastQuarterVerificationsTableProps
                 <td style={tableCellStyle}>${invoice.totalAmount.toFixed(2)}</td>
                 <td style={tableCellStyle}>
                   <div style={{ position: 'relative', height: '20px', width: '100%', backgroundColor: '#f0f0f0', borderRadius: '4px' }}>
-                    <div 
-                      style={{ 
-                        position: 'absolute', 
-                        height: '100%', 
-                        width: `${invoice.progressPercent}%`, 
+                    <div
+                      style={{
+                        position: 'absolute',
+                        height: '100%',
+                        width: `${invoice.progressPercent}%`,
                         backgroundColor: invoice.hasIncorrectCalculations ? '#d32f2f' : 'var(--primary-color)',
                         borderRadius: '4px'
-                      }} 
+                      }}
                     />
-                    <div 
-                      style={{ 
-                        position: 'absolute', 
-                        width: '100%', 
-                        textAlign: 'center', 
+                    <div
+                      style={{
+                        position: 'absolute',
+                        width: '100%',
+                        textAlign: 'center',
                         color: invoice.progressPercent > 50 ? 'white' : 'var(--text-color)',
                         lineHeight: '20px',
                         fontSize: '0.8rem'
@@ -168,8 +169,8 @@ const PastQuarterVerificationsTable: React.FC<PastQuarterVerificationsTableProps
                     </div>
                   </div>
                 </td>
-                <td style={tableCellStyle}>{invoice.verificationDate 
-                  ? new Date(invoice.verificationDate).toLocaleDateString() 
+                <td style={tableCellStyle}>{invoice.verificationDate
+                  ? new Date(invoice.verificationDate).toLocaleDateString()
                   : 'In progress'
                 }</td>
               </tr>
@@ -193,4 +194,4 @@ const tableCellStyle: React.CSSProperties = {
   borderBottom: '1px solid var(--border-color)'
 };
 
-export default PastQuarterVerificationsTable; 
+export default PastQuarterVerificationsTable;

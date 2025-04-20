@@ -16,14 +16,14 @@ interface VerifiedInvoicesTableProps {
   currentQuarter: string;
 }
 
-const VerifiedInvoicesTable: React.FC<VerifiedInvoicesTableProps> = ({ 
+const VerifiedInvoicesTable: React.FC<VerifiedInvoicesTableProps> = ({
   onSelectInvoice,
   employeeQuarterlyStatus,
   currentQuarter
 }) => {
   const verificationData = useAppSelector(selectVerificationData);
   const { quarter: currentQuarterNum, year: currentYear } = getCurrentQuarter();
-  
+
   // Get all verified invoices with their verification data for the current quarter only
   const verifiedInvoices = useMemo(() => {
     return Object.keys(verificationData)
@@ -31,19 +31,21 @@ const VerifiedInvoicesTable: React.FC<VerifiedInvoicesTableProps> = ({
         const verification = verificationData[invoiceId];
         // Only include invoices from the current quarter that have verification data
         const isCurrentQuarter = verification.quarter === currentQuarterNum && verification.year === currentYear;
-        return isCurrentQuarter && (verification.isVerified || 
+        return isCurrentQuarter && (verification.isVerified ||
           Object.values(verification.steps).some(step => step.isVerified || step.isIncorrect));
       })
       .map(invoiceId => {
         const invoice = invoices.find(inv => inv.id === invoiceId);
         const verification = verificationData[invoiceId];
-        
-        if (!invoice) return null;
-        
+
+        if (!invoice) {
+          return null;
+        }
+
         // Get employee name
-        const employee = employees.find(emp => emp.id === invoice.employeeId) || 
+        const employee = employees.find(emp => emp.id === invoice.employeeId) ||
                          { id: invoice.employeeId, name: 'Unknown Employee', department: '' };
-        
+
         // Count verified steps and incorrect steps
         const totalSteps = invoice.calculationSteps.length;
         const verifiedSteps = Object.keys(verification.steps)
@@ -52,14 +54,14 @@ const VerifiedInvoicesTable: React.FC<VerifiedInvoicesTableProps> = ({
         const incorrectSteps = Object.keys(verification.steps)
           .filter(stepId => verification.steps[stepId].isIncorrect)
           .length;
-        
+
         // Calculate the number of actively processed steps (verified or incorrect)
         const processedSteps = verifiedSteps + incorrectSteps;
-        
+
         // Employee quarterly verification status
         const employeeId = invoice.employeeId;
         const quarterlyStatus = employeeQuarterlyStatus[employeeId]?.[currentQuarter] || { verified: false };
-        
+
         return {
           id: invoice.id,
           employeeId: invoice.employeeId,
@@ -96,7 +98,7 @@ const VerifiedInvoicesTable: React.FC<VerifiedInvoicesTableProps> = ({
         quarterlyStatus: { verified: boolean };
       }[];
   }, [verificationData, employeeQuarterlyStatus, currentQuarter, currentQuarterNum, currentYear]);
-  
+
   if (verifiedInvoices.length === 0) {
     return (
       <div className="mb-8 left">
@@ -105,13 +107,13 @@ const VerifiedInvoicesTable: React.FC<VerifiedInvoicesTableProps> = ({
       </div>
     );
   }
-  
+
   return (
     <div className="mb-8 left">
       <h2>Verified Invoices</h2>
       <div style={{ overflowX: 'auto' }}>
-        <table style={{ 
-          width: '100%', 
+        <table style={{
+          width: '100%',
           borderCollapse: 'collapse',
           textAlign: 'left'
         }}>
@@ -130,9 +132,9 @@ const VerifiedInvoicesTable: React.FC<VerifiedInvoicesTableProps> = ({
           </thead>
           <tbody>
             {verifiedInvoices.map(invoice => (
-              <tr 
+              <tr
                 key={invoice.id}
-                style={{ 
+                style={{
                   cursor: onSelectInvoice ? 'pointer' : 'default',
                 }}
                 onClick={() => onSelectInvoice && onSelectInvoice(invoice.id)}
@@ -146,20 +148,20 @@ const VerifiedInvoicesTable: React.FC<VerifiedInvoicesTableProps> = ({
                 <td style={tableCellStyle} align="left">${invoice.totalAmount.toFixed(2)}</td>
                 <td style={tableCellStyle}>
                   <div style={{ position: 'relative', height: '20px', width: '100%', backgroundColor: '#f0f0f0', borderRadius: '4px' }}>
-                    <div 
-                      style={{ 
-                        position: 'absolute', 
-                        height: '100%', 
-                        width: `${invoice.progressPercent}%`, 
-                        backgroundColor: !invoice.verificationDate ? 'var(--warning-color)' : invoice.hasIncorrectCalculations ? '#d32f2f' : 'var(--primary-color)',
+                    <div
+                      style={{
+                        position: 'absolute',
+                        height: '100%',
+                        width: `${invoice.progressPercent}%`,
+                        backgroundColor: invoice.verificationDate ? invoice.hasIncorrectCalculations ? '#d32f2f' : 'var(--primary-color)' : 'var(--warning-color)',
                         borderRadius: '4px'
-                      }} 
+                      }}
                     />
-                    <div 
-                      style={{ 
-                        position: 'absolute', 
-                        width: '100%', 
-                        textAlign: 'center', 
+                    <div
+                      style={{
+                        position: 'absolute',
+                        width: '100%',
+                        textAlign: 'center',
                         color: invoice.progressPercent > 50 ? 'white' : '#a67906',
                         lineHeight: '20px',
                         fontSize: '0.8rem',
@@ -170,8 +172,8 @@ const VerifiedInvoicesTable: React.FC<VerifiedInvoicesTableProps> = ({
                     </div>
                   </div>
                 </td>
-                <td style={tableCellStyle} align="left">{invoice.verificationDate 
-                  ? new Date(invoice.verificationDate).toLocaleDateString() 
+                <td style={tableCellStyle} align="left">{invoice.verificationDate
+                  ? new Date(invoice.verificationDate).toLocaleDateString()
                   : 'In progress'
                 }</td>
               </tr>
@@ -193,9 +195,9 @@ const tableHeaderStyle: React.CSSProperties = {
 
 const tableCellStyle: React.CSSProperties = {
   padding: '0.75rem',
-  textAlign: 'left !important' as any,
+  textAlign: 'left !important' as React.CSSProperties["textAlign"],
   verticalAlign: 'top',
   borderBottom: '1px solid var(--border-color)'
 };
 
-export default VerifiedInvoicesTable; 
+export default VerifiedInvoicesTable;

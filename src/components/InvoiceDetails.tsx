@@ -29,7 +29,7 @@ const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({
   }
 
   // Find employee name
-  const employee = employees.find(emp => emp.id === invoice.employeeId) || 
+  const employee = employees.find(emp => emp.id === invoice.employeeId) ||
                   { id: invoice.employeeId, name: 'Unknown Employee', department: '' };
 
   // Calculate if all steps are verified or marked as incorrect
@@ -40,38 +40,38 @@ const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({
   return (
     <div className="card">
       <h2>Claim Information</h2>
-      
+
       <div className="mb-4" >
       <div style={{ display: 'flex', justifyContent: 'space-between', margin: '4px 0' }}>
-          <strong>Claim Manager</strong> 
+          <strong>Claim Manager</strong>
           <span style={{ textAlign: 'right' }}>{employee.name}</span>
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between', margin: '4px 0' }}>
-          <strong>Client</strong> 
+          <strong>Client</strong>
           <span style={{ textAlign: 'right' }}>{invoice.clientName}</span>
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between', margin: '4px 0' }}>
-          <strong>Policy Number</strong> 
+          <strong>Policy Number</strong>
           <span style={{ textAlign: 'right' }}>{invoice.policyNumber}</span>
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between', margin: '4px 0' }}>
-          <strong>Case Number</strong> 
+          <strong>Case Number</strong>
           <span style={{ textAlign: 'right' }}>{invoice.caseNumber}</span>
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between', margin: '4px 0' }}>
-          <strong>Dossier Risk</strong> 
+          <strong>Dossier Risk</strong>
           <span style={{ textAlign: 'right' }}>{invoice.dossierRisk}</span>
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between', margin: '4px 0' }}>
-          <strong>Dossier Name</strong> 
+          <strong>Dossier Name</strong>
           <span style={{ textAlign: 'right' }}>{invoice.dossierName}</span>
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between', margin: '4px 0' }}>
-          <strong>Date</strong> 
+          <strong>Date</strong>
           <span style={{ textAlign: 'right' }}>{invoice.date}</span>
         </div>
       </div>
-      
+
       <div style={{ display: 'flex', marginBottom: '2rem', justifyContent: 'start' }}>
         <button
           onClick={() => window.dispatchEvent(new CustomEvent('selectRandomInvoice'))}
@@ -88,11 +88,11 @@ const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({
           Select Another Random Invoice
         </button>
       </div>
-      
+
       <h3 className="left">Calculation Steps</h3>
       <div className="mb-4">
         {invoice.calculationSteps.map((step) => (
-          <CalculationStepItem 
+          <CalculationStepItem
             key={step.id}
             step={step}
             onVerifyStep={onVerifyStep}
@@ -101,50 +101,47 @@ const InvoiceDetails: React.FC<InvoiceDetailsProps> = ({
           />
         ))}
       </div>
-      
+
       <div>
-        {!allStepsProcessed ? (
-          <p style={{ color: 'var(--info-color)', fontSize: '.9rem', fontWeight: 'bold' }}>
-            Please verify all calculation steps before completing the verification.
-          </p>
-        ) : invoice.isVerified ? (
-          <div style={{ display: 'flex', justifyContent: 'end' }}>
-            <button 
-              onClick={() => onVerifyInvoice(false)}
-              style={{ 
-                backgroundColor: '#00008f',
-                color: 'white',
-                padding: '10px 20px',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-              }}
-            >
-              ⏳ Mark as In Progress
-            </button>
-          </div>
+        {allStepsProcessed ? invoice.isVerified ? (
+            <div style={{display: 'flex', justifyContent: 'end'}}>
+                <button
+                    onClick={() => onVerifyInvoice(false)}
+                    style={{
+                        backgroundColor: '#00008f',
+                        color: 'white',
+                        padding: '10px 20px',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                    }}
+                >
+                    ⏳ Mark as In Progress
+                </button>
+            </div>
         ) : (
-          <div style={{ display: 'flex', justifyContent: 'end' }}>
-            <button 
-              onClick={() => onVerifyInvoice(true)}
-              style={{ 
-                backgroundColor: hasIncorrectSteps ? '#d24723' : 'var(--success-color)',
-                color: 'white',
-                padding: '10px 20px',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer'
-              }}
-              disabled={!allStepsProcessed}
-            >
-              {hasIncorrectSteps ? 
-                <span>
-                  <span style={{ fontSize: '1em', marginRight: '5px' }}>⛆</span>
-                  Complete Verification with Errors
-                </span> : 
-                "Validate Verification"}
-            </button>
-          </div>
+            <div style={{display: 'flex', justifyContent: 'end'}}>
+                <button
+                    onClick={() => onVerifyInvoice(true)}
+                    style={{
+                        backgroundColor: hasIncorrectSteps ? '#d24723' : 'var(--success-color)',
+                        color: 'white',
+                        padding: '10px 20px',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: 'pointer'
+                    }}
+                    disabled={!allStepsProcessed}
+                >
+                    {hasIncorrectSteps ?
+                        <span><span style={{fontSize: '1em', marginRight: '5px'}}>⛆</span>Complete Verification with Errors</span> :
+                        "Validate Verification"}
+                </button>
+            </div>
+        ) : (
+            <p style={{color: 'var(--info-color)', fontSize: '.9rem', fontWeight: 'bold'}}>
+                Please verify all calculation steps before completing the verification.
+            </p>
         )}
       </div>
     </div>
@@ -168,18 +165,18 @@ const CalculationStepItem: React.FC<CalculationStepItemProps> = ({
   const handleVerifyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const isChecked = e.target.checked;
     onVerifyStep(step.id, isChecked);
-    
+
     // If verifying, make sure to uncheck the incorrect checkbox
     if (isChecked && step.isIncorrect) {
       onMarkStepIncorrect(step.id, false);
     }
   };
-  
+
   // Handle incorrect checkbox change
   const handleIncorrectChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const isChecked = e.target.checked;
     onMarkStepIncorrect(step.id, isChecked);
-    
+
     // If marking as incorrect, make sure to uncheck the verify checkbox
     if (isChecked && step.isVerified) {
       onVerifyStep(step.id, false);
@@ -187,15 +184,15 @@ const CalculationStepItem: React.FC<CalculationStepItemProps> = ({
   };
 
   return (
-    <div className="mb-4" style={{ 
-      padding: '10px', 
-      border: '1px solid', 
+    <div className="mb-4" style={{
+      padding: '10px',
+      border: '1px solid',
       borderRadius: '4px',
       borderColor: '#f0f0f0'
     }}>
       <div className="flex" style={{ justifyContent: 'space-between' }}>
         <div>
-          <strong>{step.description}:</strong> 
+          <strong>{step.description}:</strong>
           {step.value >= 0 ? ' $' + step.value.toFixed(2) : ' -$' + Math.abs(step.value).toFixed(2)}
         </div>
         <div style={{ display: 'flex', gap: '1rem' }}>
@@ -221,7 +218,7 @@ const CalculationStepItem: React.FC<CalculationStepItemProps> = ({
           </div>
         </div>
       </div>
-      
+
       <div className="mt-4">
         <label style={{ display: 'flex', marginLeft: '.5rem' }} htmlFor={`comment-${step.id}`}>Audit Comment</label>
         <textarea
@@ -236,4 +233,4 @@ const CalculationStepItem: React.FC<CalculationStepItemProps> = ({
   );
 };
 
-export default InvoiceDetails; 
+export default InvoiceDetails;
