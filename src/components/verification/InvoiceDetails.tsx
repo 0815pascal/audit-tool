@@ -2,7 +2,7 @@ import React from 'react';
 import { Invoice } from '../../types';
 import { employees } from '../../mockData';
 import CalculationStepItem from './CalculationStepItem';
-import { Button, LabelValue, Card } from '../common/FormControls';
+import { Button, LabelValue, Card } from '../common';
 
 // Empty state component when no invoice is selected
 const EmptyInvoiceState = ({ currentQuarter }: { currentQuarter: string }) => (

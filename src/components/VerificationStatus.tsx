@@ -1,4 +1,5 @@
 import React from 'react';
+import { StatusMessage, CompletionIndicator, ProgressBar } from './status';
 
 interface VerificationStatusProps {
   currentQuarter: string;
@@ -24,45 +25,14 @@ const VerificationStatus: React.FC<VerificationStatusProps> = ({
         }}>
           <div>
             <h3 style={{ margin: 0, textAlign: 'start' }}>{currentQuarter} Quarterly Verification</h3>
-            <p style={{ margin: '0.5rem 0 0 0' }}>
-              {employeesNeedingVerification > 0 ? (
-                <span style={{ color: 'var(--info-color)' }}>
-                  <strong>{employeesNeedingVerification}</strong> employee(s) still need verification this quarter
-                </span>
-              ) : (
-                <span style={{ color: '#4caf50' }}>
-                  All employees verified for this quarter!
-                </span>
-              )}
-            </p>
+            <StatusMessage 
+              employeesNeedingVerification={employeesNeedingVerification}
+            />
           </div>
-          <div style={{
-            backgroundColor: '#f5f5f5',
-            padding: '0.5rem 1rem',
-            borderRadius: '4px',
-            textAlign: 'center'
-          }}>
-            <div style={{ fontSize: '1.5rem', fontWeight: 'bold'}}>
-              {completionPercentage}%
-            </div>
-            <div style={{ fontSize: '0.8rem' }}>
-              Complete
-            </div>
-          </div>
+          <CompletionIndicator completionPercentage={completionPercentage} />
         </div>
 
-        <div style={{ position: 'relative', height: '8px', backgroundColor: '#f0f0f0', borderRadius: '4px', marginBottom: '1.5rem' }}>
-          <div
-            style={{
-              position: 'absolute',
-              height: '100%',
-              width: `${completionPercentage}%`,
-              backgroundColor: completionPercentage < 100 ? '#ffbc11' : '#4caf50',
-              borderRadius: '4px',
-              transition: 'width 0.5s ease-in-out'
-            }}
-          />
-        </div>
+        <ProgressBar percentage={completionPercentage} />
       </div>
     </div>
   );

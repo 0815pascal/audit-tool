@@ -1,12 +1,9 @@
 import React, {useState, useEffect} from 'react'
 import './App.css'
 import Header from './components/Header'
-import EmployeeList from './components/EmployeeList'
-import { InvoiceDetails } from './components/verification'
+import { OverviewTabContent, VerificationTabContent } from './components/tabs'
 import VerificationStatus from './components/VerificationStatus'
 import TabNavigation, {TabView} from './components/TabNavigation'
-import VerifiedInvoicesTable from './components/VerifiedInvoicesTable'
-import PastQuarterVerificationsTable from './components/PastQuarterVerificationsTable'
 import {employees, getRandomInvoiceForEmployee, invoices} from './mockData'
 import {Invoice} from './types'
 import {useAppSelector, useAppDispatch} from './store/hooks'
@@ -238,66 +235,37 @@ function App() {
       <Header />
 
       <TabNavigation
-          activeTab={activeTab}
-          onTabChange={handleTabChange}
-        />
-         <VerificationStatus
+        activeTab={activeTab}
+        onTabChange={handleTabChange}
+      />
+      
+      <VerificationStatus
+        currentQuarter={currentQuarterFormatted}
+        employeesNeedingVerification={employeesNeedingVerification.length}
+        totalEmployees={employees.length}
+        key={Object.keys(verificationData).join(',')}
+      />
+
+      {activeTab === 'overview' ? (
+        <OverviewTabContent
+          onSelectInvoice={handleSelectInvoiceFromTable}
+          employeeQuarterlyStatus={employeeQuarterlyStatus}
           currentQuarter={currentQuarterFormatted}
-          employeesNeedingVerification={employeesNeedingVerification.length}
-          totalEmployees={employees.length}
-          key={Object.keys(verificationData).join(',')}
         />
-
-
-        {activeTab === 'overview' ? (
-          // Overview Tab - Show verified invoices table
-          <>
-            <VerifiedInvoicesTable
-              onSelectInvoice={handleSelectInvoiceFromTable}
-              employeeQuarterlyStatus={employeeQuarterlyStatus}
-              currentQuarter={currentQuarterFormatted}
-            />
-            <PastQuarterVerificationsTable
-              onSelectInvoice={handleSelectInvoiceFromTable}
-              employeeQuarterlyStatus={employeeQuarterlyStatus}
-            />
-          </>
-        ) : (
-          // Verification Tab - Show verification interface
-          <main className="container">
-            <div style={{ display: 'flex', gap: '20px', flexDirection: 'row-reverse' }}>
-              {/* Employee List (right side - 30% width) */}
-              <div style={{ flex: '0 0 30%' }}>
-                <EmployeeList
-                  employees={employees}
-                  selectedEmployee={selectedEmployee}
-                  onSelectEmployee={handleSelectEmployee}
-                  employeeQuarterlyStatus={employeeQuarterlyStatus}
-                  currentQuarter={currentQuarterFormatted}
-                />
-              </div>
-
-              {/* Invoice Details (left side - 70% width) */}
-              <div style={{ flex: '1 1 70%' }}>
-                {selectedEmployee ? (
-                  <InvoiceDetails
-                    invoice={currentInvoice}
-                    onVerifyStep={handleVerifyStep}
-                    onMarkStepIncorrect={handleMarkStepIncorrect}
-                    onAddComment={handleAddComment}
-                    onVerifyInvoice={handleVerifyInvoice}
-                    currentQuarter={currentQuarterFormatted}
-                  />
-                ) : (
-                  <div className="card">
-                    <h2>Claim Information</h2>
-                    <p>Select an employee from the right panel to begin verification.</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </main>
-        )}
+      ) : (
+        <VerificationTabContent
+          employees={employees}
+          selectedEmployee={selectedEmployee}
+          currentInvoice={currentInvoice}
+          employeeQuarterlyStatus={employeeQuarterlyStatus}
+          currentQuarter={currentQuarterFormatted}
+          onSelectEmployee={handleSelectEmployee}
+          onVerifyStep={handleVerifyStep}
+          onMarkStepIncorrect={handleMarkStepIncorrect}
+          onAddComment={handleAddComment}
+          onVerifyInvoice={handleVerifyInvoice}
+        />
+      )}
     </div>
   )
 }
