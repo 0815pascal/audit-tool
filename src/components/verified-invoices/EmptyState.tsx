@@ -1,8 +1,9 @@
 import React from 'react';
+import { EmptyState as CommonEmptyState } from '../common';
 
 export const EmptyState: React.FC = () => (
-  <div className="mb-8 left">
-    <h2>Verified Invoices</h2>
-    <p>No invoices have been verified yet.</p>
-  </div>
+  <CommonEmptyState 
+    title="Verified Invoices" 
+    message="No invoices have been verified yet." 
+  />
 ); 

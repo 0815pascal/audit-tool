@@ -1,7 +1,6 @@
 import React from 'react';
-import { tableCellStyle } from './styles';
+import { tableCellStyle, ProgressBarWithLabel } from '../common';
 import { PastQuarterVerificationRowProps } from './types';
-import ProgressBar from '../status/ProgressBar';
 
 export const PastQuarterVerificationRow: React.FC<PastQuarterVerificationRowProps> = ({ 
   verification, 
@@ -20,26 +19,11 @@ export const PastQuarterVerificationRow: React.FC<PastQuarterVerificationRowProp
       <td style={tableCellStyle}>{verification.employeeName}</td>
       <td style={tableCellStyle}>${verification.totalAmount.toFixed(2)}</td>
       <td style={tableCellStyle}>
-        <div style={{ position: 'relative', height: '20px' }}>
-          <ProgressBar 
-            percentage={verification.progressPercent} 
-            height={20}
-            successColor={verification.hasIncorrectCalculations ? '#d32f2f' : 'var(--primary-color)'}
-          />
-          <div
-            style={{
-              position: 'absolute',
-              top: 0,
-              width: '100%',
-              textAlign: 'center',
-              color: verification.progressPercent > 50 ? 'white' : 'var(--text-color)',
-              lineHeight: '20px',
-              fontSize: '0.8rem'
-            }}
-          >
-            {verification.progress}
-          </div>
-        </div>
+        <ProgressBarWithLabel
+          percentage={verification.progressPercent}
+          label={verification.progress}
+          hasError={verification.hasIncorrectCalculations}
+        />
       </td>
       <td style={tableCellStyle}>
         {verification.verificationDate

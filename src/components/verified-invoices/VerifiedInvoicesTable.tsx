@@ -6,6 +6,7 @@ import {
   VerifiedInvoiceRow,
   VerifiedInvoicesTableProps
 } from '.';
+import { DataTable } from '../common';
 
 const VerifiedInvoicesTable: React.FC<VerifiedInvoicesTableProps> = ({
   onSelectInvoice,
@@ -14,32 +15,21 @@ const VerifiedInvoicesTable: React.FC<VerifiedInvoicesTableProps> = ({
 }) => {
   const verifiedInvoices = useVerifiedInvoices(employeeQuarterlyStatus, currentQuarter);
 
-  if (verifiedInvoices.length === 0) {
-    return <EmptyState />;
-  }
-
   return (
-    <div className="mb-8 left">
-      <h2>Verified Invoices</h2>
-      <div style={{ overflowX: 'auto' }}>
-        <table style={{
-          width: '100%',
-          borderCollapse: 'collapse',
-          textAlign: 'left'
-        }}>
-          <VerifiedInvoicesTableHeader />
-          <tbody>
-            {verifiedInvoices.map(invoice => (
-              <VerifiedInvoiceRow
-                key={invoice.id}
-                invoice={invoice}
-                onSelect={() => onSelectInvoice && onSelectInvoice(invoice.id)}
-              />
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
+    <DataTable
+      title="Verified Invoices"
+      emptyState={<EmptyState />}
+      tableHeader={<VerifiedInvoicesTableHeader />}
+      data={verifiedInvoices}
+      className="mb-8"
+      renderRow={(invoice) => (
+        <VerifiedInvoiceRow
+          key={invoice.id}
+          invoice={invoice}
+          onSelect={() => onSelectInvoice && onSelectInvoice(invoice.id)}
+        />
+      )}
+    />
   );
 };
 

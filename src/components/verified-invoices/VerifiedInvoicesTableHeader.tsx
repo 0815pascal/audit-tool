@@ -1,5 +1,5 @@
 import React from 'react';
-import { tableHeaderStyle } from './styles';
+import { tableHeaderStyle } from '../common';
 
 export const VerifiedInvoicesTableHeader: React.FC = () => (
   <thead>

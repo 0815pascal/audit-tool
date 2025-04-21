@@ -1,6 +1,5 @@
 import React from 'react';
-import ProgressBar from '../status/ProgressBar';
-import { tableCellStyle } from './styles';
+import { tableCellStyle, ProgressBarWithLabel } from '../common';
 import { VerifiedInvoiceRowProps } from './types';
 
 export const VerifiedInvoiceRow: React.FC<VerifiedInvoiceRowProps> = ({ invoice, onSelect }) => {
@@ -17,28 +16,11 @@ export const VerifiedInvoiceRow: React.FC<VerifiedInvoiceRowProps> = ({ invoice,
       <td style={tableCellStyle} align="left">{invoice.employeeName}</td>
       <td style={tableCellStyle} align="left">${invoice.totalAmount.toFixed(2)}</td>
       <td style={tableCellStyle}>
-        <div style={{ position: 'relative' }}>
-          <ProgressBar 
-            percentage={invoice.progressPercent} 
-            height={20}
-            successColor={invoice.hasIncorrectCalculations ? '#d32f2f' : 'var(--primary-color)'}
-            inProgressColor="var(--warning-color)"
-          />
-          <div
-            style={{
-              position: 'absolute',
-              top: 0,
-              width: '100%',
-              textAlign: 'center',
-              color: invoice.progressPercent > 50 ? 'white' : '#a67906',
-              lineHeight: '20px',
-              fontSize: '0.8rem',
-              fontWeight: 'bold'
-            }}
-          >
-            {invoice.progress}
-          </div>
-        </div>
+        <ProgressBarWithLabel
+          percentage={invoice.progressPercent}
+          label={invoice.progress}
+          hasError={invoice.hasIncorrectCalculations}
+        />
       </td>
       <td style={tableCellStyle} align="left">
         {invoice.verificationDate
