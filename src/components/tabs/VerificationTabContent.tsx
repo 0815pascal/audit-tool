@@ -2,40 +2,22 @@ import React from 'react';
 import EmployeeList from '../EmployeeList';
 import { InvoiceDetails } from '../verification';
 import EmptyClaimInfo from '../verification/EmptyClaimInfo';
-import { Employee, Invoice } from '../../types';
+import { useVerificationHandlers } from '../../hooks/useVerificationHandlers';
+import { employees } from '../../mockData';
 
-interface VerificationTabContentProps {
-  employees: Employee[];
-  selectedEmployee: string;
-  currentInvoice: Invoice | null;
-  employeeQuarterlyStatus: {
-    [employeeId: string]: {
-      [quarterKey: string]: {
-        verified: boolean;
-        lastVerified?: string;
-      }
-    }
-  };
-  currentQuarter: string;
-  onSelectEmployee: (employeeId: string) => void;
-  onVerifyStep: (stepId: string, verified: boolean) => void;
-  onMarkStepIncorrect: (stepId: string, incorrect: boolean) => void;
-  onAddComment: (stepId: string, comment: string) => void;
-  onVerifyInvoice: (verified: boolean) => void;
-}
+const VerificationTabContent: React.FC = () => {
+  const {
+    selectedEmployee,
+    currentInvoice,
+    employeeQuarterlyStatus,
+    currentQuarterFormatted: currentQuarter,
+    handleSelectEmployee: onSelectEmployee,
+    handleVerifyStep: onVerifyStep,
+    handleMarkStepIncorrect: onMarkStepIncorrect,
+    handleAddComment: onAddComment,
+    handleVerifyInvoice: onVerifyInvoice
+  } = useVerificationHandlers();
 
-const VerificationTabContent: React.FC<VerificationTabContentProps> = ({
-  employees,
-  selectedEmployee,
-  currentInvoice,
-  employeeQuarterlyStatus,
-  currentQuarter,
-  onSelectEmployee,
-  onVerifyStep,
-  onMarkStepIncorrect,
-  onAddComment,
-  onVerifyInvoice
-}) => {
   return (
     <main className="container">
       <div style={{ display: 'flex', gap: '20px', flexDirection: 'row-reverse' }}>

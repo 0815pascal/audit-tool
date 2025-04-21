@@ -1,18 +1,15 @@
 import React from 'react';
 import { StatusMessage, CompletionIndicator, ProgressBar } from './status';
+import { useVerificationHandlers } from '../hooks/useVerificationHandlers';
 
-interface VerificationStatusProps {
-  currentQuarter: string;
-  employeesNeedingVerification: number;
-  totalEmployees: number;
-}
+const VerificationStatus: React.FC = () => {
+  const {
+    currentQuarterFormatted: currentQuarter,
+    employeesNeedingVerification,
+    totalEmployees
+    } = useVerificationHandlers();
 
-const VerificationStatus: React.FC<VerificationStatusProps> = ({
-  currentQuarter,
-  employeesNeedingVerification,
-  totalEmployees
-}) => {
-  const completionPercentage = Math.round(((totalEmployees - employeesNeedingVerification) / totalEmployees) * 100);
+  const completionPercentage = Math.round(((totalEmployees - employeesNeedingVerification.length) / totalEmployees) * 100);
 
   return (
     <div className="mb-4">
@@ -26,7 +23,7 @@ const VerificationStatus: React.FC<VerificationStatusProps> = ({
           <div>
             <h3 style={{ margin: 0, textAlign: 'start' }}>{currentQuarter} Quarterly Verification</h3>
             <StatusMessage 
-              employeesNeedingVerification={employeesNeedingVerification}
+              employeesNeedingVerification={employeesNeedingVerification.length}
             />
           </div>
           <CompletionIndicator completionPercentage={completionPercentage} />
