@@ -53,14 +53,47 @@ export const useVerificationHandlers = () => {
 
   const handleSelectEmployee = (employeeId: string) => {
     setSelectedEmployee(employeeId);
-    if (employeeId) {
-      const invoice = getRandomInvoiceForEmployee(employeeId, quarter, year);
+    
+    if (!employeeId) {
+      setCurrentInvoice(null);
+      return;
+    }
+    
+    // First, check if there are any invoices with verification data for this employee
+    // in the current quarter
+    const employeeVerifiedInvoices = Object.entries(verificationData)
+      .filter(([_, data]) => {
+        // Check if this verification belongs to this employee and is from the current quarter
+        return data.employeeId === employeeId && 
+               data.quarter === quarter && 
+               data.year === year;
+      })
+      .filter(([_, data]) => {
+        // Check if there's any verification data (fully verified or steps verified/incorrect)
+        return data.isVerified || 
+          Object.values(data.steps || {}).some(
+            (step: any) => step.isVerified || step.isIncorrect
+          );
+      })
+      .map(([invoiceId]) => invoiceId);
+    
+    // If we found any verified invoices, use the first one
+    if (employeeVerifiedInvoices.length > 0) {
+      const invoiceId = employeeVerifiedInvoices[0];
+      const invoice = invoices.find(inv => inv.id === invoiceId);
+      
       if (invoice) {
         const updatedInvoice = applyVerificationDataToInvoice(invoice, verificationData);
         setCurrentInvoice(updatedInvoice);
-      } else {
-        setCurrentInvoice(null);
+        return;
       }
+    }
+    
+    // If no verified invoices were found, fall back to random selection
+    const invoice = getRandomInvoiceForEmployee(employeeId, quarter, year);
+    if (invoice) {
+      const updatedInvoice = applyVerificationDataToInvoice(invoice, verificationData);
+      setCurrentInvoice(updatedInvoice);
     } else {
       setCurrentInvoice(null);
     }
