@@ -132,11 +132,19 @@ interface CardProps {
   title?: string;
   children: React.ReactNode;
   className?: string;
+  fullWidth?: boolean;
+  centerTitle?: boolean;
 }
 
-export const Card: React.FC<CardProps> = ({ title, children, className = '' }) => (
-  <div className={`card ${className}`}>
-    {title && <h2>{title}</h2>}
+export const Card: React.FC<CardProps> = ({ 
+  title, 
+  children, 
+  className = '',
+  fullWidth = false,
+  centerTitle = false
+}) => (
+  <div className={`card ${className}`} style={{ width: fullWidth ? '100%' : 'auto' }}>
+    {title && <h2 className={centerTitle ? "text-center" : "text-left"}>{title}</h2>}
     {children}
   </div>
 ); 

@@ -8,6 +8,7 @@ interface DataTableProps {
   renderRow: (item: any, index: number) => ReactNode;
   className?: string;
   useClassNameStyling?: boolean;
+  showTitle?: boolean;
 }
 
 /**
@@ -20,24 +21,30 @@ export const DataTable: React.FC<DataTableProps> = ({
   data,
   renderRow,
   className = "mb-4",
-  useClassNameStyling = false
+  useClassNameStyling = false,
+  showTitle = true
 }) => {
   if (data.length === 0) {
     return <>{emptyState}</>;
   }
 
   return (
-    <div className={`${className} left`}>
-      <h2>{title}</h2>
-      <div className={useClassNameStyling ? "table-responsive" : ""} 
-           style={useClassNameStyling ? {} : { overflowX: 'auto' }}>
+    <div className={`${className} w-100`} style={{ width: '100%' }}>
+      {showTitle && <h2 className="text-left">{title}</h2>}
+      <div 
+        className={`${useClassNameStyling ? "table-responsive" : ""} w-100`}
+        style={{ 
+          overflowX: 'auto',
+          width: '100%'
+        }}
+      >
         <table 
-          className={useClassNameStyling ? "table table-bordered" : ""}
-          style={!useClassNameStyling ? {
+          className={`${useClassNameStyling ? "table table-bordered" : ""} w-100`}
+          style={{
             width: '100%',
             borderCollapse: 'collapse',
             textAlign: 'left'
-          } : {}}
+          }}
         >
           {tableHeader}
           <tbody>

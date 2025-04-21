@@ -1,18 +1,18 @@
 import React from 'react';
-import { tableHeaderStyle } from '../common';
+import { tableHeaderStyle, headerRowStyle } from '../common';
 
 export const VerifiedInvoicesTableHeader: React.FC = () => (
   <thead>
-    <tr style={{ backgroundColor: 'var(--primary-color)', color: 'white' }}>
-      <th style={{...tableHeaderStyle, textAlign: 'left'}} align="left">Quarter</th>
-      <th style={{...tableHeaderStyle, textAlign: 'left'}} align="left">Case</th>
-      <th style={{...tableHeaderStyle, textAlign: 'left'}} align="left">Client</th>
-      <th style={{...tableHeaderStyle, textAlign: 'left'}} align="left">Policy</th>
-      <th style={{...tableHeaderStyle, textAlign: 'left'}} align="left">Dossier</th>
-      <th style={{...tableHeaderStyle, textAlign: 'left'}} align="left">Employee</th>
-      <th style={{...tableHeaderStyle, textAlign: 'left'}} align="left">Amount</th>
-      <th style={{...tableHeaderStyle, textAlign: 'left'}} align="left">Progress</th>
-      <th style={{...tableHeaderStyle, textAlign: 'left'}} align="left">Date</th>
+    <tr style={headerRowStyle}>
+      <th style={tableHeaderStyle}>Quarter</th>
+      <th style={tableHeaderStyle}>Case</th>
+      <th style={tableHeaderStyle}>Client</th>
+      <th style={tableHeaderStyle}>Policy</th>
+      <th style={tableHeaderStyle}>Dossier</th>
+      <th style={tableHeaderStyle}>Employee</th>
+      <th style={tableHeaderStyle}>Amount</th>
+      <th style={tableHeaderStyle}>Progress</th>
+      <th style={tableHeaderStyle}>Date</th>
     </tr>
   </thead>
 ); 

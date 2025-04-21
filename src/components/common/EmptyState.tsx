@@ -7,7 +7,7 @@ interface EmptyStateProps {
 
 export const EmptyState: React.FC<EmptyStateProps> = ({ title, message }) => (
   <div className="card mb-4">
-    <h2>{title}</h2>
-    <p>{message}</p>
+    <h2 className="text-left">{title}</h2>
+    <p className="text-left">{message}</p>
   </div>
 ); 

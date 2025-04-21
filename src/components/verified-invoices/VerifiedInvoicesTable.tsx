@@ -11,7 +11,8 @@ import { DataTable } from '../common';
 const VerifiedInvoicesTable: React.FC<VerifiedInvoicesTableProps> = ({
   onSelectInvoice,
   employeeQuarterlyStatus,
-  currentQuarter
+  currentQuarter,
+  showTitle = true
 }) => {
   const verifiedInvoices = useVerifiedInvoices(employeeQuarterlyStatus, currentQuarter);
 
@@ -21,7 +22,8 @@ const VerifiedInvoicesTable: React.FC<VerifiedInvoicesTableProps> = ({
       emptyState={<EmptyState />}
       tableHeader={<VerifiedInvoicesTableHeader />}
       data={verifiedInvoices}
-      className="mb-8"
+      className={showTitle ? "mb-8" : ""}
+      showTitle={showTitle}
       renderRow={(invoice) => (
         <VerifiedInvoiceRow
           key={invoice.id}

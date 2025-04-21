@@ -27,6 +27,7 @@ export interface PastQuarterVerificationsTableProps {
       }
     }
   };
+  showTitle?: boolean;
 }
 
 export interface PastQuarterVerificationRowProps {

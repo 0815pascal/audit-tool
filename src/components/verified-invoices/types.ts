@@ -27,6 +27,7 @@ export interface VerifiedInvoicesTableProps {
     }
   };
   currentQuarter: string;
+  showTitle?: boolean;
 }
 
 export interface VerifiedInvoiceRowProps {

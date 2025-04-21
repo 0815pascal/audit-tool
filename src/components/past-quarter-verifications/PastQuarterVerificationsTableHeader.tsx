@@ -1,10 +1,10 @@
 import React from 'react';
-import { tableHeaderStyle } from '../common';
+import { tableHeaderStyle, headerRowStyle } from '../common';
 
 export const PastQuarterVerificationsTableHeader: React.FC = () => {
   return (
     <thead>
-      <tr>
+      <tr style={headerRowStyle}>
         <th style={tableHeaderStyle}>Quarter</th>
         <th style={tableHeaderStyle}>Case</th>
         <th style={tableHeaderStyle}>Client</th>

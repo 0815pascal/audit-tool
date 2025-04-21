@@ -46,7 +46,7 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
   };
 
   return (
-    <Card title="Claim Manager">
+    <Card title="Claim Manager" centerTitle>
       <p style={{ fontSize: '0.9rem', marginBottom: '1rem' }}>
         Select a claim manager to review their calculations for {currentQuarter}
       </p>
