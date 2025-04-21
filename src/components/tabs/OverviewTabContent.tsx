@@ -1,6 +1,6 @@
 import React from 'react';
-import VerifiedInvoicesTable from '../VerifiedInvoicesTable';
-import PastQuarterVerificationsTable from '../PastQuarterVerificationsTable';
+import VerifiedInvoicesTable from '../verified-invoices/VerifiedInvoicesTable';
+import { PastQuarterVerificationsTable } from '../past-quarter-verifications';
 import { useVerificationHandlers } from '../../hooks/useVerificationHandlers';
 
 const OverviewTabContent: React.FC = () => {

@@ -1,11 +1,11 @@
 import React from 'react';
-import { useVerifiedInvoices } from '../hooks/useVerifiedInvoices';
+import { useVerifiedInvoices } from '../../hooks/useVerifiedInvoices';
 import {
   EmptyState,
   VerifiedInvoicesTableHeader,
   VerifiedInvoiceRow,
   VerifiedInvoicesTableProps
-} from './verified-invoices';
+} from '.';
 
 const VerifiedInvoicesTable: React.FC<VerifiedInvoicesTableProps> = ({
   onSelectInvoice,
