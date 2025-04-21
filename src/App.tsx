@@ -2,8 +2,8 @@ import React, {useState, useEffect} from 'react'
 import './App.css'
 import Header from './components/Header'
 import EmployeeList from './components/EmployeeList'
-import InvoiceDetails from './components/InvoiceDetails'
-import VerificationStatus from './components/VerificationStatus.tsx'
+import { InvoiceDetails } from './components/verification'
+import VerificationStatus from './components/VerificationStatus'
 import TabNavigation, {TabView} from './components/TabNavigation'
 import VerifiedInvoicesTable from './components/VerifiedInvoicesTable'
 import PastQuarterVerificationsTable from './components/PastQuarterVerificationsTable'
@@ -242,7 +242,6 @@ function App() {
           onTabChange={handleTabChange}
         />
          <VerificationStatus
-          verifiedInvoicesCount={Object.keys(verificationData).length}
           currentQuarter={currentQuarterFormatted}
           employeesNeedingVerification={employeesNeedingVerification.length}
           totalEmployees={employees.length}

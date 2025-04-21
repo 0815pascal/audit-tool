@@ -1,13 +1,21 @@
 import React from 'react';
 import { Employee } from '../types';
-import { invoices } from '../mockData';
 import { useAppSelector } from '../store/hooks';
-import { selectVerificationData, getCurrentQuarter } from '../store/verificationSlice';
+import { selectVerificationData, getCurrentQuarter, formatQuarterYear } from '../store/verificationSlice';
 
 interface EmployeeListProps {
   employees: Employee[];
   selectedEmployee: string;
   onSelectEmployee: (employeeId: string) => void;
+  employeeQuarterlyStatus: {
+    [employeeId: string]: {
+      [quarterKey: string]: {
+        verified: boolean;
+        lastVerified?: string;
+      }
+    }
+  };
+  currentQuarter: string;
 }
 
 // Possible verification status types
@@ -17,6 +25,8 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
   employees,
   selectedEmployee,
   onSelectEmployee,
+  employeeQuarterlyStatus,
+  currentQuarter
 }) => {
   const verificationData = useAppSelector(selectVerificationData);
 
@@ -33,6 +43,35 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
   const getVerificationStatus = (employeeId: string): VerificationStatus => {
     // Get the current quarter and year
     const { quarter: currentQuarterNum, year: currentYear } = getCurrentQuarter();
+    const quarterKey = formatQuarterYear(currentQuarterNum, currentYear);
+
+    // Check if the employee has a verified status in the quarterly status tracker
+    const employeeStatus = employeeQuarterlyStatus[employeeId];
+    const isVerifiedInQuarterlyStatus = employeeStatus && 
+                                       employeeStatus[quarterKey] && 
+                                       employeeStatus[quarterKey].verified;
+
+    // If already marked verified in quarterly status, determine if there are errors
+    if (isVerifiedInQuarterlyStatus) {
+      // Filter invoices to only include those from the current employee AND current quarter
+      const employeeInvoices = Object.entries(verificationData)
+        .map(([id, data]) => ({
+          id,
+          ...data
+        }))
+        .filter(invoice =>
+          invoice.employeeId === employeeId &&
+          invoice.quarter === currentQuarterNum &&
+          invoice.year === currentYear
+        );
+
+      // Check if any verified invoices have incorrect calculations
+      const hasErrors = employeeInvoices.some(invoice => {
+        return Object.values(invoice.steps).some(step => step.isIncorrect);
+      });
+
+      return hasErrors ? 'verified-with-errors' : 'verified';
+    }
 
     // Filter invoices to only include those from the current employee AND current quarter
     const employeeInvoices = Object.entries(verificationData)
@@ -61,37 +100,8 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
       return 'unverified';
     }
 
-    // Check if all steps in all current quarter invoices are fully processed and the invoice is verified
-    const allStepsProcessed = employeeInvoices.every(invoice => {
-      // Get the invoice from the invoices array to know how many steps it should have
-      const invoiceData = invoices.find(inv => inv.id === invoice.id);
-      if (!invoiceData) {
-        return false;
-      }
-
-      // Check if ALL steps have been processed (either verified or marked incorrect)
-      const allStepsVerifiedOrMarkedIncorrect = invoiceData.calculationSteps.every(step => {
-        const stepVerification = invoice.steps[step.id];
-        return stepVerification && (stepVerification.isVerified || stepVerification.isIncorrect);
-      });
-
-      // All steps must be actively verified or marked incorrect AND the invoice marked as verified
-      return allStepsVerifiedOrMarkedIncorrect && invoice.isVerified;
-    });
-
-    // If not all steps are processed, the status is in-progress
-    if (!allStepsProcessed) {
-      return 'in-progress';
-    }
-
-    // At this point, all steps for current quarter are processed and all invoices are verified
-    // Check if any verified invoices have incorrect calculations
-    const hasErrors = employeeInvoices.some(invoice => {
-      return Object.values(invoice.steps).some(step => step.isIncorrect);
-    });
-
-    // Return verified-with-errors if there are errors, otherwise verified
-    return hasErrors ? 'verified-with-errors' : 'verified';
+    // At this point, we know the employee has some progress but isn't fully verified
+    return 'in-progress';
   };
 
   // Style for the select element to make it more prominent
@@ -145,6 +155,9 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
   return (
     <div className="card" style={{ minWidth: '20rem' }}>
       <h2>Claim Manager</h2>
+      <p style={{ fontSize: '0.9rem', marginBottom: '1rem' }}>
+        Select a claim manager to review their calculations for {currentQuarter}
+      </p>
       <div className="form-group">
         <select
           id="employee-select"

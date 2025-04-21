@@ -21,7 +21,6 @@ interface VerificationState {
   verifiedInvoices: {
     [invoiceId: string]: {
       isVerified: boolean;
-      verifiedBy: string;
       verificationDate: string | null;
       employeeId: string;
       quarter: number;
@@ -100,7 +99,6 @@ export const verificationSlice = createSlice({
         // Add a sample past invoice verification for E001
         state.verifiedInvoices['INV001-PAST'] = {
           isVerified: true,
-          verifiedBy: 'Supervisor',
           verificationDate: new Date(pastYear, (pastQuarter - 1) * 3 + 2, 15).toISOString(),
           employeeId: '1',
           quarter: pastQuarter,
@@ -122,7 +120,6 @@ export const verificationSlice = createSlice({
         
         state.verifiedInvoices['INV002-PAST'] = {
           isVerified: true,
-          verifiedBy: 'Supervisor',
           verificationDate: new Date(pastYear2, (pastQuarter2 - 1) * 3 + 2, 10).toISOString(),
           employeeId: '2',
           quarter: pastQuarter2,
@@ -173,7 +170,6 @@ export const verificationSlice = createSlice({
       if (!state.verifiedInvoices[invoiceId]) {
         state.verifiedInvoices[invoiceId] = {
           isVerified: false,
-          verifiedBy: 'Supervisor',
           verificationDate: null,
           employeeId,
           quarter,
@@ -214,7 +210,6 @@ export const verificationSlice = createSlice({
       if (!state.verifiedInvoices[invoiceId]) {
         state.verifiedInvoices[invoiceId] = {
           isVerified: false,
-          verifiedBy: 'Supervisor',
           verificationDate: null,
           employeeId,
           quarter,
@@ -255,7 +250,6 @@ export const verificationSlice = createSlice({
       if (!state.verifiedInvoices[invoiceId]) {
         state.verifiedInvoices[invoiceId] = {
           isVerified: false,
-          verifiedBy: 'Supervisor',
           verificationDate: null,
           employeeId,
           quarter,
@@ -293,7 +287,6 @@ export const verificationSlice = createSlice({
       if (!state.verifiedInvoices[invoiceId]) {
         state.verifiedInvoices[invoiceId] = {
           isVerified: false,
-          verifiedBy: 'Supervisor',
           verificationDate: null,
           employeeId,
           quarter,
