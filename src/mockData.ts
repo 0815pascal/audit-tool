@@ -1,6 +1,5 @@
-import { Employee, Invoice, Department } from './types';
+import { Employee, Invoice } from './types';
 
-export const department: Department = { id: '5', name: 'Claims and Recovery' };
 
 export const employees: Employee[] = [
   { id: '1', name: 'John Smith', department: '5' },

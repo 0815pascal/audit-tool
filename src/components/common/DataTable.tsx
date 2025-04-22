@@ -4,8 +4,8 @@ interface DataTableProps {
   title: string;
   emptyState: ReactNode;
   tableHeader: ReactNode;
-  data: any[];
-  renderRow: (item: any, index: number) => ReactNode;
+  data: unknown[];
+  renderRow: (item: unknown, index: number) => ReactNode;
   className?: string;
   useClassNameStyling?: boolean;
   showTitle?: boolean;

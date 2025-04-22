@@ -17,7 +17,7 @@ export const PastQuarterVerificationsTable: React.FC<PastQuarterVerificationsTab
     <div style={{ width: '100%' }}>
       <DataTable
         title="Past Quarter Verifications"
-        emptyState={<EmptyState />}
+        emptyState={<EmptyState insideCard={!showTitle} />}
         tableHeader={<PastQuarterVerificationsTableHeader />}
         data={pastQuarterVerifications}
         useClassNameStyling={true}

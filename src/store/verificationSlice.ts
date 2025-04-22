@@ -75,7 +75,7 @@ const migrateEmployeeQuarterlyStatus = (state: VerificationState): void => {
   }
 };
 
-export const verificationSlice = createSlice({
+const verificationSlice = createSlice({
   name: 'verification',
   initialState,
   reducers: {
@@ -348,26 +348,8 @@ export const { initializeState, verifyStep, markStepIncorrect, addStepComment, v
 export const selectVerificationData = (state: { verification: VerificationState }) => 
   state.verification.verifiedInvoices;
 
-export const selectInvoiceVerification = (state: { verification: VerificationState }, invoiceId: string) => 
-  state.verification.verifiedInvoices[invoiceId];
-
 export const selectEmployeeQuarterlyStatus = (state: { verification: VerificationState }) =>
   state.verification.employeeQuarterlyStatus;
-
-export const selectEmployeeVerificationStatus = (
-  state: { verification: VerificationState }, 
-  employeeId: string,
-  quarter?: number,
-  year?: number
-) => {
-  const currentPeriod = getCurrentQuarter();
-  const q = quarter || currentPeriod.quarter;
-  const y = year || currentPeriod.year;
-  const quarterKey = formatQuarterYear(q, y);
-  
-  const employeeStatus = state.verification.employeeQuarterlyStatus[employeeId];
-  return employeeStatus ? employeeStatus[quarterKey] || false : false;
-};
 
 // Memoized selector for employees needing verification
 export const selectEmployeesNeedingVerification = createSelector(

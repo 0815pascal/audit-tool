@@ -10,12 +10,10 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "predeploy": "npm run build:gh-pages",
-    "deploy": "gh-pages -d dist"
+    "deploy": "gh-pages -d dist",
+    "knip": "knip --fix --allow-remove-files"
   },
   "dependencies": {
-    "@emotion/react": "^11.14.0",
-    "@emotion/styled": "^11.14.0",
-    "@mui/material": "^7.0.2",
     "@reduxjs/toolkit": "^2.6.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
@@ -23,6 +21,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.21.0",
+    "@types/node": "^22.14.1",
     "@types/react": "^19.0.10",
     "@types/react-dom": "^19.0.4",
     "@vitejs/plugin-react": "^4.3.4",
@@ -31,6 +30,7 @@
     "eslint-plugin-react-refresh": "^0.4.19",
     "gh-pages": "^6.3.0",
     "globals": "^15.15.0",
+    "knip": "^5.50.5",
     "typescript": "~5.7.2",
     "typescript-eslint": "^8.24.1",
     "vite": "^6.2.0"

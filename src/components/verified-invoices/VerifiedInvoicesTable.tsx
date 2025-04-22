@@ -19,7 +19,7 @@ const VerifiedInvoicesTable: React.FC<VerifiedInvoicesTableProps> = ({
   return (
     <DataTable
       title="Verified Invoices"
-      emptyState={<EmptyState />}
+      emptyState={<EmptyState insideCard={!showTitle} />}
       tableHeader={<VerifiedInvoicesTableHeader />}
       data={verifiedInvoices}
       className={showTitle ? "mb-8" : ""}

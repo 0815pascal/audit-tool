@@ -26,8 +26,3 @@ export interface Invoice {
   totalAmount: number;
   isVerified: boolean;
 }
-
-export interface Department {
-  id: string;
-  name: string;
-} 

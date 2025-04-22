@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import {
   selectVerificationData,
@@ -62,17 +62,17 @@ export const useVerificationHandlers = () => {
     // First, check if there are any invoices with verification data for this employee
     // in the current quarter
     const employeeVerifiedInvoices = Object.entries(verificationData)
-      .filter(([_, data]) => {
+      .filter(([, data]) => {
         // Check if this verification belongs to this employee and is from the current quarter
         return data.employeeId === employeeId && 
                data.quarter === quarter && 
                data.year === year;
       })
-      .filter(([_, data]) => {
+      .filter(([, data]) => {
         // Check if there's any verification data (fully verified or steps verified/incorrect)
         return data.isVerified || 
           Object.values(data.steps || {}).some(
-            (step: any) => step.isVerified || step.isIncorrect
+            (step) => step.isVerified || step.isIncorrect
           );
       })
       .map(([invoiceId]) => invoiceId);
@@ -197,7 +197,7 @@ export const useVerificationHandlers = () => {
     }, 50);
   };
 
-  const handleSelectNewInvoice = () => {
+  const handleSelectNewInvoice = useCallback(() => {
     if (!selectedEmployee) {
       return;
     }
@@ -209,7 +209,7 @@ export const useVerificationHandlers = () => {
     } else {
       alert(`No invoices found for this employee in ${currentQuarterFormatted}`);
     }
-  };
+  }, [selectedEmployee, quarter, year, verificationData, currentQuarterFormatted]);
 
   // Add event listener for the selectRandomInvoice custom event
   useEffect(() => {
@@ -222,7 +222,7 @@ export const useVerificationHandlers = () => {
     return () => {
       window.removeEventListener('selectRandomInvoice', handleSelectRandomInvoiceEvent);
     };
-  }, [selectedEmployee, quarter, year, verificationData, currentQuarterFormatted]);
+  }, [handleSelectNewInvoice]);
 
   return {
     activeTab,
