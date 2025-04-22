@@ -1,6 +1,6 @@
 import React from 'react';
 import { usePastQuarterVerifications } from '../../hooks/usePastQuarterVerifications';
-import { PastQuarterVerificationsTableProps } from './types';
+import { PastQuarterVerificationsTableProps, PastQuarterVerification } from './types';
 import { EmptyState } from './EmptyState';
 import { PastQuarterVerificationsTableHeader } from './PastQuarterVerificationsTableHeader';
 import { PastQuarterVerificationRow } from './PastQuarterVerificationRow';
@@ -15,7 +15,7 @@ export const PastQuarterVerificationsTable: React.FC<PastQuarterVerificationsTab
 
   return (
     <div style={{ width: '100%' }}>
-      <DataTable
+      <DataTable<PastQuarterVerification>
         title="Past Quarter Verifications"
         emptyState={<EmptyState insideCard={!showTitle} />}
         tableHeader={<PastQuarterVerificationsTableHeader />}

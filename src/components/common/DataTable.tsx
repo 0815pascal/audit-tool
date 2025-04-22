@@ -1,11 +1,11 @@
-import React, { ReactNode } from 'react';
+import { ReactNode } from 'react';
 
-interface DataTableProps {
+interface DataTableProps<T> {
   title: string;
   emptyState: ReactNode;
   tableHeader: ReactNode;
-  data: unknown[];
-  renderRow: (item: unknown, index: number) => ReactNode;
+  data: T[];
+  renderRow: (item: T, index: number) => ReactNode;
   className?: string;
   useClassNameStyling?: boolean;
   showTitle?: boolean;
@@ -14,7 +14,7 @@ interface DataTableProps {
 /**
  * A reusable data table component with standardized layout
  */
-export const DataTable: React.FC<DataTableProps> = ({
+export const DataTable = <T,>({
   title,
   emptyState,
   tableHeader,
@@ -23,7 +23,7 @@ export const DataTable: React.FC<DataTableProps> = ({
   className = "mb-4",
   useClassNameStyling = false,
   showTitle = true
-}) => {
+}: DataTableProps<T>) => {
   if (data.length === 0) {
     return <>{emptyState}</>;
   }

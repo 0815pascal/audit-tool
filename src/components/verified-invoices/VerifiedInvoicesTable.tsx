@@ -4,7 +4,8 @@ import {
   EmptyState,
   VerifiedInvoicesTableHeader,
   VerifiedInvoiceRow,
-  VerifiedInvoicesTableProps
+  VerifiedInvoicesTableProps,
+  VerifiedInvoice
 } from '.';
 import { DataTable } from '../common';
 
@@ -17,7 +18,7 @@ const VerifiedInvoicesTable: React.FC<VerifiedInvoicesTableProps> = ({
   const verifiedInvoices = useVerifiedInvoices(employeeQuarterlyStatus, currentQuarter);
 
   return (
-    <DataTable
+    <DataTable<VerifiedInvoice>
       title="Verified Invoices"
       emptyState={<EmptyState insideCard={!showTitle} />}
       tableHeader={<VerifiedInvoicesTableHeader />}
