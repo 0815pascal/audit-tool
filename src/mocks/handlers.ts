@@ -104,6 +104,9 @@ const generateFindings = (auditId) => {
   return findings;
 };
 
+// In-memory storage for created audits
+const auditStore = new Map();
+
 export const handlers = [
   // Get audits by quarter
   http.get('/api/audits/quarter/:quarter', ({ params }) => {
@@ -137,6 +140,13 @@ export const handlers = [
         .map(invoice => invoiceToAudit(invoice, quarter))
         .filter(audit => audit !== null);
       
+      // Add any audits from our store that match this quarter
+      for (const [id, audit] of auditStore.entries()) {
+        if (audit.quarter === quarter) {
+          audits.push(audit);
+        }
+      }
+      
       return new Response(JSON.stringify(audits), {
         status: 200,
         headers: { 'Content-Type': 'application/json' }
@@ -168,6 +178,13 @@ export const handlers = [
         .map(invoice => invoiceToAudit(invoice, currentQuarter))
         .filter(audit => audit !== null);
       
+      // Add any audits from our store that match this auditor
+      for (const [id, audit] of auditStore.entries()) {
+        if (audit.auditor && audit.auditor.userId === numericAuditorId) {
+          audits.push(audit);
+        }
+      }
+      
       return new Response(JSON.stringify(audits), {
         status: 200,
         headers: { 'Content-Type': 'application/json' }
@@ -175,6 +192,170 @@ export const handlers = [
     } catch (error) {
       console.error("Error in /api/audits/auditor/:auditorId handler:", error);
       return new Response(JSON.stringify([]), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+  }),
+
+  // Create Audit
+  http.post('/api/audits', async ({ request }) => {
+    try {
+      let requestData = {};
+      
+      try {
+        requestData = await request.json();
+      } catch (e) {
+        console.warn("Failed to parse request body for /api/audits POST");
+      }
+      
+      // Generate a new audit ID
+      const auditId = Math.floor(Math.random() * 10000) + 1;
+      
+      // Create a new audit object
+      const newAudit = {
+        auditId,
+        quarter: requestData.quarter || `Q${Math.floor((new Date().getMonth()) / 3) + 1}-${new Date().getFullYear()}`,
+        caseObj: requestData.caseObj || {
+          caseNumber: Math.floor(Math.random() * 100000) + 1,
+          claimOwner: {
+            userId: requestData.caseObj?.caseNumber ? safeParseInt(requestData.caseObj.caseNumber) : 1,
+            role: ROLES.TEAM_LEADER
+          },
+          claimsStatus: CLAIMS_STATUS.FULL_COVER,
+          coverageAmount: 10000.00,
+          caseStatus: "COMPENSATED"
+        },
+        auditor: requestData.auditor || {
+          userId: 2,
+          role: ROLES.SPECIALIST
+        }
+      };
+      
+      // Store the audit
+      auditStore.set(auditId, newAudit);
+      
+      console.log(`Created new audit with ID ${auditId}:`, newAudit);
+      
+      return new Response(JSON.stringify(newAudit), {
+        status: 201,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    } catch (error) {
+      console.error("Error in /api/audits POST handler:", error);
+      
+      // Return a fallback audit object
+      const fallbackAudit = {
+        auditId: Math.floor(Math.random() * 10000) + 1,
+        quarter: `Q${Math.floor((new Date().getMonth()) / 3) + 1}-${new Date().getFullYear()}`,
+        caseObj: {
+          caseNumber: Math.floor(Math.random() * 100000) + 1,
+          claimOwner: {
+            userId: 1,
+            role: ROLES.TEAM_LEADER
+          },
+          claimsStatus: CLAIMS_STATUS.FULL_COVER,
+          coverageAmount: 10000.00,
+          caseStatus: "COMPENSATED"
+        },
+        auditor: {
+          userId: 2,
+          role: ROLES.SPECIALIST
+        }
+      };
+      
+      return new Response(JSON.stringify(fallbackAudit), {
+        status: 201,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+  }),
+
+  // Update Audit
+  http.put('/api/audits/:auditId', async ({ params, request }) => {
+    try {
+      const { auditId } = params;
+      const numericAuditId = safeParseInt(auditId);
+      
+      let requestData = {};
+      try {
+        requestData = await request.json();
+      } catch (e) {
+        console.warn("Failed to parse request body for /api/audits PUT");
+      }
+      
+      // Get existing audit or create a placeholder
+      let existingAudit = auditStore.get(numericAuditId);
+      
+      if (!existingAudit) {
+        // If not in our store, create a new one with this ID
+        existingAudit = {
+          auditId: numericAuditId,
+          quarter: `Q${Math.floor((new Date().getMonth()) / 3) + 1}-${new Date().getFullYear()}`,
+          caseObj: {
+            caseNumber: Math.floor(Math.random() * 100000) + 1,
+            claimOwner: {
+              userId: 1,
+              role: ROLES.TEAM_LEADER
+            },
+            claimsStatus: CLAIMS_STATUS.FULL_COVER,
+            coverageAmount: 10000.00,
+            caseStatus: "COMPENSATED"
+          },
+          auditor: {
+            userId: 2,
+            role: ROLES.SPECIALIST
+          }
+        };
+      }
+      
+      // Update audit with new data
+      const updatedAudit = {
+        ...existingAudit,
+        ...(requestData.quarter && { quarter: requestData.quarter }),
+        ...(requestData.caseObj && { caseObj: {
+          ...existingAudit.caseObj,
+          ...requestData.caseObj
+        }}),
+        ...(requestData.auditor && { auditor: {
+          ...existingAudit.auditor,
+          ...requestData.auditor
+        }})
+      };
+      
+      // Store the updated audit
+      auditStore.set(numericAuditId, updatedAudit);
+      
+      console.log(`Updated audit with ID ${numericAuditId}:`, updatedAudit);
+      
+      return new Response(JSON.stringify(updatedAudit), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    } catch (error) {
+      console.error("Error in /api/audits/:auditId PUT handler:", error);
+      
+      // Return a fallback updated audit
+      const fallbackAudit = {
+        auditId: safeParseInt(params.auditId, 1),
+        quarter: `Q${Math.floor((new Date().getMonth()) / 3) + 1}-${new Date().getFullYear()}`,
+        caseObj: {
+          caseNumber: Math.floor(Math.random() * 100000) + 1,
+          claimOwner: {
+            userId: 1,
+            role: ROLES.TEAM_LEADER
+          },
+          claimsStatus: CLAIMS_STATUS.FULL_COVER,
+          coverageAmount: 10000.00,
+          caseStatus: "COMPENSATED"
+        },
+        auditor: {
+          userId: 2,
+          role: ROLES.SPECIALIST
+        }
+      };
+      
+      return new Response(JSON.stringify(fallbackAudit), {
         status: 200,
         headers: { 'Content-Type': 'application/json' }
       });
@@ -328,7 +509,34 @@ export const handlers = [
 
   // Fallback for unhandled requests
   http.get('*', ({ request }) => {
-    console.log('Unhandled request:', request.url);
+    console.log('Unhandled GET request:', request.url);
     return fetch(request);
+  }),
+  
+  // Fallback for unhandled POST requests
+  http.post('*', ({ request }) => {
+    console.log('Unhandled POST request:', request.url);
+    return new Response(JSON.stringify({ message: "Endpoint not implemented" }), {
+      status: 200, // Return 200 to not break the app
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }),
+  
+  // Fallback for unhandled PUT requests
+  http.put('*', ({ request }) => {
+    console.log('Unhandled PUT request:', request.url);
+    return new Response(JSON.stringify({ message: "Endpoint not implemented" }), {
+      status: 200, // Return 200 to not break the app
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }),
+  
+  // Fallback for unhandled DELETE requests
+  http.delete('*', ({ request }) => {
+    console.log('Unhandled DELETE request:', request.url);
+    return new Response(JSON.stringify({ message: "Endpoint not implemented" }), {
+      status: 200, // Return 200 to not break the app
+      headers: { 'Content-Type': 'application/json' }
+    });
   })
 ]; 
