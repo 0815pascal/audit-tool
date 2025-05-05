@@ -11,6 +11,7 @@ import App from './App';
 // Get root element
 const rootElement = document.getElementById('root');
 
+// First render the app regardless of MSW status
 if (rootElement) {
   // Create root and render app
   const root = createRoot(rootElement);
@@ -37,9 +38,32 @@ if (rootElement) {
   document.body.innerHTML = '<div style="color: red; padding: 20px;">Root element not found</div>';
 }
 
-// Initialize MSW in development environment
+// Initialize MSW in development environment (after app is rendered)
 if (import.meta.env.DEV) {
-  import('./mocks/browser')
-    .then(({ worker }) => worker.start({ onUnhandledRequest: 'bypass' }))
-    .catch(error => console.error('MSW initialization failed:', error));
+  const initializeMSW = async () => {
+    try {
+      const { worker } = await import('./mocks/browser');
+      
+      // Launch MSW with more permissive options
+      await worker.start({
+        onUnhandledRequest: 'bypass',
+        serviceWorker: {
+          url: '/mockServiceWorker.js',
+          options: {
+            // More permissive scope for the service worker
+            scope: '/'
+          }
+        }
+      });
+      
+      console.log("[MSW] Mock Service Worker initialized successfully");
+    } catch (error) {
+      console.error("[MSW] Failed to initialize Mock Service Worker:", error);
+      
+      // App will continue to work without MSW
+    }
+  };
+  
+  // Start MSW initialization
+  initializeMSW();
 }
