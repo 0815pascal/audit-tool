@@ -3,6 +3,9 @@ import react from '@vitejs/plugin-react'
 
 // https://vite.dev/config/
 export default defineConfig({
+  optimizeDeps: {
+    include: ['msw'],
+  },
   plugins: [
     react(),
     {
@@ -16,7 +19,7 @@ export default defineConfig({
       }
     }
   ],
-  base: '/audit-tool/',
+  base: process.env.NODE_ENV === 'production' ? '/audit-tool/' : '/',
   build: {
     outDir: 'dist',
     assetsDir: 'assets',

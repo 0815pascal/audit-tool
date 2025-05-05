@@ -19,7 +19,7 @@ const TabNavigation: React.FC<TabNavigationProps> = ({ activeTab, onTabChange })
         }}
       >
         <TabButton 
-          label="IKS" 
+          label="Audit Log" 
           isActive={activeTab === 'overview'} 
           onClick={() => onTabChange('overview')} 
         />
@@ -29,7 +29,7 @@ const TabNavigation: React.FC<TabNavigationProps> = ({ activeTab, onTabChange })
           onClick={() => onTabChange('verification')} 
         />
         <TabButton 
-          label="Audit Log" 
+          label="IKS" 
           isActive={activeTab === 'audit'} 
           onClick={() => onTabChange('audit')} 
         />

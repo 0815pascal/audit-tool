@@ -1,46 +1,57 @@
 // @ts-nocheck
-import { rest } from 'msw';
+import { http } from 'msw';
 import { invoices, auditorCodes } from '../mockData';
 
 export const handlers = [
   // Get audits by quarter (returns empty list or you can mock data here)
-  rest.get('/api/audits/quarter/:quarter', (req, res, ctx) => {
-    const { quarter } = req.params;
+  http.get('/api/audits/quarter/:quarter', ({ params }) => {
+    const { quarter } = params;
     // TODO: return filtered mock data based on quarter
-    return res(ctx.status(200), ctx.json([]));
+    return new Response(JSON.stringify([]), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    });
   }),
 
   // Get audits by auditor
-  rest.get('/api/audits/auditor/:auditorId', (req, res, ctx) => {
-    const { auditorId } = req.params;
+  http.get('/api/audits/auditor/:auditorId', ({ params }) => {
+    const { auditorId } = params;
     // TODO: return mock audits for given auditor
-    return res(ctx.status(200), ctx.json([]));
+    return new Response(JSON.stringify([]), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    });
   }),
 
   // Select cases for audit
-  rest.get('/api/audits/select-cases/:quarter', (req, res, ctx) => {
-    const { quarter } = req.params;
+  http.get('/api/audits/select-cases/:quarter', ({ params }) => {
+    const { quarter } = params;
     // Return mock cases (reuse invoices)
-    return res(ctx.status(200), ctx.json(invoices));
+    return new Response(JSON.stringify(invoices), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    });
   }),
 
   // Export audit results (CSV)
-  rest.get('/api/audit-reports/export/:quarter', (req, res, ctx) => {
+  http.get('/api/audit-reports/export/:quarter', () => {
     const csv = 'Case-ID,Claims Manager,Prüfergebnis,Prüfer\n';
-    return res(
-      ctx.status(200),
-      ctx.set('Content-Type', 'text/csv'),
-      ctx.body(csv)
-    );
+    return new Response(csv, {
+      status: 200,
+      headers: { 'Content-Type': 'text/csv' }
+    });
   }),
 
   // Get audit statistics
-  rest.get('/api/audit-reports/statistics/:quarter', (req, res, ctx) => {
-    return res(ctx.status(200), ctx.json({ totalAudits: 0, averageScore: 0 }));
+  http.get('/api/audit-reports/statistics/:quarter', () => {
+    return new Response(JSON.stringify({ totalAudits: 0, averageScore: 0 }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    });
   }),
 
   // Fallback for unhandled requests
-  rest.get('*', (req, res, ctx) => {
-    return req.passthrough();
+  http.get('*', ({ request }) => {
+    return fetch(request);
   })
 ]; 
