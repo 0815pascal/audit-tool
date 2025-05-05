@@ -3,6 +3,7 @@ import { Invoice } from '../../types';
 import { employees } from '../../mockData';
 import CalculationStepItem from './CalculationStepItem';
 import { Button, LabelValue, Card } from '../common';
+import { VerifiedInvoice } from '../verified-invoices/types';
 
 // Empty state component when no invoice is selected
 const EmptyInvoiceState = ({ currentQuarter }: { currentQuarter: string }) => (
@@ -12,7 +13,7 @@ const EmptyInvoiceState = ({ currentQuarter }: { currentQuarter: string }) => (
 );
 
 // Component for displaying invoice/claim information
-const ClaimInformation = ({ invoice }: { invoice: Invoice }) => {
+export const ClaimInformation = ({ invoice }: { invoice: Invoice | VerifiedInvoice }) => {
   // Find employee name
   const employee = employees.find(emp => emp.id === invoice.employeeId) ||
                   { id: invoice.employeeId, name: 'Unknown Employee', department: '' };
@@ -23,9 +24,19 @@ const ClaimInformation = ({ invoice }: { invoice: Invoice }) => {
       <LabelValue label="Client" value={invoice.clientName} />
       <LabelValue label="Policy Number" value={invoice.policyNumber} />
       <LabelValue label="Case Number" value={invoice.caseNumber} />
-      <LabelValue label="Dossier Risk" value={invoice.dossierRisk} />
+      {/* Render dossier risk if available */}
+      { 'dossierRisk' in invoice && (
+        <LabelValue label="Dossier Risk" value={invoice.dossierRisk} />
+      ) }
       <LabelValue label="Dossier Name" value={invoice.dossierName} />
       <LabelValue label="Date" value={invoice.date} />
+      {/* Show claims status and coverage amount if available */}
+      {'claimsStatus' in invoice && (
+        <LabelValue label="Claims Status" value={(invoice as any).claimsStatus} />
+      )}
+      {'coverageAmount' in invoice && (
+        <LabelValue label="Coverage Amount" value={`CHF ${(invoice as any).coverageAmount.toFixed(2)}`} />
+      )}
     </div>
   );
 };

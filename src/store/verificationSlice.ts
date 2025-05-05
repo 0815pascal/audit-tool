@@ -406,7 +406,10 @@ export const applyVerificationDataToInvoice = (
   
   // Create a deep copy of the invoice with verification data applied
   const updatedInvoice = {
+    // Include original invoice data plus mock claims/coverage
     ...invoice,
+    claimsStatus: (invoice as any).claimsStatus ?? 'FULL_COVER',
+    coverageAmount: (invoice as any).coverageAmount ?? invoice.totalAmount,
     isVerified: invoiceVerification.isVerified,
     calculationSteps: invoice.calculationSteps.map(step => {
       // Find the verification data for this step

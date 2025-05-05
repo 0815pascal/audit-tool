@@ -298,4 +298,34 @@ export const getRandomInvoiceForEmployee = (
   
   const randomIndex = Math.floor(Math.random() * employeeInvoices.length);
   return employeeInvoices[randomIndex];
-}; 
+};
+
+// Filter option definitions for mock data
+export const quarterOptions: string[] = [
+  'Q1 2025',
+  'Q2 2025',
+  'Q3 2025',
+  'Q4 2025',
+];
+
+export const managerOptions: { value: string; label: string }[] = employees.map(emp => ({
+  value: emp.id,
+  label: emp.name,
+}));
+
+export type VerificationStatusOption =
+  | 'Erfolgreich erfüllt'
+  | 'Teilweise nicht erfüllt'
+  | 'Überwiegend nicht erfüllt';
+
+export const statusOptions: VerificationStatusOption[] = [
+  'Erfolgreich erfüllt',
+  'Teilweise nicht erfüllt',
+  'Überwiegend nicht erfüllt',
+];
+
+// Auditor codes for mock
+export const auditorCodes: string[] = [
+  'PF', // P. Fässler
+  'TF'  // T. Frei
+]; 

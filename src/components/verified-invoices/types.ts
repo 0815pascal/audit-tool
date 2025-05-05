@@ -11,6 +11,10 @@ export interface VerifiedInvoice {
   isFullyVerified: boolean;
   hasIncorrectCalculations: boolean;
   verificationDate: string | null;
+  quarter: string;
+  claimsStatus: string;
+  coverageAmount: number;
+  auditorCode: string;
   progress: string;
   progressPercent: number;
   quarterlyStatus: { verified: boolean };

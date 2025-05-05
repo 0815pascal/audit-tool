@@ -8,7 +8,7 @@ import React from 'react';
 interface ButtonProps {
   onClick: () => void;
   children: React.ReactNode;
-  color?: 'primary' | 'success' | 'danger' | 'info';
+  color?: 'primary' | 'success' | 'danger' | 'info' | 'text';
   disabled?: boolean;
   size?: 'small' | 'medium' | 'large';
 }
@@ -25,7 +25,8 @@ export const Button: React.FC<ButtonProps> = ({
     primary: 'var(--primary-color)',
     success: 'var(--success-color)',
     danger: '#d24723',
-    info: '#00008f'
+    info: '#00008f',
+    text: 'transparent'
   };
   
   // Size mapping
@@ -41,7 +42,7 @@ export const Button: React.FC<ButtonProps> = ({
       disabled={disabled}
       style={{
         backgroundColor: colorMap[color],
-        color: 'white',
+        color: color === 'text' ? 'var(--primary-color)' : 'white',
         padding: sizeMap[size].padding,
         fontSize: sizeMap[size].fontSize,
         border: 'none',
@@ -146,5 +147,36 @@ export const Card: React.FC<CardProps> = ({
   <div className={`card ${className}`} style={{ width: fullWidth ? '100%' : 'auto' }}>
     {title && <h2 className={centerTitle ? "text-center" : "text-left"}>{title}</h2>}
     {children}
+  </div>
+);
+
+// Select dropdown component
+interface SelectProps {
+  id: string;
+  label?: string;
+  options: { value: string; label: string }[];
+  value: string;
+  onChange: (value: string) => void;
+}
+
+export const Select: React.FC<SelectProps> = ({
+  id,
+  label,
+  options,
+  value,
+  onChange
+}) => (
+  <div style={{ display: 'flex', flexDirection: 'column', marginRight: '1rem' }}>
+    {label && <label htmlFor={id} style={{ marginBottom: '0.25rem' }}>{label}</label>}
+    <select
+      id={id}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      style={{ padding: '6px', borderRadius: '4px', border: '1px solid #ccc' }}
+    >
+      {options.map(opt => (
+        <option key={opt.value} value={opt.value}>{opt.label}</option>
+      ))}
+    </select>
   </div>
 ); 

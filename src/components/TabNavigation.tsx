@@ -1,6 +1,6 @@
 import React from 'react';
 
-export type TabView = 'overview' | 'verification';
+export type TabView = 'overview' | 'verification' | 'audit';
 
 interface TabNavigationProps {
   activeTab: TabView;
@@ -19,7 +19,7 @@ const TabNavigation: React.FC<TabNavigationProps> = ({ activeTab, onTabChange })
         }}
       >
         <TabButton 
-          label="Overview" 
+          label="IKS" 
           isActive={activeTab === 'overview'} 
           onClick={() => onTabChange('overview')} 
         />
@@ -27,6 +27,11 @@ const TabNavigation: React.FC<TabNavigationProps> = ({ activeTab, onTabChange })
           label="Verification" 
           isActive={activeTab === 'verification'} 
           onClick={() => onTabChange('verification')} 
+        />
+        <TabButton 
+          label="Audit Log" 
+          isActive={activeTab === 'audit'} 
+          onClick={() => onTabChange('audit')} 
         />
       </div>
     </div>

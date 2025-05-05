@@ -25,4 +25,6 @@ export interface Invoice {
   calculationSteps: CalculationStep[];
   totalAmount: number;
   isVerified: boolean;
+  claimsStatus?: string;
+  coverageAmount?: number;
 }

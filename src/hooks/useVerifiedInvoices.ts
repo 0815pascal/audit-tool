@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useAppSelector } from '../store/hooks';
 import { selectVerificationData, getCurrentQuarter } from '../store/verificationSlice';
-import { invoices, employees } from '../mockData';
+import { invoices, employees, auditorCodes } from '../mockData';
 import { VerifiedInvoice, VerifiedInvoicesTableProps } from '../components/verified-invoices/types';
 
 /**
@@ -23,7 +23,7 @@ export const useVerifiedInvoices = (
         return isCurrentQuarter && (verification.isVerified ||
           Object.values(verification.steps).some(step => step.isVerified || step.isIncorrect));
       })
-      .map(invoiceId => {
+      .map((invoiceId, index) => {
         const invoice = invoices.find(inv => inv.id === invoiceId);
         const verification = verificationData[invoiceId];
 
@@ -61,9 +61,13 @@ export const useVerifiedInvoices = (
           caseNumber: invoice.caseNumber,
           dossierName: invoice.dossierName,
           totalAmount: invoice.totalAmount,
+          coverageAmount: invoice.totalAmount,
+          claimsStatus: 'FULL_COVER',
+          auditorCode: auditorCodes[index % auditorCodes.length],
           isFullyVerified: verification.isVerified,
           hasIncorrectCalculations: incorrectSteps > 0,
           verificationDate: verification.verificationDate,
+          quarter: currentQuarter,
           progress: `${processedSteps}/${totalSteps}`,
           progressPercent: Math.round((processedSteps / totalSteps) * 100),
           quarterlyStatus,
