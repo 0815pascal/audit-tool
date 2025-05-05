@@ -1,3 +1,10 @@
+// Start MSW in development
+if (import.meta.env.DEV) {
+  import('./mocks/browser').then(({ worker }) => {
+    worker.start();
+  });
+}
+
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { Provider } from 'react-redux'
