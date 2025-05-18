@@ -1,6 +1,5 @@
 import React from 'react';
 import { Invoice } from '../../types';
-import { employees } from '../../mockData';
 import CalculationStepItem from './CalculationStepItem';
 import { Button, LabelValue, Card } from '../common';
 import { VerifiedInvoice } from '../verified-invoices/types';
@@ -14,13 +13,14 @@ const EmptyInvoiceState = ({ currentQuarter }: { currentQuarter: string }) => (
 
 // Component for displaying invoice/claim information
 export const ClaimInformation = ({ invoice }: { invoice: Invoice | VerifiedInvoice }) => {
-  // Find employee name
-  const employee = employees.find(emp => emp.id === invoice.employeeId) ||
-                  { id: invoice.employeeId, name: 'Unknown Employee', department: '' };
+  // Get employee name from employeeName property if available, or generate one from employeeId
+  const employeeName = 'employeeName' in invoice && invoice.employeeName
+    ? invoice.employeeName
+    : `Employee ${invoice.employeeId}`;
   
   return (
     <div className="mb-4">
-      <LabelValue label="Claim Manager" value={employee.name} />
+      <LabelValue label="Claim Manager" value={employeeName} />
       <LabelValue label="Client" value={invoice.clientName} />
       <LabelValue label="Policy Number" value={invoice.policyNumber} />
       <LabelValue label="Case Number" value={invoice.caseNumber} />

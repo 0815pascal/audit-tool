@@ -1,7 +1,7 @@
-import { useMemo } from 'react';
+import { useMemo, useEffect, useState, useRef } from 'react';
 import { useAppSelector } from '../store/hooks';
 import { selectVerificationData, formatQuarterYear, getCurrentQuarter } from '../store/verificationSlice';
-import { invoices, employees } from '../mockData';
+import { getAuditsByQuarter, AuditRecord } from '../services/auditService';
 import { PastQuarterVerification, PastQuarterVerificationsTableProps } from '../components/past-quarter-verifications/types';
 
 /**
@@ -12,6 +12,43 @@ export const usePastQuarterVerifications = (
 ): PastQuarterVerification[] => {
   const verificationData = useAppSelector(selectVerificationData);
   const { quarter: currentQuarterNum, year: currentYear } = getCurrentQuarter();
+  const [pastAudits, setPastAudits] = useState<AuditRecord[]>([]);
+  const lastFetchedQuarterRef = useRef<string>('');
+
+  // Fetch audits from past quarters with caching
+  useEffect(() => {
+    const fetchPastAudits = async () => {
+      try {
+        // Calculate past quarters (simple example: just the previous quarter)
+        const prevQuarterNum = currentQuarterNum === 1 ? 4 : currentQuarterNum - 1;
+        const prevYear = currentQuarterNum === 1 ? currentYear - 1 : currentYear;
+        const prevQuarter = `Q${prevQuarterNum}-${prevYear}`;
+        
+        // Skip if we've already fetched this quarter
+        if (prevQuarter === lastFetchedQuarterRef.current && pastAudits.length > 0) {
+          return;
+        }
+        
+        console.log(`Fetching past audits for ${prevQuarter}`);
+        const auditRecords = await getAuditsByQuarter(prevQuarter);
+        
+        // Validate that we received an array before using it
+        if (!auditRecords || !Array.isArray(auditRecords)) {
+          console.error("API returned non-array data for past audits:", auditRecords);
+          setPastAudits([]);
+        } else {
+          setPastAudits(auditRecords);
+        }
+        
+        lastFetchedQuarterRef.current = prevQuarter;
+      } catch (error) {
+        console.error('Error fetching past audit records:', error);
+        setPastAudits([]);
+      }
+    };
+
+    fetchPastAudits();
+  }, [currentQuarterNum, currentYear, pastAudits.length]);
 
   // Memoize the list of past quarter verifications
   return useMemo(() => {
@@ -23,22 +60,23 @@ export const usePastQuarterVerifications = (
         return isPastQuarter && verification.isVerified;
       })
       .map(invoiceId => {
-        const invoice = invoices.find(inv => inv.id === invoiceId);
+        // Find matching audit from API data
+        const audit = pastAudits.find(a => a.auditId.toString() === invoiceId);
         const verification = verificationData[invoiceId];
 
-        if (!invoice) {
+        if (!audit) {
           return null;
         }
 
-        // Get employee name
-        const employee = employees.find(emp => emp.id === invoice.employeeId) ||
-                         { id: invoice.employeeId, name: 'Unknown Employee', department: '' };
+        // Get case information from the audit
+        const caseObj = audit.caseObj || {};
+        const claimOwner = caseObj.claimOwner || { userId: 0, role: '' };
 
         // Format the quarter
         const quarterKey = formatQuarterYear(verification.quarter, verification.year);
 
         // Count verified steps and incorrect steps
-        const totalSteps = invoice.calculationSteps.length;
+        const totalSteps = 4; // Default number of steps
         const verifiedSteps = Object.keys(verification.steps)
           .filter(stepId => verification.steps[stepId].isVerified)
           .length;
@@ -50,19 +88,19 @@ export const usePastQuarterVerifications = (
         const processedSteps = verifiedSteps + incorrectSteps;
 
         // Employee quarterly verification status
-        const employeeId = invoice.employeeId;
+        const employeeId = claimOwner.userId.toString();
         const quarterlyStatus = employeeQuarterlyStatus[employeeId]?.[quarterKey] || { verified: false };
 
         return {
-          id: invoice.id,
-          employeeId: invoice.employeeId,
-          employeeName: employee.name,
-          date: invoice.date,
-          clientName: invoice.clientName,
-          policyNumber: invoice.policyNumber,
-          caseNumber: invoice.caseNumber,
-          dossierName: invoice.dossierName,
-          totalAmount: invoice.totalAmount,
+          id: invoiceId,
+          employeeId: employeeId,
+          employeeName: claimOwner.role || 'Unknown',
+          date: new Date().toISOString().split('T')[0], // Use current date as fallback
+          clientName: caseObj.claimOwner?.role || 'Unknown Client',
+          policyNumber: `POL-${caseObj.caseNumber || '0000'}`,
+          caseNumber: caseObj.caseNumber || 0,
+          dossierName: `Case ${caseObj.caseNumber || '0000'}`,
+          totalAmount: caseObj.coverageAmount || 0,
           isFullyVerified: verification.isVerified,
           hasIncorrectCalculations: incorrectSteps > 0,
           verificationDate: verification.verificationDate,
@@ -73,5 +111,5 @@ export const usePastQuarterVerifications = (
         };
       })
       .filter(Boolean) as PastQuarterVerification[];
-  }, [verificationData, currentQuarterNum, currentYear, employeeQuarterlyStatus]);
+  }, [verificationData, currentQuarterNum, currentYear, employeeQuarterlyStatus, pastAudits]);
 }; 

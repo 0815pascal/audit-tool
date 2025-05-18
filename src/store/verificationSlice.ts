@@ -12,9 +12,9 @@ export const getCurrentQuarter = (): { quarter: number; year: number } => {
   };
 };
 
-// Format quarter and year (e.g., "Q2 2023")
+// Format quarter and year (e.g., "Q2-2023")
 export const formatQuarterYear = (quarter: number, year: number): string => {
-  return `Q${quarter} ${year}`;
+  return `Q${quarter}-${year}`;
 };
 
 interface VerificationState {
@@ -351,12 +351,19 @@ export const selectVerificationData = (state: { verification: VerificationState 
 export const selectEmployeeQuarterlyStatus = (state: { verification: VerificationState }) =>
   state.verification.employeeQuarterlyStatus;
 
+// Define the Employee interface to match what the component expects
+interface Employee {
+  id: string;
+  name: string;
+  department: string;
+}
+
 // Memoized selector for employees needing verification
 export const selectEmployeesNeedingVerification = createSelector(
   [
     (state: { verification: VerificationState }) => state.verification.verifiedInvoices,
     (state: { verification: VerificationState }) => state.verification.employeeQuarterlyStatus, 
-    (_state, employees: { id: string }[]) => employees
+    (_state, employees: Employee[]) => employees
   ],
   (verifiedInvoices, employeeQuarterlyStatus, employees) => {
     const { quarter, year } = getCurrentQuarter();

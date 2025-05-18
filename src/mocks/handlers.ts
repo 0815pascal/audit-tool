@@ -108,13 +108,40 @@ const generateFindings = (auditId) => {
 const auditStore = new Map();
 
 export const handlers = [
+  // Special catch-all handler for all API requests
+  http.all('/api/*', ({ request }) => {
+    try {
+      const url = new URL(request.url);
+      console.log(`[MSW] Catch-all handler intercepted: ${request.method} ${url.pathname}`);
+      
+      return new Response(JSON.stringify([]), {
+        status: 200,
+        headers: { 
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE',
+          'Access-Control-Allow-Headers': 'Content-Type'
+        }
+      });
+    } catch (error) {
+      console.error(`[MSW] Error in catch-all handler:`, error);
+      return new Response(JSON.stringify([]), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+  }),
+
   // Get audits by quarter
   http.get('/api/audits/quarter/:quarter', ({ params }) => {
     try {
       const { quarter } = params;
+      console.log(`[MSW] Processing request for quarter: ${quarter}`);
+      
       const parsedQuarter = parseQuarter(quarter);
       
       if (!parsedQuarter) {
+        console.warn(`[MSW] Invalid quarter format: ${quarter}`);
         return new Response(JSON.stringify([]), {
           status: 200,
           headers: { 'Content-Type': 'application/json' }
@@ -131,9 +158,12 @@ export const handlers = [
           return invoiceQuarter === parsedQuarter.quarterNum && 
                 invoiceYear === parsedQuarter.year;
         } catch (e) {
+          console.error(`[MSW] Error filtering invoice:`, e);
           return false;
         }
       });
+      
+      console.log(`[MSW] Found ${filteredInvoices.length} invoices for quarter ${quarter}`);
       
       // Convert to API format
       const audits = filteredInvoices
@@ -141,21 +171,43 @@ export const handlers = [
         .filter(audit => audit !== null);
       
       // Add any audits from our store that match this quarter
+      let storeAudits = 0;
       for (const [id, audit] of auditStore.entries()) {
         if (audit.quarter === quarter) {
           audits.push(audit);
+          storeAudits++;
         }
       }
       
+      if (storeAudits > 0) {
+        console.log(`[MSW] Added ${storeAudits} audits from store for quarter ${quarter}`);
+      }
+      
+      console.log(`[MSW] Returning ${audits.length} total audits for quarter ${quarter}`);
+      
+      // Ensure we're returning valid JSON with the correct headers
       return new Response(JSON.stringify(audits), {
         status: 200,
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 
+          'Content-Type': 'application/json',
+          // Add CORS headers to ensure proper handling
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET',
+          'Access-Control-Allow-Headers': 'Content-Type'
+        }
       });
     } catch (error) {
-      console.error("Error in /api/audits/quarter/:quarter handler:", error);
+      console.error("[MSW] Error in /api/audits/quarter/:quarter handler:", error);
+      
+      // Always return a valid JSON array, even on error
       return new Response(JSON.stringify([]), {
         status: 200,
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET',
+          'Access-Control-Allow-Headers': 'Content-Type'
+        }
       });
     }
   }),
@@ -509,34 +561,69 @@ export const handlers = [
 
   // Fallback for unhandled requests
   http.get('*', ({ request }) => {
-    console.log('Unhandled GET request:', request.url);
-    return fetch(request);
+    const url = new URL(request.url);
+    
+    // Only intercept API requests
+    if (url.pathname.startsWith('/api')) {
+      console.log('Unhandled API GET request:', request.url);
+      return new Response(JSON.stringify({ message: "Endpoint not implemented" }), {
+        status: 200, // Return 200 to not break the app
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+    
+    // Pass through all other requests to actual server
+    return request;
   }),
   
   // Fallback for unhandled POST requests
   http.post('*', ({ request }) => {
-    console.log('Unhandled POST request:', request.url);
-    return new Response(JSON.stringify({ message: "Endpoint not implemented" }), {
-      status: 200, // Return 200 to not break the app
-      headers: { 'Content-Type': 'application/json' }
-    });
+    const url = new URL(request.url);
+    
+    // Only intercept API requests
+    if (url.pathname.startsWith('/api')) {
+      console.log('Unhandled API POST request:', request.url);
+      return new Response(JSON.stringify({ message: "Endpoint not implemented" }), {
+        status: 200, // Return 200 to not break the app
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+    
+    // Pass through all other requests
+    return request;
   }),
   
   // Fallback for unhandled PUT requests
   http.put('*', ({ request }) => {
-    console.log('Unhandled PUT request:', request.url);
-    return new Response(JSON.stringify({ message: "Endpoint not implemented" }), {
-      status: 200, // Return 200 to not break the app
-      headers: { 'Content-Type': 'application/json' }
-    });
+    const url = new URL(request.url);
+    
+    // Only intercept API requests
+    if (url.pathname.startsWith('/api')) {
+      console.log('Unhandled API PUT request:', request.url);
+      return new Response(JSON.stringify({ message: "Endpoint not implemented" }), {
+        status: 200, // Return 200 to not break the app
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+    
+    // Pass through all other requests
+    return request;
   }),
   
   // Fallback for unhandled DELETE requests
   http.delete('*', ({ request }) => {
-    console.log('Unhandled DELETE request:', request.url);
-    return new Response(JSON.stringify({ message: "Endpoint not implemented" }), {
-      status: 200, // Return 200 to not break the app
-      headers: { 'Content-Type': 'application/json' }
-    });
+    const url = new URL(request.url);
+    
+    // Only intercept API requests
+    if (url.pathname.startsWith('/api')) {
+      console.log('Unhandled API DELETE request:', request.url);
+      return new Response(JSON.stringify({ message: "Endpoint not implemented" }), {
+        status: 200, // Return 200 to not break the app
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+    
+    // Pass through all other requests
+    return request;
   })
 ]; 

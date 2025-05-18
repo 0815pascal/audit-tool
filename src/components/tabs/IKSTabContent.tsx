@@ -1,14 +1,24 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useVerificationHandlers } from '../../hooks/useVerificationHandlers';
 import { useVerifiedInvoices } from '../../hooks/useVerifiedInvoices';
 import { VerifiedInvoice } from '../verified-invoices/types';
 import { DataTable, tableHeaderStyle, tableCellStyle, headerRowStyle, Select, Checkbox, PruefensterModal, Button } from '../common';
-import { quarterOptions, managerOptions, statusOptions, VerificationStatusOption } from '../../mockData';
-import { exportAuditReport } from '../../services/auditService';
+import { exportAuditReport, getAuditsByQuarter } from '../../services/auditService';
+
+// Hardcoded options that would typically come from the API
+const quarterOptions = ['Q1-2023', 'Q2-2023', 'Q3-2023', 'Q4-2023', 'Q1-2024', 'Q2-2024'];
+const statusOptions = [
+  'Erfolgreich erfüllt',
+  'Teilweise nicht erfüllt',
+  'Überwiegend nicht erfüllt'
+] as const;
+type VerificationStatusOption = typeof statusOptions[number];
 
 const IksTabContent: React.FC = () => {
   const { employeeQuarterlyStatus, currentQuarterFormatted } = useVerificationHandlers();
   const data = useVerifiedInvoices(employeeQuarterlyStatus, currentQuarterFormatted);
+  const [managerOptions, setManagerOptions] = useState<Array<{value: string, label: string}>>([]);
+  const lastFetchedQuarterRef = useRef<string>('');
 
   // Filter state
   const [filterQuarter, setFilterQuarter] = useState<string>(currentQuarterFormatted);
@@ -32,17 +42,68 @@ const IksTabContent: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Simulate loading effect (replace with real data fetching later)
+  // Fetch manager options from the API with caching
   useEffect(() => {
-    setIsLoading(true);
-    try {
-      // no-op for mock
-      setIsLoading(false);
-    } catch (e) {
-      setError('Failed to load records.');
-      setIsLoading(false);
-    }
-  }, []);
+    const fetchManagers = async () => {
+      // Skip if we've already fetched managers for this quarter
+      if (filterQuarter === lastFetchedQuarterRef.current && managerOptions.length > 1) {
+        return;
+      }
+      
+      setIsLoading(true);
+      try {
+        console.log(`Fetching managers for ${filterQuarter}`);
+        // Get audits for the current quarter
+        const audits = await getAuditsByQuarter(filterQuarter);
+        
+        // Validate that we got an array
+        if (!audits || !Array.isArray(audits)) {
+          console.error("API returned non-array data for managers:", audits);
+          setManagerOptions([
+            { value: '', label: 'All Managers' },
+            { value: '1', label: 'Manager 1' },
+            { value: '2', label: 'Manager 2' }
+          ]);
+          setIsLoading(false);
+          lastFetchedQuarterRef.current = filterQuarter;
+          return;
+        }
+        
+        // Extract unique claim managers
+        const uniqueManagers = Array.from(
+          new Set(audits.map(audit => {
+            const userId = audit.caseObj?.claimOwner?.userId;
+            return userId ? userId.toString() : null;
+          }).filter(Boolean))
+        );
+        
+        // Create options for dropdown
+        const options = [
+          { value: '', label: 'All Managers' },
+          ...uniqueManagers.map(userId => ({ 
+            value: userId as string, 
+            label: `Manager ${userId}` 
+          }))
+        ];
+        
+        setManagerOptions(options);
+        lastFetchedQuarterRef.current = filterQuarter;
+        setIsLoading(false);
+      } catch (e) {
+        console.error("Error fetching managers:", e);
+        setError('Failed to load managers.');
+        setIsLoading(false);
+        // Provide some default options as fallback
+        setManagerOptions([
+          { value: '', label: 'All Managers' },
+          { value: '1', label: 'Manager 1' },
+          { value: '2', label: 'Manager 2' }
+        ]);
+      }
+    };
+    
+    fetchManagers();
+  }, [filterQuarter]);
 
   // Derive invoice status label
   const deriveStatus = (invoice: VerifiedInvoice): VerificationStatusOption =>
@@ -110,7 +171,7 @@ const IksTabContent: React.FC = () => {
         <Select
           id="manager-filter"
           label="Manager"
-          options={[{ value: '', label: 'All Managers' }, ...managerOptions]}
+          options={managerOptions}
           value={filterManager}
           onChange={setFilterManager}
         />

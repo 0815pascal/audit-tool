@@ -11,7 +11,8 @@
     "preview": "vite preview",
     "predeploy": "npm run build:gh-pages",
     "deploy": "gh-pages -d dist",
-    "knip": "knip --fix --allow-remove-files"
+    "knip": "knip --fix --allow-remove-files",
+    "msw:generate": "npx msw init public --save"
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.6.1",

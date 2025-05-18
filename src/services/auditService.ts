@@ -39,14 +39,38 @@ export interface Finding {
 
 // Fetch all audits for a given quarter (e.g. "Q1-2024")
 export const getAuditsByQuarter = async (quarter: string): Promise<AuditRecord[]> => {
-  const response = await api.get<AuditRecord[]>(`/audits/quarter/${quarter}`);
-  return response.data;
+  try {
+    const response = await api.get<AuditRecord[]>(`/audits/quarter/${quarter}`);
+    
+    // Ensure we're returning an array
+    if (!response.data || !Array.isArray(response.data)) {
+      console.error('API returned non-array data:', response.data);
+      return [];
+    }
+    
+    return response.data;
+  } catch (error) {
+    console.error(`Error fetching audits for quarter ${quarter}:`, error);
+    return []; // Return empty array on error
+  }
 };
 
 // Fetch audits performed by a specific auditor
 export const getAuditsByAuditor = async (auditorId: number): Promise<AuditRecord[]> => {
-  const response = await api.get<AuditRecord[]>(`/audits/auditor/${auditorId}`);
-  return response.data;
+  try {
+    const response = await api.get<AuditRecord[]>(`/audits/auditor/${auditorId}`);
+    
+    // Ensure we're returning an array
+    if (!response.data || !Array.isArray(response.data)) {
+      console.error('API returned non-array data:', response.data);
+      return [];
+    }
+    
+    return response.data;
+  } catch (error) {
+    console.error(`Error fetching audits for auditor ${auditorId}:`, error);
+    return []; // Return empty array on error
+  }
 };
 
 // Start a new audit for a case in the given quarter
@@ -77,14 +101,38 @@ export const addFindingToAudit = async (
 
 // Get all findings for a given audit
 export const getFindingsByAudit = async (auditId: number): Promise<Finding[]> => {
-  const response = await api.get<Finding[]>(`/audits/${auditId}/findings`);
-  return response.data;
+  try {
+    const response = await api.get<Finding[]>(`/audits/${auditId}/findings`);
+    
+    // Ensure we're returning an array
+    if (!response.data || !Array.isArray(response.data)) {
+      console.error('API returned non-array data:', response.data);
+      return [];
+    }
+    
+    return response.data;
+  } catch (error) {
+    console.error(`Error fetching findings for audit ${auditId}:`, error);
+    return []; // Return empty array on error
+  }
 };
 
 // Select cases available for audit in a given quarter
 export const selectCasesForAudit = async (quarter: string): Promise<CaseObj[]> => {
-  const response = await api.get<CaseObj[]>(`/audits/select-cases/${quarter}`);
-  return response.data;
+  try {
+    const response = await api.get<CaseObj[]>(`/audits/select-cases/${quarter}`);
+    
+    // Ensure we're returning an array
+    if (!response.data || !Array.isArray(response.data)) {
+      console.error('API returned non-array data:', response.data);
+      return [];
+    }
+    
+    return response.data;
+  } catch (error) {
+    console.error(`Error fetching cases for quarter ${quarter}:`, error);
+    return []; // Return empty array on error
+  }
 };
 
 // Export audit results as CSV. Users can trigger download directly via window.location

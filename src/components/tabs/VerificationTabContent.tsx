@@ -3,7 +3,6 @@ import EmployeeList from '../EmployeeList';
 import { InvoiceDetails } from '../verification';
 import EmptyClaimInfo from '../verification/EmptyClaimInfo';
 import { useVerificationHandlers } from '../../hooks/useVerificationHandlers';
-import { employees } from '../../mockData';
 
 const VerificationTabContent: React.FC = () => {
   const {
@@ -11,6 +10,8 @@ const VerificationTabContent: React.FC = () => {
     currentInvoice,
     employeeQuarterlyStatus,
     currentQuarterFormatted: currentQuarter,
+    employeesNeedingVerification: employees,
+    loading,
     handleSelectEmployee: onSelectEmployee,
     handleVerifyStep: onVerifyStep,
     handleMarkStepIncorrect: onMarkStepIncorrect,
@@ -29,6 +30,7 @@ const VerificationTabContent: React.FC = () => {
             onSelectEmployee={onSelectEmployee}
             employeeQuarterlyStatus={employeeQuarterlyStatus}
             currentQuarter={currentQuarter}
+            loading={loading}
           />
         </div>
 

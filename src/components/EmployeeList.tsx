@@ -1,7 +1,12 @@
 import React from 'react';
-import { Employee } from '../types';
 import { Card } from './common';
 import { EmployeeOption, StatusLegend, useEmployeeStatus } from './employee';
+
+interface Employee {
+  id: string;
+  name: string;
+  department: string;
+}
 
 interface EmployeeListProps {
   employees: Employee[];
@@ -16,6 +21,7 @@ interface EmployeeListProps {
     }
   };
   currentQuarter: string;
+  loading?: boolean;
 }
 
 const EmployeeList: React.FC<EmployeeListProps> = ({
@@ -23,9 +29,18 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
   selectedEmployee,
   onSelectEmployee,
   employeeQuarterlyStatus,
-  currentQuarter
+  currentQuarter,
+  loading = false
 }) => {
   const { getVerificationStatus } = useEmployeeStatus(employeeQuarterlyStatus);
+
+  if (loading) {
+    return (
+      <Card title="Employee Selector">
+        <p>Loading employees...</p>
+      </Card>
+    );
+  }
 
   if (employees.length === 0) {
     return (
