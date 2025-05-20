@@ -1,6 +1,141 @@
 // @ts-nocheck
-import { http } from 'msw';
-import { invoices, employees, auditorCodes } from '../mockData';
+import { http, HttpResponse } from 'msw';
+import { User } from '../types';
+
+// Mock data directly in the handlers file
+export const users: User[] = [
+  { id: '1', name: 'John Smith', department: '5', role: 'SPECIALIST', isActive: true, initials: 'JS' },
+  { id: '2', name: 'Jane Doe', department: '5', role: 'REGULAR', isActive: true, initials: 'JD' },
+  { id: '3', name: 'Robert Johnson', department: '5', role: 'REGULAR', isActive: true, initials: 'RJ' },
+  { id: '4', name: 'Emily Davis', department: '5', role: 'TEAM_LEADER', isActive: true, initials: 'ED' },
+  { id: '5', name: 'Michael Brown', department: '5', role: 'REGULAR', isActive: true, initials: 'MB' },
+  { id: '6', name: 'Sarah Wilson', department: '5', role: 'SPECIALIST', isActive: true, initials: 'SW' },
+  { id: '7', name: 'David Thompson', department: '5', role: 'REGULAR', isActive: true, initials: 'DT' },
+  { id: '8', name: 'Lisa Garcia', department: '5', role: 'REGULAR', isActive: true, initials: 'LG' },
+];
+
+const mockCases = [
+  {
+    id: '1',
+    userId: '1',
+    date: '2025-04-10',
+    clientName: 'Thomas Anderson',
+    policyNumber: '12345',
+    caseNumber: 10045,
+    dossierRisk: 123456,
+    dossierName: 'Matrix Incorporated',
+    totalAmount: 525,
+    isVerified: false,
+    claimsStatus: 'FULL_COVER',
+    coverageAmount: 525,
+    verifier: '',
+    comment: '',
+    rating: '',
+    specialFindings: {},
+    detailedFindings: {},
+    quarter: '1',
+    year: 2025,
+    isAkoReviewed: false,
+    isSpecialist: true,
+    caseType: 'USER_QUARTERLY'
+  },
+  {
+    id: '2',
+    userId: '2',
+    date: '2025-04-16',
+    clientName: 'Alice Johnson',
+    policyNumber: '67890',
+    caseNumber: 10046,
+    dossierRisk: 234567,
+    dossierName: 'Wonderland Holdings',
+    totalAmount: 360,
+    isVerified: false,
+    claimsStatus: 'FULL_COVER',
+    coverageAmount: 360,
+    verifier: '',
+    comment: '',
+    rating: '',
+    specialFindings: {},
+    detailedFindings: {},
+    quarter: '1',
+    year: 2025,
+    isAkoReviewed: false,
+    isSpecialist: false,
+    caseType: 'USER_QUARTERLY'
+  },
+  {
+    id: '3',
+    userId: '3',
+    date: '2025-04-25',
+    clientName: 'Mark Wilson',
+    policyNumber: '34567',
+    caseNumber: 10047,
+    dossierRisk: 345678,
+    dossierName: 'Wilson Family Trust',
+    totalAmount: 440,
+    isVerified: false,
+    claimsStatus: 'PARTIAL_COVER',
+    coverageAmount: 440,
+    verifier: '',
+    comment: '',
+    rating: '',
+    specialFindings: {},
+    detailedFindings: {},
+    quarter: '1',
+    year: 2025,
+    isAkoReviewed: false,
+    isSpecialist: false,
+    caseType: 'USER_QUARTERLY'
+  },
+  {
+    id: '4',
+    userId: '4',
+    date: '2025-05-08',
+    clientName: 'Sarah Miller',
+    policyNumber: '89012',
+    caseNumber: 10048,
+    dossierRisk: 456789,
+    dossierName: 'Miller Automotive Group',
+    totalAmount: 875,
+    isVerified: false,
+    claimsStatus: 'FULL_COVER',
+    coverageAmount: 875,
+    verifier: '',
+    comment: '',
+    rating: '',
+    specialFindings: {},
+    detailedFindings: {},
+    quarter: '2',
+    year: 2025,
+    isAkoReviewed: false,
+    isSpecialist: true,
+    caseType: 'USER_QUARTERLY'
+  },
+  {
+    id: '5',
+    userId: '5',
+    date: '2025-05-19',
+    clientName: 'David Brown',
+    policyNumber: '45678',
+    caseNumber: 10049,
+    dossierRisk: 567890,
+    dossierName: 'Brown Medical Associates',
+    totalAmount: 970,
+    isVerified: false,
+    claimsStatus: 'FULL_COVER',
+    coverageAmount: 970,
+    verifier: '',
+    comment: '',
+    rating: '',
+    specialFindings: {},
+    detailedFindings: {},
+    quarter: '2',
+    year: 2025,
+    isAkoReviewed: false,
+    isSpecialist: false,
+    caseType: 'USER_QUARTERLY'
+  }
+];
 
 // Claims status options from API docs
 const CLAIMS_STATUS = {
@@ -23,6 +158,9 @@ const ROLES = {
   MANAGER: "MANAGER"
 };
 
+// Auditor codes for mock
+const auditorCodes = ['PF', 'TF'];
+
 // Safely parse string to integer with fallback
 const safeParseInt = (value, fallback = 0) => {
   const parsed = parseInt(value);
@@ -40,47 +178,67 @@ const getNumericId = (id) => {
 const parseQuarter = (quarterStr) => {
   if (!quarterStr) return null;
   
-  // Handle both formats: "Q1-2023" and "Q1 2023"
-  const match = quarterStr.match(/Q(\d+)[\s-](\d{4})/);
-  if (!match) return null;
-  
-  return {
-    quarterNum: parseInt(match[1]),
-    year: parseInt(match[2])
-  };
+  try {
+    // Handle both formats: "Q1-2023" and "Q1 2023"
+    const match = quarterStr.match(/Q(\d+)[\s-](\d{4})/);
+    if (!match) {
+      // Try alternate format without Q prefix: "1-2023"
+      const altMatch = quarterStr.match(/(\d+)[\s-](\d{4})/);
+      if (!altMatch) return null;
+      
+      return {
+        quarterNum: parseInt(altMatch[1]),
+        year: parseInt(altMatch[2])
+      };
+    }
+    
+    return {
+      quarterNum: parseInt(match[1]),
+      year: parseInt(match[2])
+    };
+  } catch (error) {
+    console.warn("Error parsing quarter string:", quarterStr, error);
+    // Provide fallback values for current quarter
+    const now = new Date();
+    return {
+      quarterNum: Math.floor(now.getMonth() / 3) + 1,
+      year: now.getFullYear()
+    };
+  }
 };
 
-// Utility to convert our invoice data to the API case format
-const invoiceToCaseObj = (invoice) => {
-  if (!invoice) return null;
+// Utility to convert our case data to the API case format
+const caseToCaseObj = (caseData) => {
+  if (!caseData) return null;
   
   return {
-    caseNumber: invoice.caseNumber || 0,
+    caseNumber: caseData.caseNumber || 0,
     claimOwner: {
-      userId: safeParseInt(invoice.employeeId, 1),
+      userId: safeParseInt(caseData.userId, 1),
       role: ROLES.TEAM_LEADER
     },
-    claimsStatus: invoice.claimsStatus || CLAIMS_STATUS.FULL_COVER,
-    coverageAmount: invoice.coverageAmount || invoice.totalAmount || 0,
+    claimsStatus: caseData.claimsStatus || CLAIMS_STATUS.FULL_COVER,
+    coverageAmount: caseData.coverageAmount || caseData.totalAmount || 0,
     caseStatus: "COMPENSATED"
   };
 };
 
-// Convert our invoice to API audit format
-const invoiceToAudit = (invoice, quarter, auditorIndex = 0) => {
-  if (!invoice) return null;
+// Convert our case to API audit format
+const caseToAudit = (caseData, quarter, auditorIndex = 0) => {
+  if (!caseData) return null;
   
   // Cycle through auditor codes
-  const auditorId = (getNumericId(invoice.id) % 2) + 1;
+  const auditorId = (getNumericId(caseData.id) % 2) + 1;
   
   return {
-    auditId: getNumericId(invoice.id),
+    auditId: getNumericId(caseData.id),
     quarter: quarter || "Q1-2023",
-    caseObj: invoiceToCaseObj(invoice),
+    caseObj: caseToCaseObj(caseData),
     auditor: {
       userId: auditorId,
       role: ROLES.SPECIALIST
-    }
+    },
+    isAkoReviewed: false
   };
 };
 
@@ -108,66 +266,48 @@ const generateFindings = (auditId) => {
 const auditStore = new Map();
 
 export const handlers = [
-  // Special catch-all handler for all API requests
-  http.all('/api/*', ({ request }) => {
-    try {
-      const url = new URL(request.url);
-      console.log(`[MSW] Catch-all handler intercepted: ${request.method} ${url.pathname}`);
-      
-      return new Response(JSON.stringify([]), {
-        status: 200,
-        headers: { 
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE',
-          'Access-Control-Allow-Headers': 'Content-Type'
-        }
-      });
-    } catch (error) {
-      console.error(`[MSW] Error in catch-all handler:`, error);
-      return new Response(JSON.stringify([]), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      });
-    }
-  }),
-
   // Get audits by quarter
   http.get('/api/audits/quarter/:quarter', ({ params }) => {
     try {
       const { quarter } = params;
-      console.log(`[MSW] Processing request for quarter: ${quarter}`);
+      console.log(`[MSW] Handling request for quarter: ${quarter}`);
       
       const parsedQuarter = parseQuarter(quarter);
       
       if (!parsedQuarter) {
-        console.warn(`[MSW] Invalid quarter format: ${quarter}`);
-        return new Response(JSON.stringify([]), {
-          status: 200,
-          headers: { 'Content-Type': 'application/json' }
-        });
+        console.warn(`[MSW] Could not parse quarter string: ${quarter}`);
+        return HttpResponse.json([], { status: 200 });
       }
       
-      // Filter invoices for the requested quarter
-      const filteredInvoices = invoices.filter(invoice => {
+      console.log(`[MSW] Parsed quarter: ${parsedQuarter.quarterNum}, year: ${parsedQuarter.year}`);
+      
+      // Filter cases for the requested quarter
+      const filteredCases = mockCases.filter(caseItem => {
         try {
-          const invoiceDate = new Date(invoice.date);
-          const invoiceQuarter = Math.floor(invoiceDate.getMonth() / 3) + 1;
-          const invoiceYear = invoiceDate.getFullYear();
+          const caseDate = new Date(caseItem.date);
+          const caseQuarter = Math.floor(caseDate.getMonth() / 3) + 1;
+          const caseYear = caseDate.getFullYear();
           
-          return invoiceQuarter === parsedQuarter.quarterNum && 
-                invoiceYear === parsedQuarter.year;
+          return caseQuarter === parsedQuarter.quarterNum && 
+                caseYear === parsedQuarter.year;
         } catch (e) {
-          console.error(`[MSW] Error filtering invoice:`, e);
+          console.warn(`[MSW] Error filtering case ${caseItem.id}:`, e);
           return false;
         }
       });
       
-      console.log(`[MSW] Found ${filteredInvoices.length} invoices for quarter ${quarter}`);
+      console.log(`[MSW] Filtered ${filteredCases.length} cases`);
       
       // Convert to API format
-      const audits = filteredInvoices
-        .map(invoice => invoiceToAudit(invoice, quarter))
+      const audits = filteredCases
+        .map(caseItem => {
+          try {
+            return caseToAudit(caseItem, quarter);
+          } catch (e) {
+            console.warn(`[MSW] Error converting case ${caseItem.id} to audit:`, e);
+            return null;
+          }
+        })
         .filter(audit => audit !== null);
       
       // Add any audits from our store that match this quarter
@@ -179,36 +319,12 @@ export const handlers = [
         }
       }
       
-      if (storeAudits > 0) {
-        console.log(`[MSW] Added ${storeAudits} audits from store for quarter ${quarter}`);
-      }
+      console.log(`[MSW] Returning ${audits.length} audits (${storeAudits} from store)`);
       
-      console.log(`[MSW] Returning ${audits.length} total audits for quarter ${quarter}`);
-      
-      // Ensure we're returning valid JSON with the correct headers
-      return new Response(JSON.stringify(audits), {
-        status: 200,
-        headers: { 
-          'Content-Type': 'application/json',
-          // Add CORS headers to ensure proper handling
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'GET',
-          'Access-Control-Allow-Headers': 'Content-Type'
-        }
-      });
+      return HttpResponse.json(audits || [], { status: 200 });
     } catch (error) {
       console.error("[MSW] Error in /api/audits/quarter/:quarter handler:", error);
-      
-      // Always return a valid JSON array, even on error
-      return new Response(JSON.stringify([]), {
-        status: 200,
-        headers: { 
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'GET',
-          'Access-Control-Allow-Headers': 'Content-Type'
-        }
-      });
+      return HttpResponse.json([], { status: 200 });
     }
   }),
 
@@ -217,17 +333,25 @@ export const handlers = [
     try {
       const { auditorId } = params;
       const numericAuditorId = safeParseInt(auditorId);
+      console.log(`[MSW] Handling request for auditor: ${auditorId}`);
       
-      // Filter invoices to create mock audits for the given auditor
+      // Filter cases to create mock audits for the given auditor
       // In this mock, we'll use modulo operation to assign audits to auditors
-      const filteredInvoices = invoices.filter(invoice => 
-        (getNumericId(invoice.id) % 2) + 1 === numericAuditorId
+      const filteredCases = mockCases.filter(caseItem => 
+        (getNumericId(caseItem.id) % 2) + 1 === numericAuditorId
       );
       
       // Convert to API format - use a recent quarter for these
       const currentQuarter = `Q${Math.floor((new Date().getMonth()) / 3) + 1}-${new Date().getFullYear()}`;
-      const audits = filteredInvoices
-        .map(invoice => invoiceToAudit(invoice, currentQuarter))
+      const audits = filteredCases
+        .map(caseItem => {
+          try {
+            return caseToAudit(caseItem, currentQuarter);
+          } catch (e) {
+            console.warn(`[MSW] Error converting case to audit:`, e);
+            return null;
+          }
+        })
         .filter(audit => audit !== null);
       
       // Add any audits from our store that match this auditor
@@ -237,16 +361,12 @@ export const handlers = [
         }
       }
       
-      return new Response(JSON.stringify(audits), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      console.log(`[MSW] Returning ${audits.length} audits for auditor ${auditorId}`);
+      
+      return HttpResponse.json(audits, { status: 200 });
     } catch (error) {
-      console.error("Error in /api/audits/auditor/:auditorId handler:", error);
-      return new Response(JSON.stringify([]), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      console.error("[MSW] Error in /api/audits/auditor/:auditorId handler:", error);
+      return HttpResponse.json([], { status: 200 });
     }
   }),
 
@@ -258,7 +378,7 @@ export const handlers = [
       try {
         requestData = await request.json();
       } catch (e) {
-        console.warn("Failed to parse request body for /api/audits POST");
+        console.warn("[MSW] Failed to parse request body for /api/audits POST");
       }
       
       // Generate a new audit ID
@@ -281,20 +401,18 @@ export const handlers = [
         auditor: requestData.auditor || {
           userId: 2,
           role: ROLES.SPECIALIST
-        }
+        },
+        isAkoReviewed: false
       };
       
       // Store the audit
       auditStore.set(auditId, newAudit);
       
-      console.log(`Created new audit with ID ${auditId}:`, newAudit);
+      console.log(`[MSW] Created new audit with ID ${auditId}`);
       
-      return new Response(JSON.stringify(newAudit), {
-        status: 201,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      return HttpResponse.json(newAudit, { status: 201 });
     } catch (error) {
-      console.error("Error in /api/audits POST handler:", error);
+      console.error("[MSW] Error in /api/audits POST handler:", error);
       
       // Return a fallback audit object
       const fallbackAudit = {
@@ -313,13 +431,11 @@ export const handlers = [
         auditor: {
           userId: 2,
           role: ROLES.SPECIALIST
-        }
+        },
+        isAkoReviewed: false
       };
       
-      return new Response(JSON.stringify(fallbackAudit), {
-        status: 201,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      return HttpResponse.json(fallbackAudit, { status: 201 });
     }
   }),
 
@@ -327,22 +443,22 @@ export const handlers = [
   http.put('/api/audits/:auditId', async ({ params, request }) => {
     try {
       const { auditId } = params;
-      const numericAuditId = safeParseInt(auditId);
+      const numericAuditorId = safeParseInt(auditId);
       
       let requestData = {};
       try {
         requestData = await request.json();
       } catch (e) {
-        console.warn("Failed to parse request body for /api/audits PUT");
+        console.warn("[MSW] Failed to parse request body for /api/audits PUT");
       }
       
       // Get existing audit or create a placeholder
-      let existingAudit = auditStore.get(numericAuditId);
+      let existingAudit = auditStore.get(numericAuditorId);
       
       if (!existingAudit) {
         // If not in our store, create a new one with this ID
         existingAudit = {
-          auditId: numericAuditId,
+          auditId: numericAuditorId,
           quarter: `Q${Math.floor((new Date().getMonth()) / 3) + 1}-${new Date().getFullYear()}`,
           caseObj: {
             caseNumber: Math.floor(Math.random() * 100000) + 1,
@@ -357,7 +473,8 @@ export const handlers = [
           auditor: {
             userId: 2,
             role: ROLES.SPECIALIST
-          }
+          },
+          isAkoReviewed: false
         };
       }
       
@@ -376,16 +493,13 @@ export const handlers = [
       };
       
       // Store the updated audit
-      auditStore.set(numericAuditId, updatedAudit);
+      auditStore.set(numericAuditorId, updatedAudit);
       
-      console.log(`Updated audit with ID ${numericAuditId}:`, updatedAudit);
+      console.log(`[MSW] Updated audit with ID ${numericAuditorId}`);
       
-      return new Response(JSON.stringify(updatedAudit), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      return HttpResponse.json(updatedAudit, { status: 200 });
     } catch (error) {
-      console.error("Error in /api/audits/:auditId PUT handler:", error);
+      console.error("[MSW] Error in /api/audits/:auditId PUT handler:", error);
       
       // Return a fallback updated audit
       const fallbackAudit = {
@@ -404,58 +518,27 @@ export const handlers = [
         auditor: {
           userId: 2,
           role: ROLES.SPECIALIST
-        }
+        },
+        isAkoReviewed: false
       };
       
-      return new Response(JSON.stringify(fallbackAudit), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      return HttpResponse.json(fallbackAudit, { status: 200 });
     }
   }),
 
-  // Select cases for audit
-  http.get('/api/audits/select-cases/:quarter', ({ params }) => {
-    try {
-      const { quarter } = params;
-      
-      // Always return some cases for audit selection regardless of quarter
-      const cases = invoices
-        .slice(0, 5)
-        .map(invoice => invoiceToCaseObj(invoice))
-        .filter(caseObj => caseObj !== null);
-      
-      return new Response(JSON.stringify(cases), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      });
-    } catch (error) {
-      console.error("Error in /api/audits/select-cases/:quarter handler:", error);
-      return new Response(JSON.stringify([]), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      });
-    }
-  }),
-
-  // Get findings by audit
+  // Get findings for an audit
   http.get('/api/audits/:auditId/findings', ({ params }) => {
     try {
       const { auditId } = params;
+      console.log(`[MSW] Getting findings for audit ${auditId}`);
       
       // Generate mock findings for this audit
       const findings = generateFindings(auditId);
       
-      return new Response(JSON.stringify(findings), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      return HttpResponse.json(findings, { status: 200 });
     } catch (error) {
-      console.error("Error in /api/audits/:auditId/findings GET handler:", error);
-      return new Response(JSON.stringify([]), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      console.error("[MSW] Error in /api/audits/:auditId/findings GET handler:", error);
+      return HttpResponse.json([], { status: 200 });
     }
   }),
 
@@ -473,7 +556,7 @@ export const handlers = [
       try {
         requestData = await request.json();
       } catch (e) {
-        console.warn("Failed to parse request body, using default data");
+        console.warn("[MSW] Failed to parse request body, using default data");
       }
       
       // Create a new finding with an ID
@@ -483,20 +566,54 @@ export const handlers = [
         description: requestData.description || "No description provided"
       };
       
-      return new Response(JSON.stringify(newFinding), {
-        status: 201,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      console.log(`[MSW] Added finding to audit ${auditId}:`, newFinding);
+      
+      return HttpResponse.json(newFinding, { status: 201 });
     } catch (error) {
-      console.error("Error in /api/audits/:auditId/findings POST handler:", error);
-      return new Response(JSON.stringify({
+      console.error("[MSW] Error in /api/audits/:auditId/findings POST handler:", error);
+      return HttpResponse.json({
         findingId: Math.floor(Math.random() * 1000) + 1,
         type: "DOCUMENTATION_ISSUE",
         description: "Error creating finding"
-      }), {
-        status: 201, // Return success status to not block the app
-        headers: { 'Content-Type': 'application/json' }
-      });
+      }, { status: 201 });
+    }
+  }),
+
+  // Select cases for audit
+  http.get('/api/audits/select-cases/:quarter', ({ params }) => {
+    try {
+      const { quarter } = params;
+      console.log(`[MSW] Selecting cases for quarter ${quarter}`);
+      
+      // Always return some cases for audit selection regardless of quarter
+      const cases = mockCases
+        .slice(0, 5)
+        .map(caseItem => caseToCaseObj(caseItem))
+        .filter(caseObj => caseObj !== null);
+      
+      return HttpResponse.json(cases, { status: 200 });
+    } catch (error) {
+      console.error("[MSW] Error in /api/audits/select-cases/:quarter handler:", error);
+      return HttpResponse.json([], { status: 200 });
+    }
+  }),
+
+  // Get audit statistics
+  http.get('/api/audit-reports/statistics/:quarter', ({ params }) => {
+    try {
+      const { quarter } = params;
+      console.log(`[MSW] Getting statistics for quarter ${quarter}`);
+      
+      // Generate some mock statistics
+      const stats = {
+        totalAudits: Math.floor(Math.random() * 20) + 10, // 10-30 audits
+        averageScore: Math.floor(Math.random() * 30) + 70 // 70-100 score
+      };
+      
+      return HttpResponse.json(stats, { status: 200 });
+    } catch (error) {
+      console.error("[MSW] Error in /api/audit-reports/statistics/:quarter handler:", error);
+      return HttpResponse.json({ totalAudits: 0, averageScore: 0 }, { status: 200 });
     }
   }),
 
@@ -504,24 +621,25 @@ export const handlers = [
   http.get('/api/audit-reports/export/:quarter', ({ params }) => {
     try {
       const { quarter } = params;
+      console.log(`[MSW] Exporting report for quarter ${quarter}`);
       
       // Create a mock CSV with header and some sample data
       let csv = 'Case-ID,Claims Manager,Finding Type,Finding Description,Auditor\n';
       
       // Add some sample data
-      invoices.slice(0, 5).forEach((invoice, index) => {
+      mockCases.slice(0, 5).forEach((caseItem, index) => {
         try {
           const findingType = Object.keys(FINDING_TYPES)[index % Object.keys(FINDING_TYPES).length];
-          const employeeName = employees.find(e => e.id === invoice.employeeId)?.name || 'Unknown';
+          const userName = users.find(e => e.id === caseItem.userId)?.name || 'Unknown';
           const auditorCode = auditorCodes[index % auditorCodes.length];
           
-          csv += `${invoice.caseNumber},${employeeName},${findingType},"Sample finding description",${auditorCode}\n`;
+          csv += `${caseItem.caseNumber},${userName},${findingType},"Sample finding description",${auditorCode}\n`;
         } catch (e) {
           csv += `${index+1000},Unknown,DOCUMENTATION_ISSUE,"Sample finding description",XX\n`;
         }
       });
       
-      return new Response(csv, {
+      return new HttpResponse(csv, {
         status: 200,
         headers: { 
           'Content-Type': 'text/csv',
@@ -529,101 +647,23 @@ export const handlers = [
         }
       });
     } catch (error) {
-      console.error("Error in /api/audit-reports/export/:quarter handler:", error);
-      return new Response('Case-ID,Claims Manager,Finding Type,Finding Description,Auditor\n', {
+      console.error("[MSW] Error in /api/audit-reports/export/:quarter handler:", error);
+      return new HttpResponse('Case-ID,Claims Manager,Finding Type,Finding Description,Auditor\n', {
         status: 200,
         headers: { 'Content-Type': 'text/csv' }
       });
     }
   }),
 
-  // Get audit statistics
-  http.get('/api/audit-reports/statistics/:quarter', ({ params }) => {
-    try {
-      // Generate some mock statistics
-      const stats = {
-        totalAudits: Math.floor(Math.random() * 20) + 10, // 10-30 audits
-        averageScore: Math.floor(Math.random() * 30) + 70 // 70-100 score
-      };
-      
-      return new Response(JSON.stringify(stats), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      });
-    } catch (error) {
-      console.error("Error in /api/audit-reports/statistics/:quarter handler:", error);
-      return new Response(JSON.stringify({ totalAudits: 0, averageScore: 0 }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      });
-    }
-  }),
-
-  // Fallback for unhandled requests
-  http.get('*', ({ request }) => {
-    const url = new URL(request.url);
-    
-    // Only intercept API requests
-    if (url.pathname.startsWith('/api')) {
-      console.log('Unhandled API GET request:', request.url);
-      return new Response(JSON.stringify({ message: "Endpoint not implemented" }), {
-        status: 200, // Return 200 to not break the app
-        headers: { 'Content-Type': 'application/json' }
-      });
-    }
-    
-    // Pass through all other requests to actual server
-    return request;
-  }),
-  
-  // Fallback for unhandled POST requests
-  http.post('*', ({ request }) => {
-    const url = new URL(request.url);
-    
-    // Only intercept API requests
-    if (url.pathname.startsWith('/api')) {
-      console.log('Unhandled API POST request:', request.url);
-      return new Response(JSON.stringify({ message: "Endpoint not implemented" }), {
-        status: 200, // Return 200 to not break the app
-        headers: { 'Content-Type': 'application/json' }
-      });
-    }
-    
-    // Pass through all other requests
-    return request;
-  }),
-  
-  // Fallback for unhandled PUT requests
-  http.put('*', ({ request }) => {
-    const url = new URL(request.url);
-    
-    // Only intercept API requests
-    if (url.pathname.startsWith('/api')) {
-      console.log('Unhandled API PUT request:', request.url);
-      return new Response(JSON.stringify({ message: "Endpoint not implemented" }), {
-        status: 200, // Return 200 to not break the app
-        headers: { 'Content-Type': 'application/json' }
-      });
-    }
-    
-    // Pass through all other requests
-    return request;
-  }),
-  
-  // Fallback for unhandled DELETE requests
-  http.delete('*', ({ request }) => {
-    const url = new URL(request.url);
-    
-    // Only intercept API requests
-    if (url.pathname.startsWith('/api')) {
-      console.log('Unhandled API DELETE request:', request.url);
-      return new Response(JSON.stringify({ message: "Endpoint not implemented" }), {
-        status: 200, // Return 200 to not break the app
-        headers: { 'Content-Type': 'application/json' }
-      });
-    }
-    
-    // Pass through all other requests
-    return request;
+  // Handle OPTIONS requests for CORS
+  http.options('*', () => {
+    return new HttpResponse(null, {
+      status: 200,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+      }
+    });
   })
 ]; 

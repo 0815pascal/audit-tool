@@ -1,4 +1,0 @@
-;
-;
-export { PastQuarterVerificationsTable } from './PastQuarterVerificationsTable';
-;; 

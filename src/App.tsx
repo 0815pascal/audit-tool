@@ -1,22 +1,24 @@
 import './App.css';
 import Header from './components/Header';
 import TabNavigation from './components/TabNavigation';
-import { OverviewTabContent, VerificationTabContent, IksTabContent } from './components/tabs';
-import VerificationStatus from './components/VerificationStatus';
+import { AuditLogTabContent, IksTabContent } from './components/tabs';
 import { useVerificationHandlers } from './hooks/useVerificationHandlers';
+import { useAppSelector } from './store/hooks';
+import { selectUserQuarterlyStatus, getCurrentQuarter } from './store/verificationSlice';
 
 function App() {
   const { activeTab, handleTabChange } = useVerificationHandlers();
+  const userQuarterlyStatus = useAppSelector(selectUserQuarterlyStatus);
+  const { quarter, year } = useAppSelector(getCurrentQuarter);
+  const currentQuarter = `${quarter}-${year}`;
 
   return (
     <div className="app">
       <Header />
       <TabNavigation activeTab={activeTab} onTabChange={handleTabChange} />
-      <VerificationStatus />
       
-      {activeTab === 'overview' && <OverviewTabContent />}
-      {activeTab === 'verification' && <VerificationTabContent />}
-      {activeTab === 'audit' && <IksTabContent />}
+      {activeTab === 'auditLog' && <AuditLogTabContent />}
+      {activeTab === 'iks' && <IksTabContent userQuarterlyStatus={userQuarterlyStatus} currentQuarter={currentQuarter} />}
     </div>
   );
 }
