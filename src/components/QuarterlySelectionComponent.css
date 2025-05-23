@@ -83,6 +83,28 @@ button:disabled {
   padding: 10px;
   border-radius: 4px;
   margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border: 1px solid #f5c6cb;
+}
+
+.error-text {
+  flex: 1;
+}
+
+.error-message .close-button {
+  color: #721c24;
+}
+
+.error-message .close-button:hover {
+  background-color: rgba(114, 28, 36, 0.1);
+  color: #491217;
+}
+
+.error-message .close-button:focus {
+  outline: 2px solid #721c24;
+  outline-offset: 2px;
 }
 
 .success-message {
@@ -91,6 +113,42 @@ button:disabled {
   padding: 10px;
   border-radius: 4px;
   margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border: 1px solid #c3e6cb;
+}
+
+.success-text {
+  flex: 1;
+}
+
+.close-button {
+  background: none;
+  border: none;
+  color: #155724;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: background-color 0.2s, color 0.2s;
+  margin-left: 10px;
+}
+
+.close-button:hover {
+  background-color: rgba(21, 87, 36, 0.1);
+  color: #0d4419;
+}
+
+.close-button:focus {
+  outline: 2px solid #155724;
+  outline-offset: 2px;
 }
 
 .quarterly-status {

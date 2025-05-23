@@ -24,11 +24,16 @@ const setupMocks = async () => {
       const { setupMSW } = await import('./mocks/browser');
       
       // Start the MSW worker
-      await setupMSW();
-      console.log('[MSW] Mock Service Worker initialized successfully');
-      return true;
+      const success = await setupMSW();
+      if (success) {
+        console.log('[MSW] Mock Service Worker initialized successfully');
+      } else {
+        console.warn('[MSW] Mock Service Worker failed to initialize, continuing without mocks');
+      }
+      return success;
     } catch (error) {
       console.error('[MSW] Failed to initialize Mock Service Worker:', error);
+      console.warn('[MSW] Continuing without mocks - API calls will fail unless backend is available');
       return false;
     }
   }

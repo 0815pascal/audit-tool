@@ -31,6 +31,12 @@ import {
 } from '../caseAuditTypes';
 import { mapVerificationStatusToCaseAuditStatus } from '../utils/statusUtils';
 import { ensureUserId } from '../types';
+import { 
+  saveAuditVerification, 
+  verifyAuditAPI, 
+  rejectAuditAPI,
+  VerificationResponse 
+} from '../services/auditVerificationService';
 
 // Memoize the getCurrentQuarter function to avoid creating new objects on each call
 let cachedQuarter: Quarter | null = null;
@@ -163,6 +169,84 @@ export const fetchCurrentUser = createAsyncThunk<
       return (data as ApiSuccessResponse<User>).data;
     } catch (error) {
       return rejectWithValue(error instanceof Error ? error.message : 'Failed to fetch current user');
+    }
+  }
+);
+
+// Async thunk for saving audit verification data (in-progress)
+export const saveAuditVerificationThunk = createAsyncThunk<
+  VerificationResponse,
+  CaseAuditActionPayload,
+  { rejectValue: string }
+>(
+  'caseAudit/saveAuditVerification',
+  async (payload, { rejectWithValue }) => {
+    try {
+      const response = await saveAuditVerification(
+        payload.auditId,
+        payload.verifier,
+        {
+          comment: payload.comment,
+          rating: payload.rating,
+          specialFindings: payload.specialFindings,
+          detailedFindings: payload.detailedFindings
+        }
+      );
+      return response;
+    } catch (error) {
+      return rejectWithValue(error instanceof Error ? error.message : 'Failed to save verification data');
+    }
+  }
+);
+
+// Async thunk for verifying audit
+export const verifyAuditThunk = createAsyncThunk<
+  VerificationResponse,
+  VerifyAuditActionPayload,
+  { rejectValue: string }
+>(
+  'caseAudit/verifyAudit',
+  async (payload, { rejectWithValue }) => {
+    try {
+      const response = await verifyAuditAPI(
+        payload.auditId,
+        payload.verifier,
+        {
+          comment: payload.comment,
+          rating: payload.rating,
+          specialFindings: payload.specialFindings,
+          detailedFindings: payload.detailedFindings
+        }
+      );
+      return response;
+    } catch (error) {
+      return rejectWithValue(error instanceof Error ? error.message : 'Failed to verify audit');
+    }
+  }
+);
+
+// Async thunk for rejecting audit
+export const rejectAuditThunk = createAsyncThunk<
+  VerificationResponse,
+  CaseAuditActionPayload,
+  { rejectValue: string }
+>(
+  'caseAudit/rejectAudit',
+  async (payload, { rejectWithValue }) => {
+    try {
+      const response = await rejectAuditAPI(
+        payload.auditId,
+        payload.verifier,
+        {
+          comment: payload.comment,
+          rating: payload.rating,
+          specialFindings: payload.specialFindings,
+          detailedFindings: payload.detailedFindings
+        }
+      );
+      return response;
+    } catch (error) {
+      return rejectWithValue(error instanceof Error ? error.message : 'Failed to reject audit');
     }
   }
 );
@@ -531,7 +615,7 @@ const caseAuditSlice = createSlice({
           isVerified: false,
           isIncorrect: false,
           verificationDate: null,
-          userId: createUserId(''), // Random audits are not tied to a specific user
+          userId: ensureUserId(audit.userId), // Use the actual userId from the audit
           quarter: formatQuarterPeriod(quarter, year),
           year,
           steps: {},
@@ -607,6 +691,25 @@ const caseAuditSlice = createSlice({
     setUserRole: (state, action: PayloadAction<{ userId: string; role: UserRole; department: string }>) => {
       const { userId, role, department } = action.payload;
       state.userRoles[userId] = { role, department };
+    },
+    // Action to reset quarterly audits (useful for clearing old data with empty userIds)
+    resetQuarterlyAudits: (state, action: PayloadAction<{ quarterKey: QuarterPeriod }>) => {
+      const { quarterKey } = action.payload;
+      
+      // Clear the quarterly selection for this quarter
+      state.quarterlySelection[quarterKey] = {
+        quarterKey,
+        userQuarterlyAudits: [],
+        previousQuarterRandomAudits: []
+      };
+      
+      // Remove audit data for audits that belong to this quarter
+      Object.keys(state.verifiedAudits).forEach(auditId => {
+        const audit = state.verifiedAudits[auditId];
+        if (audit.quarter === quarterKey) {
+          delete state.verifiedAudits[auditId];
+        }
+      });
     }
   },
   extraReducers: (builder) => {
@@ -627,6 +730,48 @@ const caseAuditSlice = createSlice({
       .addCase(fetchCurrentUser.rejected, (_, action) => {
         console.error('Failed to fetch current user:', action.payload);
         // Could add error handling here if needed
+      })
+      
+      // Handle saveAuditVerificationThunk lifecycle
+      .addCase(saveAuditVerificationThunk.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(saveAuditVerificationThunk.fulfilled, (state, action) => {
+        state.loading = false;
+        console.log('Successfully saved verification data to backend:', action.payload);
+      })
+      .addCase(saveAuditVerificationThunk.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload || 'Failed to save verification data';
+        console.error('Failed to save verification data to backend:', action.payload);
+      })
+      
+      // Handle verifyAuditThunk lifecycle
+      .addCase(verifyAuditThunk.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(verifyAuditThunk.fulfilled, (state, action) => {
+        state.loading = false;
+        console.log('Successfully verified audit on backend:', action.payload);
+      })
+      .addCase(verifyAuditThunk.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload || 'Failed to verify audit';
+        console.error('Failed to verify audit on backend:', action.payload);
+      })
+      
+      // Handle rejectAuditThunk lifecycle
+      .addCase(rejectAuditThunk.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(rejectAuditThunk.fulfilled, (state, action) => {
+        state.loading = false;
+        console.log('Successfully rejected audit on backend:', action.payload);
+      })
+      .addCase(rejectAuditThunk.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload || 'Failed to reject audit';
+        console.error('Failed to reject audit on backend:', action.payload);
       });
   }
 });
@@ -644,7 +789,8 @@ export const {
   updateAuditInProgress,
   setCurrentUser,
   setUserRoles,
-  setUserRole
+  setUserRole,
+  resetQuarterlyAudits
 } = caseAuditSlice.actions;
 
 // Selectors

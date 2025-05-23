@@ -15,7 +15,9 @@ import {
   formatQuarterYear,
   setCurrentUser,
   setUserRole,
-  fetchCurrentUser
+  fetchCurrentUser,
+  verifyAuditThunk,
+  rejectAuditThunk
 } from '../store/caseAuditSlice';
 import {
   QuarterPeriod,
@@ -162,11 +164,21 @@ export const useCaseAuditHandlers = () => {
     const auditIdBranded = typeof auditId === 'string' ? createCaseAuditId(auditId) : auditId;
     const verifierBranded = ensureUserId(verifier);
     
+    // First update local Redux state
     dispatch(verifyAudit({
       auditId: auditIdBranded,
       userId: currentUserId,
       verifier: verifierBranded,
-      isVerified: true, // Add the required property
+      isVerified: true,
+      ...caseAuditData
+    }));
+    
+    // Then persist to backend API
+    dispatch(verifyAuditThunk({
+      auditId: auditIdBranded,
+      userId: currentUserId,
+      verifier: verifierBranded,
+      isVerified: true,
       ...caseAuditData
     }));
   };
@@ -176,7 +188,16 @@ export const useCaseAuditHandlers = () => {
     const auditIdBranded = typeof auditId === 'string' ? createCaseAuditId(auditId) : auditId;
     const verifierBranded = ensureUserId(verifier);
     
+    // First update local Redux state
     dispatch(rejectAudit({
+      auditId: auditIdBranded,
+      userId: currentUserId,
+      verifier: verifierBranded,
+      ...caseAuditData
+    }));
+    
+    // Then persist to backend API
+    dispatch(rejectAuditThunk({
       auditId: auditIdBranded,
       userId: currentUserId,
       verifier: verifierBranded,
@@ -266,72 +287,41 @@ export const useCaseAuditHandlers = () => {
       // Use the quarter key as is
       const quarterPeriod = quarterKey as QuarterPeriod;
       
-      // Generate user quarterly audits (one per active user)
-      const userQuarterlyAudits = usersList
-        .filter(user => user.isActive && user.role !== 'READER') // Exclude readers and inactive users
-        .map(user => {
-          const auditId = createCaseAuditId(`QUARTERLY-${user.id}-${Date.now()}`);
-          
-          // Generate coverage amount based on user role (within limits)
-          let maxCoverage = 30000; // Default for staff
-          if (user.role === USER_ROLE_ENUM.SPECIALIST) {
-            maxCoverage = 150000;
-          } else if (user.role === USER_ROLE_ENUM.TEAM_LEADER) {
-            maxCoverage = 150000; // Team leaders can handle same as specialists
-          }
-          
-          const coverageAmount = Math.floor(Math.random() * maxCoverage * 0.8) + 1000; // Random amount up to 80% of max
-          
-          return {
-            id: auditId,
-            auditId,
-            userId: ensureUserId(user.id),
-            coverageAmount,
-            claimsStatus: Math.random() > 0.3 ? CLAIMS_STATUS_ENUM.FULL_COVER : CLAIMS_STATUS_ENUM.PARTIAL_COVER,
-            isAkoReviewed: false,
-            status: VERIFICATION_STATUS_ENUM.NOT_VERIFIED,
-            verifier: '',
-            comment: '',
-            rating: '',
-            specialFindings: createEmptyFindings(),
-            detailedFindings: createEmptyFindings(),
-            isVerified: false
-          };
-        });
-      
-      // Generate 2 random audits from "previous quarter" for quality control
-      const previousQuarterRandomAudits = Array.from({ length: 2 }).map((_, index) => {
-        const auditId = createCaseAuditId(`PREV-QUARTER-${Date.now()}-${index}`);
-        const coverageAmount = Math.floor(Math.random() * 100000) + 5000; // Random amount 5k-105k
-        
-        return {
-          id: auditId,
-          auditId,
-          userId: ensureUserId(''), // Random audits not tied to specific user
-          coverageAmount,
-          claimsStatus: Math.random() > 0.3 ? CLAIMS_STATUS_ENUM.FULL_COVER : CLAIMS_STATUS_ENUM.PARTIAL_COVER,
-          isAkoReviewed: false,
-          status: VERIFICATION_STATUS_ENUM.NOT_VERIFIED,
-          verifier: '',
-          comment: '',
-          rating: '',
-          specialFindings: createEmptyFindings(),
-          detailedFindings: createEmptyFindings(),
-          isVerified: false
-        };
+      // Call the API to select quarterly audits - MSW will handle the generation
+      const response = await fetch('/api/verification/select-quarterly', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          quarterKey: quarterPeriod,
+          userIds: usersList.map(user => user.id)
+        }),
       });
       
-      // Dispatch the selection with actual audit data
+      if (!response.ok) {
+        throw new Error(`Failed to select quarterly dossiers: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to select quarterly dossiers');
+      }
+      
+      const responseData = data.data;
+      
+      // Store the quarterly selection in Redux
       dispatch(selectQuarterlyAudits({
         quarterKey: quarterPeriod,
-        userQuarterlyAudits,
-        previousQuarterRandomAudits
+        userQuarterlyAudits: responseData.userQuarterlyAudits,
+        previousQuarterRandomAudits: responseData.previousQuarterRandomAudits
       }));
       
-      setLoadingStatus(ACTION_STATUS.idle); // Reset to idle after completing
+      setLoadingStatus(ACTION_STATUS.idle);
     } catch (error) {
       console.error('Error selecting quarterly audits:', error);
-      setLoadingStatus(ACTION_STATUS.idle); // Reset to idle after error
+      setLoadingStatus(ACTION_STATUS.idle);
+      throw error;
     }
   };
   

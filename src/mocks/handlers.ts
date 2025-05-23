@@ -1080,10 +1080,15 @@ export const handlers = [
       // Generate mock previous quarter audits for quality control
       const previousQuarterRandomAudits = Array.from({ length: 5 }).map((_, index) => {
         const id = `PREV-QUARTER-${Date.now()}-${index}`;
+        // Assign to a random active user
+        const activeUsers = users.filter(user => user.isActive && user.role !== USER_ROLE_ENUM.READER);
+        const randomUser = activeUsers[index % activeUsers.length];
+        
         return {
           id,
           dossierId: id,
           auditId: id,
+          userId: randomUser.id, // Assign to actual user
           coverageAmount: Math.floor(Math.random() * 100000),
           claimsStatus: CLAIMS_STATUS.FULL_COVER as ClaimsStatus,
           isAkoReviewed: false
@@ -1125,5 +1130,91 @@ export const handlers = [
       { success: false, error: 'No current user found' },
       { status: 404 }
     );
+  }),
+
+  // Add new verification endpoints
+  
+  // Get audit verification data
+  http.get('/api/audit-verification/:auditId', async ({ params }) => {
+    try {
+      const { auditId } = params;
+      const numericAuditId = safeParseInt(Array.isArray(auditId) ? auditId[0] : auditId);
+      
+      // For now, return a basic verification response
+      // In a real implementation, this would fetch from the database
+      const verificationData = {
+        auditId: numericAuditId,
+        status: 'not_verified' as const,
+        verifierId: 1,
+        rating: '',
+        comment: '',
+        findings: []
+      };
+      
+      return HttpResponse.json({
+        success: true,
+        data: verificationData
+      }, { status: 200 });
+    } catch (error) {
+      console.error("[MSW] Error in /api/audit-verification/:auditId GET handler:", error);
+      return HttpResponse.json({
+        success: false,
+        error: 'Failed to fetch verification data'
+      }, { status: 500 });
+    }
+  }),
+  
+  // Update audit verification data
+  http.put('/api/audit-verification/:auditId', async ({ params, request }) => {
+    try {
+      const { auditId } = params;
+      const numericAuditId = safeParseInt(Array.isArray(auditId) ? auditId[0] : auditId);
+      
+      // Parse request body
+      let requestData: {
+        status?: string;
+        verifierId?: number;
+        rating?: string;
+        comment?: string;
+        findings?: Array<{
+          type: string;
+          description: string;
+          category: string;
+        }>;
+      } = {};
+      try {
+        const jsonData = await request.json();
+        if (jsonData && typeof jsonData === 'object') {
+          requestData = jsonData as typeof requestData;
+        }
+      } catch {
+        console.warn("[MSW] Failed to parse request body for verification update");
+      }
+      
+      console.log(`[MSW] Updating verification data for audit ${numericAuditId}:`, requestData);
+      
+      // In a real implementation, this would save to the database
+      // For now, just return a success response with the data
+      const verificationResponse = {
+        auditId: numericAuditId,
+        status: requestData.status || 'not_verified',
+        verifierId: requestData.verifierId || 1,
+        rating: requestData.rating || '',
+        comment: requestData.comment || '',
+        verificationDate: requestData.status === 'verified' ? new Date().toISOString() : undefined,
+        findings: requestData.findings || []
+      };
+      
+      return HttpResponse.json({
+        success: true,
+        data: verificationResponse
+      }, { status: 200 });
+    } catch (error) {
+      console.error("[MSW] Error in /api/audit-verification/:auditId PUT handler:", error);
+      return HttpResponse.json({
+        success: false,
+        error: 'Failed to update verification data'
+      }, { status: 500 });
+    }
   }),
 ]; 

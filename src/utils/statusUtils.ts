@@ -1,8 +1,8 @@
 /**
  * Utility functions for working with verification status enums
  * 
- * This file centralizes the mapping between CaseAuditStatus and VERIFICATION_STATUS_ENUM
- * to ensure consistency throughout the application.
+ * This file provides simple conversion utilities between CaseAuditStatus and VERIFICATION_STATUS_ENUM.
+ * Since both enums now use the same underlying string values, mapping is simplified.
  */
 
 import { VERIFICATION_STATUS_ENUM } from '../enums';
@@ -10,8 +10,10 @@ import { CaseAuditStatus } from '../caseAuditTypes';
 
 /**
  * Maps VERIFICATION_STATUS_ENUM to CaseAuditStatus
+ * Since both enums use the same underlying values, this is a simple cast with validation.
  */
 export function mapVerificationStatusToCaseAuditStatus(status: VERIFICATION_STATUS_ENUM): CaseAuditStatus {
+  // Direct mapping since values are now aligned
   switch (status) {
     case VERIFICATION_STATUS_ENUM.VERIFIED:
       return CaseAuditStatus.VERIFIED;
@@ -27,8 +29,10 @@ export function mapVerificationStatusToCaseAuditStatus(status: VERIFICATION_STAT
 
 /**
  * Maps CaseAuditStatus to VERIFICATION_STATUS_ENUM
+ * Since both enums use the same underlying values, this is a simple cast with validation.
  */
 export function mapCaseAuditStatusToVerificationStatus(status: CaseAuditStatus): VERIFICATION_STATUS_ENUM {
+  // Direct mapping since values are now aligned
   switch (status) {
     case CaseAuditStatus.VERIFIED:
       return VERIFICATION_STATUS_ENUM.VERIFIED;

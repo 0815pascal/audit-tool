@@ -12,19 +12,8 @@ export default defineConfig({
   ],
   base: process.env.NODE_ENV === 'production' ? '/audit-tool/' : '/',
   server: {
-    // Proxy all API requests to our mock server
-    proxy: {
-      '/api': {
-        target: 'http://localhost:5173',
-        changeOrigin: true,
-        secure: false,
-        configure: (proxy) => {
-          proxy.on('error', (err) => {
-            console.warn('Proxy error:', err);
-          });
-        }
-      }
-    }
+    // No proxy needed - MSW handles API mocking
+    // In production, configure your reverse proxy (nginx, etc.) to handle /api routes
   },
   build: {
     outDir: 'dist',

@@ -164,7 +164,7 @@ export const ACTION_STATUS_DISPLAY: Record<ActionStatus, string> = {
 // Error messages - Centralizing for consistency
 export const ERROR_MESSAGES = {
   [ERROR_TYPE_ENUM.VALIDATION]: {
-    INVALID_VERIFICATION_STATUS: (status: string) => `Invalid verification status: ${status}. Using 'in-progress' instead.`,
+    INVALID_VERIFICATION_STATUS: (status: string) => `Invalid verification status: ${status}. Using 'in_progress' instead.`,
     INVALID_YEAR: (year: number) => `Year ${year} is outside valid range. Using constrained value.`
   },
   [ERROR_TYPE_ENUM.FETCH]: {

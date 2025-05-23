@@ -18,7 +18,7 @@ import {
 import { Checkbox, TextArea, Button, Select } from './FormControls';
 import { useToast } from '../../context/ToastContext';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
-import { updateAuditInProgress } from '../../store/caseAuditSlice';
+import { updateAuditInProgress, saveAuditVerificationThunk } from '../../store/caseAuditSlice';
 import { INPUT_TYPE_ENUM, VERIFICATION_STATUS_ENUM, RATING_VALUE_ENUM, DETAILED_FINDING_ENUM, SPECIAL_FINDING_ENUM, TOAST_TYPE, BUTTON_COLOR, BUTTON_SIZE } from '../../enums';
 
 // Import the users directly from the mock data
@@ -29,15 +29,13 @@ interface PruefensterModalProps {
   onClose: () => void;
   audit: CaseAudit;
   onVerify?: (auditId: string | CaseAuditId, verifierId: string, caseAuditData: CaseAuditData) => void;
-  onReject?: (auditId: string | CaseAuditId, verifierId: string, caseAuditData: CaseAuditData) => void;
 }
 
 export const PruefensterModal: React.FC<PruefensterModalProps> = ({
   isOpen,
   onClose,
   audit,
-  onVerify,
-  onReject
+  onVerify
 }) => {
   const { showToast } = useToast();
   const dispatch = useAppDispatch();
@@ -247,7 +245,16 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
     console.log('rating being saved:', rating);
     console.log('=== END DEBUG ===');
     
+    // First update local Redux state
     dispatch(updateAuditInProgress({
+      auditId: ensureCaseAuditId(audit.id),
+      userId: ensureUserId(audit.userId),
+      verifier: ensureUserId(verifierId || currentUserId),
+      ...caseAuditData
+    }));
+    
+    // Then persist to backend API
+    dispatch(saveAuditVerificationThunk({
       auditId: ensureCaseAuditId(audit.id),
       userId: ensureUserId(audit.userId),
       verifier: ensureUserId(verifierId || currentUserId),
@@ -305,45 +312,36 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
     showToast('Audit verified', TOAST_TYPE.SUCCESS);
   };
 
-  const handleReject = () => {
-    if (!onReject) {
-      console.error('No onReject handler provided');
-      return;
-    }
+  // Handle reset - clears all form fields
+  const handleReset = () => {
+    setComment('');
+    setRating('' as RatingValue);
+    setSelectedFindings(createEmptyFindings());
+    setSelectedDetailedFindings(createEmptyFindings());
     
-    // Convert verifier initials back to user ID
-    let verifierId = currentUserId; // Default to current user
-    
-    if (verifier) {
-      // Find user by initials
-      const userByInitials = users.find(u => 
-        'initials' in u && u.initials === verifier.toUpperCase()
-      );
-      
-      if (userByInitials) {
-        verifierId = userByInitials.id;
-      } else {
-        // If we can't find by initials, use current user
-        console.warn(`Could not find user with initials ${verifier}, using current user`);
+    // Reset verifier to current user's initials
+    const getUserInitials = (userId: string): string => {
+      try {
+        const user = users.find(u => u.id === userId);
+        if (user && 'initials' in user && user.initials) {
+          return user.initials;
+        }
+      } catch (error) {
+        console.error(`Error finding initials for user ${userId}:`, error);
       }
-    }
-    
-    // Prepare the current form data
-    const currentFormData = {
-      comment,
-      rating,
-      specialFindings: selectedFindings,
-      detailedFindings: selectedDetailedFindings
+      
+      // If we can't find the user, generate initials from the userId
+      const initials = userId?.substring(0, 2).toUpperCase() || 'XX';
+      return initials;
     };
     
-    // Save the form state to Redux for persistence
-    saveFormState();
+    const currentUserInitials = getUserInitials(currentUserId || '');
+    setVerifier(currentUserInitials);
     
-    // Pass the current form data directly to the rejection handler
-    onReject(audit.id, ensureUserId(verifierId || currentUserId), currentFormData);
-    
-    showToast('Audit rejected', TOAST_TYPE.ERROR);
+    showToast('Formular zurückgesetzt', TOAST_TYPE.INFO);
   };
+
+
 
   // Handle when modal is being closed
   const handleCloseModal = () => {
@@ -463,11 +461,11 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
             Abbrechen
           </Button>
           <Button
-            onClick={handleReject}
-            color={BUTTON_COLOR.DANGER}
+            onClick={handleReset}
+            color={BUTTON_COLOR.INFO}
             size={BUTTON_SIZE.LARGE}
           >
-            Ablehnen
+            Zurücksetzen
           </Button>
           <Button
             onClick={handleVerify}

@@ -16,7 +16,6 @@ import { USER_ROLE_ENUM, CASE_TYPE_ENUM, VERIFICATION_STATUS_ENUM, DEFAULT_VALUE
 import { useCaseAuditHandlers } from '../hooks/useCaseAuditHandlers';
 import { formatQuarterYear } from '../store/caseAuditSlice';
 import { PruefensterModal } from './common/PruefensterModal';
-import { convertToVerificationStatus } from '../utils/statusUtils';
 import './QuarterlySelectionComponent.css';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { 
@@ -59,7 +58,6 @@ const QuarterlySelectionComponent: React.FC = () => {
     usersList,
     loading,
     handleVerify,
-    handleReject,
     canVerifyAudit
   } = useCaseAuditHandlers();
   
@@ -158,7 +156,17 @@ const QuarterlySelectionComponent: React.FC = () => {
   
   // Find the user from usersList
   const findUserById = (userId: string) => {
-    return usersList.find((user: User) => user.id === userId);
+    return usersList.find((user: User) => String(user.id) === String(userId));
+  };
+  
+  // Handle closing the success message
+  const handleCloseSuccessMessage = () => {
+    setSuccessMessage('');
+  };
+
+  // Handle closing the error message
+  const handleCloseErrorMessage = () => {
+    setErrorMessage('');
   };
   
   // Helper function to get user initials by user ID
@@ -236,32 +244,48 @@ const QuarterlySelectionComponent: React.FC = () => {
   
   // Handle verify audit
   const handleVerifyAudit = (auditId: string, verifierId: string, caseAuditData: CaseAuditData) => {
-    console.log('=== DEBUG: handleVerifyAudit ===');
+    console.log('=== Verify Audit Debug ===');
     console.log('auditId:', auditId);
     console.log('verifierId:', verifierId);
     console.log('caseAuditData:', caseAuditData);
-    console.log('rating from caseAuditData:', caseAuditData.rating);
-    console.log('=== END DEBUG ===');
     
-    handleVerify(
-      auditId,
-      verifierId,
-      caseAuditData
-    );
+    // Call the audit verification handler
+    handleVerify(auditId, verifierId, caseAuditData);
+    
+    // Close the modal
     setIsModalOpen(false);
     setSelectedAudit(null);
-    setSuccessMessage(`Successfully verified audit ${auditId}`);
+    
+    // Show success message
+    setSuccessMessage('Audit erfolgreich verifiziert!');
+    setTimeout(() => setSuccessMessage(''), 3000);
+    console.log('=== End Verify Debug ===');
   };
   
-  // Handle reject audit
-  const handleRejectAudit = (auditId: string, verifierId: string, caseAuditData: CaseAuditData) => {
-    handleReject(
-      auditId,
-      verifierId,
-      caseAuditData
-    );
-    setIsModalOpen(false);
-    setSelectedAudit(null);
+  // Note: Reject functionality removed - audit outcomes are now handled through the Prüfergebnis dropdown
+  // where users can select "Überwiegend nicht erfüllt" for failed audits
+  
+  const convertToVerificationStatus = (status: CaseAuditStatus | VERIFICATION_STATUS_ENUM): VERIFICATION_STATUS_ENUM => {
+    // Handle both string statuses and enum values
+    const statusString = typeof status === 'string' ? status : String(status);
+    
+    // Check if it's already a VERIFICATION_STATUS_ENUM value
+    if (Object.values(VERIFICATION_STATUS_ENUM).includes(statusString as VERIFICATION_STATUS_ENUM)) {
+      return statusString as VERIFICATION_STATUS_ENUM;
+    }
+    
+    // Map CaseAuditStatus to VERIFICATION_STATUS_ENUM 
+    switch (statusString) {
+      case CaseAuditStatus.VERIFIED:
+        return VERIFICATION_STATUS_ENUM.VERIFIED;
+      case CaseAuditStatus.IN_PROGRESS:
+        return VERIFICATION_STATUS_ENUM.IN_PROGRESS;
+      case CaseAuditStatus.NOT_VERIFIED:
+        return VERIFICATION_STATUS_ENUM.NOT_VERIFIED;
+      default:
+        console.warn(`Unknown status: ${statusString}, defaulting to NOT_VERIFIED`);
+        return VERIFICATION_STATUS_ENUM.NOT_VERIFIED;
+    }
   };
   
   return (
@@ -332,8 +356,32 @@ const QuarterlySelectionComponent: React.FC = () => {
         </button>
       </div>
       
-      {errorMessage && <div className="error-message">{errorMessage}</div>}
-      {successMessage && <div className="success-message">{successMessage}</div>}
+      {errorMessage && (
+        <div className="error-message">
+          <span className="error-text">{errorMessage}</span>
+          <button 
+            className="close-button" 
+            onClick={handleCloseErrorMessage}
+            aria-label="Close error message"
+            title="Close"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+      {successMessage && (
+        <div className="success-message">
+          <span className="success-text">{successMessage}</span>
+          <button 
+            className="close-button" 
+            onClick={handleCloseSuccessMessage}
+            aria-label="Close success message"
+            title="Close"
+          >
+            ✕
+          </button>
+        </div>
+      )}
       
       <div className="quarterly-status">
         <h3>Status for {selectedQuarter}</h3>
@@ -351,14 +399,6 @@ const QuarterlySelectionComponent: React.FC = () => {
             <span className="status-value">
               {quarterlyDossiers.userQuarterlyAudits.length + 
                quarterlyDossiers.previousQuarterRandomAudits.length}
-            </span>
-          </div>
-          <div className="status-item">
-            <span className="status-label">Last Selection Date:</span>
-            <span className="status-value">
-              {quarterlyDossiers.lastSelectionDate 
-                ? new Date(quarterlyDossiers.lastSelectionDate).toLocaleString() 
-                : 'Not selected yet'}
             </span>
           </div>
         </div>
@@ -391,14 +431,13 @@ const QuarterlySelectionComponent: React.FC = () => {
                     try {
                       canVerify = canVerifyAudit(audit.id);
                     } catch (error) {
-                      console.error(`Error checking if audit ${audit.id} can be verified:`, error);
+                      console.error(`Error checking if audit can be verified:`, error);
                     }
                   }
-                  
                   return (
                     <tr key={audit.id}>
                       <td>{audit.id}</td>
-                      <td>{user ? user.name : audit.userId}</td>
+                      <td>{user ? user.name : 'Unknown'}</td>
                       <td>{convertToVerificationStatus(audit.status) === VERIFICATION_STATUS_ENUM.VERIFIED ? 'Geprüft' : 
                            convertToVerificationStatus(audit.status) === VERIFICATION_STATUS_ENUM.IN_PROGRESS ? 'In Bearbeitung' : 'Nicht geprüft'}</td>
                       <td>{getUserInitials(audit.verifier || '')}</td>
@@ -417,6 +456,7 @@ const QuarterlySelectionComponent: React.FC = () => {
                 
                 {/* Random Previous Quarter Audits */}
                 {quarterlyDossiers.previousQuarterRandomAudits.map((audit: AuditItem) => {
+                  const user = findUserById(audit.userId);
                   // Store the result of canVerifyAudit in a variable with a default false value for safety
                   let canVerify = false;
                   if (audit && audit.id) {
@@ -430,7 +470,7 @@ const QuarterlySelectionComponent: React.FC = () => {
                   return (
                     <tr key={audit.id}>
                       <td>{audit.id}</td>
-                      <td>Zufällige Prüfung (Vorquartal)</td>
+                      <td>{user ? user.name : audit.userId}</td>
                       <td>{convertToVerificationStatus(audit.status) === VERIFICATION_STATUS_ENUM.VERIFIED ? 'Geprüft' : 
                            convertToVerificationStatus(audit.status) === VERIFICATION_STATUS_ENUM.IN_PROGRESS ? 'In Bearbeitung' : 'Nicht geprüft'}</td>
                       <td>{getUserInitials(audit.verifier || '')}</td>
@@ -459,7 +499,6 @@ const QuarterlySelectionComponent: React.FC = () => {
           onClose={() => setIsModalOpen(false)}
           audit={selectedAudit}
           onVerify={handleVerifyAudit}
-          onReject={handleRejectAudit}
         />
       )}
     </div>
@@ -467,4 +506,4 @@ const QuarterlySelectionComponent: React.FC = () => {
 };
 
 // Wrap with React.memo to prevent unnecessary re-renders
-export default React.memo(QuarterlySelectionComponent); 
+export default React.memo(QuarterlySelectionComponent);

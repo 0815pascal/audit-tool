@@ -39,8 +39,8 @@ export function ensureCaseAuditId(id: string | CaseAuditId): CaseAuditId {
 
 // Enum for CaseAuditStatus
 export enum CaseAuditStatus {
-  NOT_VERIFIED = 'not-verified',
-  IN_PROGRESS = 'in-progress',
+  NOT_VERIFIED = 'not_verified',
+  IN_PROGRESS = 'in_progress',
   VERIFIED = 'verified'
 }
 
