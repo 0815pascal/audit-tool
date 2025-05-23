@@ -1,8 +1,19 @@
 import React, { useState } from 'react';
-import { useVerificationHandlers } from '../hooks/useVerificationHandlers';
-import { formatQuarterYear } from '../store/verificationSlice';
+import { 
+  ClaimsStatus, CaseType, RatingValue, QuarterNumber, 
+  QuarterPeriod,
+  ensureUserId, createISODateString,
+  createPolicyId, createCaseId
+} from '../types';
+import {
+  CaseAudit,
+  CaseAuditId,
+  createCaseAuditId
+} from '../caseAuditTypes';
+import { USER_ROLE_ENUM, CASE_TYPE_ENUM, VERIFICATION_STATUS_ENUM } from '../enums';
+import { useCaseAuditHandlers } from '../hooks/useCaseAuditHandlers';
+import { formatQuarterYear } from '../store/caseAuditSlice';
 import { PruefensterModal } from './common/PruefensterModal';
-import { Dossier } from '../types';
 import './QuarterlySelectionComponent.css';
 
 const QuarterlySelectionComponent: React.FC = () => {
@@ -11,8 +22,8 @@ const QuarterlySelectionComponent: React.FC = () => {
     filteredYear,
     currentUserId,
     currentUserRole,
-    quarterlyDossiers,
-    handleSelectQuarterlyDossiers,
+    quarterlyAudits: quarterlyDossiers,
+    handleSelectQuarterlyAudits: handleSelectQuarterlyDossiers,
     exportQuarterlyResults,
     handleQuarterChange,
     handleYearChange,
@@ -21,12 +32,12 @@ const QuarterlySelectionComponent: React.FC = () => {
     loading,
     handleVerify,
     handleReject,
-    canVerifyDossier
-  } = useVerificationHandlers();
+    canVerifyAudit
+  } = useCaseAuditHandlers();
   
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [successMessage, setSuccessMessage] = useState<string>('');
-  const [selectedDossier, setSelectedDossier] = useState<Dossier | null>(null);
+  const [selectedAudit, setSelectedAudit] = useState<CaseAudit | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   
   // Get available years (current year and 4 previous years)
@@ -51,104 +62,105 @@ const QuarterlySelectionComponent: React.FC = () => {
   
   const quarters = getAvailableQuarters(filteredYear);
   
-  // Generate quarter options
+        // Generate quarter options
   const quarterOptions = quarters.map(q => ({
-    value: formatQuarterYear(q, filteredYear),
+    value: formatQuarterYear(q as QuarterNumber, filteredYear),
     label: `Q${q}-${filteredYear}`
   }));
   
   // Handle opening the verification modal
-  const handleOpenVerification = (dossierId: string) => {
-    // Find the dossier in the quarterlyDossiers
-    const dossier = [...quarterlyDossiers.userQuarterlyDossiers, ...quarterlyDossiers.previousQuarterRandomDossiers]
-      .find(d => d.id === dossierId);
+  const handleOpenVerification = (auditId: string) => {
+    // Find the audit in the quarterlyDossiers
+    const audit = [...quarterlyDossiers.userQuarterlyAudits, ...quarterlyDossiers.previousQuarterRandomAudits]
+      .find(a => a.id === auditId);
     
-    if (dossier) {
-      // Convert to full Dossier object
-      const fullDossier: Dossier = {
-        id: dossier.id,
-        userId: dossier.userId || '',
-        date: new Date().toISOString().split('T')[0],
-        clientName: `Client for ${dossier.id}`,
-        policyNumber: `POL-${dossier.id}`,
-        caseNumber: parseInt(dossier.id.replace(/\D/g, '')) || 0,
+    if (audit) {
+      // Convert to full CaseAudit object
+      const auditObject: CaseAudit = {
+        id: typeof audit.id === 'string' ? createCaseAuditId(audit.id) : audit.id,
+        userId: audit.userId,
+        date: createISODateString(new Date()),
+        clientName: `Client ${audit.id}`,
+        policyNumber: createPolicyId(typeof audit.id === 'string' ? parseInt(audit.id.replace(/\D/g, '')) || 10000 : 10000),
+        // Extract just the number from the ID or generate a random case number
+        caseNumber: createCaseId(typeof audit.id === 'string' ? parseInt(audit.id.replace(/\D/g, '')) || 30000000 : 30000000),
         dossierRisk: 0,
-        dossierName: `Case ${dossier.id}`,
-        totalAmount: dossier.coverageAmount || 0,
-        coverageAmount: dossier.coverageAmount || 0,
-        isVerified: dossier.status === 'verified',
-        isAkoReviewed: dossier.isAkoReviewed || false,
+        dossierName: `Case ${audit.id}`,
+        totalAmount: audit.coverageAmount,
+        coverageAmount: audit.coverageAmount,
+        isVerified: audit.isVerified,
+        isAkoReviewed: audit.isAkoReviewed,
         isSpecialist: false,
-        quarter: selectedQuarter.split('-')[0].replace('Q', ''),
+        quarter: selectedQuarter as QuarterPeriod, // Cast to QuarterPeriod
         year: parseInt(selectedQuarter.split('-')[1]),
-        claimsStatus: dossier.claimsStatus || 'FULL_COVER',
-        verifier: currentUserId,
-        comment: dossier.comment || '',
-        rating: dossier.rating as Dossier['rating'] || '',
-        specialFindings: dossier.specialFindings || {},
-        detailedFindings: dossier.detailedFindings || {},
-        caseType: 'USER_QUARTERLY'
+        claimsStatus: (audit.claimsStatus as ClaimsStatus) || ('FULL_COVER' as ClaimsStatus),
+        verifier: audit.verifier || ensureUserId(currentUserId),
+        comment: audit.comment || '',
+        rating: (audit.rating || '') as RatingValue,
+        specialFindings: audit.specialFindings || {},
+        detailedFindings: audit.detailedFindings || {},
+        caseType: CASE_TYPE_ENUM.USER_QUARTERLY as CaseType
       };
       
-      setSelectedDossier(fullDossier);
+      setSelectedAudit(auditObject);
       setIsModalOpen(true);
     }
   };
   
-  // Handle verify dossier
-  const handleVerifyDossier = (dossierId: string) => {
-    if (selectedDossier) {
+  // Handle verify audit
+  const handleVerifyAudit = (auditId: string) => {
+    if (selectedAudit) {
       handleVerify(
-        dossierId,
-        selectedDossier.verifier || '',
+        auditId,
+        selectedAudit.verifier || '',
         {
-          comment: selectedDossier.comment || '',
-          rating: selectedDossier.rating || '',
-          specialFindings: selectedDossier.specialFindings || {},
-          detailedFindings: selectedDossier.detailedFindings || {}
+          comment: selectedAudit.comment || '',
+          rating: selectedAudit.rating || '',
+          specialFindings: selectedAudit.specialFindings || {},
+          detailedFindings: selectedAudit.detailedFindings || {}
         }
       );
       setIsModalOpen(false);
-      setSelectedDossier(null);
-      setSuccessMessage(`Successfully verified dossier ${dossierId}`);
+      setSelectedAudit(null);
+      setSuccessMessage(`Successfully verified audit ${auditId}`);
     }
   };
   
-  // Handle reject dossier
-  const handleRejectDossier = (dossierId: string) => {
-    if (selectedDossier) {
+  // Handle reject audit
+  const handleRejectAudit = (auditId: string) => {
+    if (selectedAudit) {
       handleReject(
-        dossierId,
-        selectedDossier.verifier || '',
+        auditId,
+        selectedAudit.verifier || '',
         {
-          comment: selectedDossier.comment || '',
-          rating: selectedDossier.rating || '',
-          specialFindings: selectedDossier.specialFindings || {},
-          detailedFindings: selectedDossier.detailedFindings || {}
+          comment: selectedAudit.comment || '',
+          rating: selectedAudit.rating || '',
+          specialFindings: selectedAudit.specialFindings || {},
+          detailedFindings: selectedAudit.detailedFindings || {}
         }
       );
       setIsModalOpen(false);
-      setSelectedDossier(null);
+      setSelectedAudit(null);
     }
   };
   
-  // Handle auto-selection of dossiers for a quarter
+  // Handle auto-selection of audits for a quarter
   const handleAutoSelect = async () => {
     setErrorMessage('');
     setSuccessMessage('');
     
     try {
       // Check if user is a team leader
-      if (currentUserRole.role !== 'TEAM_LEADER') {
-        setErrorMessage('Only team leaders can initiate quarterly dossier selection.');
+      if (!currentUserRole || currentUserRole.role !== USER_ROLE_ENUM.TEAM_LEADER) {
+        setErrorMessage('Only team leaders can initiate quarterly audit selection.');
         return;
       }
       
-      // Check if dossiers were already selected for this quarter
-      if (quarterlyDossiers.userQuarterlyDossiers.length > 0 || 
-          quarterlyDossiers.previousQuarterRandomDossiers.length > 0) {
+      // Check if audits were already selected for this quarter
+      if (quarterlyDossiers.userQuarterlyAudits.length > 0 || 
+          quarterlyDossiers.previousQuarterRandomAudits.length > 0) {
         const confirmReselect = window.confirm(
-          `Dossiers have already been selected for ${selectedQuarter}. Do you want to reselect?`
+          `Audits have already been selected for ${selectedQuarter}. Do you want to reselect?`
         );
         if (!confirmReselect) {
           return;
@@ -156,10 +168,10 @@ const QuarterlySelectionComponent: React.FC = () => {
       }
       
       await handleSelectQuarterlyDossiers(selectedQuarter);
-      setSuccessMessage(`Successfully selected dossiers for ${selectedQuarter}`);
+      setSuccessMessage(`Successfully selected audits for ${selectedQuarter}`);
     } catch (error) {
-      console.error('Error selecting dossiers:', error);
-      setErrorMessage('Failed to select dossiers. Please try again.');
+      console.error('Error selecting audits:', error);
+      setErrorMessage('Failed to select audits. Please try again.');
     }
   };
   
@@ -191,7 +203,7 @@ const QuarterlySelectionComponent: React.FC = () => {
   
   return (
     <div className="quarterly-selection">
-      <h2>IKS Quarterly Dossier Selection</h2>
+      <h2>IKS Quarterly Audit Selection</h2>
       
       <div className="selection-controls">
         <div className="control-group">
@@ -238,10 +250,10 @@ const QuarterlySelectionComponent: React.FC = () => {
       <div className="button-group">
         <button 
           onClick={handleAutoSelect}
-          disabled={loading || currentUserRole.role !== 'TEAM_LEADER'}
+          disabled={loading || !currentUserRole || currentUserRole.role !== USER_ROLE_ENUM.TEAM_LEADER}
           className="primary-button"
         >
-          {loading ? 'Loading...' : 'Auto-Select Dossiers'}
+          {loading ? 'Loading...' : 'Auto-Select Audits'}
         </button>
         
         <button 
@@ -260,18 +272,18 @@ const QuarterlySelectionComponent: React.FC = () => {
         <h3>Status for {selectedQuarter}</h3>
         <div className="status-summary">
           <div className="status-item">
-            <span className="status-label">User Dossiers:</span>
-            <span className="status-value">{quarterlyDossiers.userQuarterlyDossiers.length}</span>
+            <span className="status-label">User Audits:</span>
+            <span className="status-value">{quarterlyDossiers.userQuarterlyAudits.length}</span>
           </div>
           <div className="status-item">
-            <span className="status-label">Random Previous Quarter Dossiers:</span>
-            <span className="status-value">{quarterlyDossiers.previousQuarterRandomDossiers.length}</span>
+            <span className="status-label">Random Previous Quarter Audits:</span>
+            <span className="status-value">{quarterlyDossiers.previousQuarterRandomAudits.length}</span>
           </div>
           <div className="status-item">
-            <span className="status-label">Total Dossiers:</span>
+            <span className="status-label">Total Audits:</span>
             <span className="status-value">
-              {quarterlyDossiers.userQuarterlyDossiers.length + 
-               quarterlyDossiers.previousQuarterRandomDossiers.length}
+              {quarterlyDossiers.userQuarterlyAudits.length + 
+               quarterlyDossiers.previousQuarterRandomAudits.length}
             </span>
           </div>
           <div className="status-item">
@@ -285,17 +297,17 @@ const QuarterlySelectionComponent: React.FC = () => {
         </div>
       </div>
       
-      {/* Dossier Tables */}
-      <div className="dossier-tables">
-        <div className="dossier-table">
+      {/* Audit Tables */}
+      <div className="audit-tables">
+        <div className="audit-table">
           <h3>Quartals-Check {selectedQuarter}</h3>
-          {quarterlyDossiers.userQuarterlyDossiers.length === 0 && quarterlyDossiers.previousQuarterRandomDossiers.length === 0 ? (
-            <p className="no-data">Keine Dossiers für dieses Quartal ausgewählt.</p>
+          {quarterlyDossiers.userQuarterlyAudits.length === 0 && quarterlyDossiers.previousQuarterRandomAudits.length === 0 ? (
+            <p className="no-data">Keine Audits für dieses Quartal ausgewählt.</p>
           ) : (
             <table>
               <thead>
                 <tr>
-                  <th>Case-ID</th>
+                  <th>CaseID</th>
                   <th>Verantwortlicher Fallbearbeiter</th>
                   <th>Prüfergebnis</th>
                   <th>Prüfer</th>
@@ -303,65 +315,65 @@ const QuarterlySelectionComponent: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {/* User Quarterly Dossiers */}
-                {quarterlyDossiers.userQuarterlyDossiers.map(dossier => {
-                  const user = findUserById(dossier.userId);
-                  // Store the result of canVerifyDossier in a variable with a default false value for safety
+                {/* User Quarterly Audits */}
+                {quarterlyDossiers.userQuarterlyAudits.map((audit) => {
+                  const user = findUserById(audit.userId);
+                  // Store the result of canVerifyAudit in a variable with a default false value for safety
                   let canVerify = false;
-                  if (dossier && dossier.id) {
+                  if (audit && audit.id) {
                     try {
-                      canVerify = canVerifyDossier(dossier.id);
+                      canVerify = canVerifyAudit(audit.id);
                     } catch (error) {
-                      console.error(`Error checking if dossier ${dossier.id} can be verified:`, error);
+                      console.error(`Error checking if audit ${audit.id} can be verified:`, error);
                     }
                   }
                   
                   return (
-                    <tr key={dossier.id}>
-                      <td>{dossier.id}</td>
-                      <td>{user ? user.name : dossier.userId}</td>
-                      <td>{dossier.status === 'verified' ? 'Geprüft' : 
-                           dossier.status === 'in-progress' ? 'In Bearbeitung' : 'Nicht geprüft'}</td>
-                      <td>{dossier.verifier || '-'}</td>
+                    <tr key={audit.id}>
+                      <td>{audit.id}</td>
+                      <td>{user ? user.name : audit.userId}</td>
+                      <td>{audit.status === VERIFICATION_STATUS_ENUM.VERIFIED ? 'Geprüft' : 
+                           audit.status === VERIFICATION_STATUS_ENUM.IN_PROGRESS ? 'In Bearbeitung' : 'Nicht geprüft'}</td>
+                      <td>{audit.verifier || '-'}</td>
                       <td>
                         <button
                           className="verify-button"
-                          onClick={() => handleOpenVerification(dossier.id)}
+                          onClick={() => handleOpenVerification(audit.id)}
                           disabled={!canVerify}
                         >
-                          {dossier.status === 'verified' ? 'Ansehen' : 'Prüfen'}
+                          {audit.status === VERIFICATION_STATUS_ENUM.VERIFIED ? 'Ansehen' : 'Prüfen'}
                         </button>
                       </td>
                     </tr>
                   );
                 })}
                 
-                {/* Random Previous Quarter Dossiers */}
-                {quarterlyDossiers.previousQuarterRandomDossiers.map(dossier => {
-                  // Store the result of canVerifyDossier in a variable with a default false value for safety
+                {/* Random Previous Quarter Audits */}
+                {quarterlyDossiers.previousQuarterRandomAudits.map((audit) => {
+                  // Store the result of canVerifyAudit in a variable with a default false value for safety
                   let canVerify = false;
-                  if (dossier && dossier.id) {
+                  if (audit && audit.id) {
                     try {
-                      canVerify = canVerifyDossier(dossier.id);
+                      canVerify = canVerifyAudit(audit.id);
                     } catch (error) {
-                      console.error(`Error checking if dossier ${dossier.id} can be verified:`, error);
+                      console.error(`Error checking if audit ${audit.id} can be verified:`, error);
                     }
                   }
                   
                   return (
-                    <tr key={dossier.id}>
-                      <td>{dossier.id}</td>
+                    <tr key={audit.id}>
+                      <td>{audit.id}</td>
                       <td>Zufällige Prüfung (Vorquartal)</td>
-                      <td>{dossier.status === 'verified' ? 'Geprüft' : 
-                           dossier.status === 'in-progress' ? 'In Bearbeitung' : 'Nicht geprüft'}</td>
-                      <td>{dossier.verifier || '-'}</td>
+                      <td>{audit.status === VERIFICATION_STATUS_ENUM.VERIFIED ? 'Geprüft' : 
+                           audit.status === VERIFICATION_STATUS_ENUM.IN_PROGRESS ? 'In Bearbeitung' : 'Nicht geprüft'}</td>
+                      <td>{audit.verifier || '-'}</td>
                       <td>
                         <button
                           className="verify-button"
-                          onClick={() => handleOpenVerification(dossier.id)}
+                          onClick={() => handleOpenVerification(audit.id)}
                           disabled={!canVerify}
                         >
-                          {dossier.status === 'verified' ? 'Ansehen' : 'Prüfen'}
+                          {audit.status === VERIFICATION_STATUS_ENUM.VERIFIED ? 'Ansehen' : 'Prüfen'}
                         </button>
                       </td>
                     </tr>
@@ -374,13 +386,13 @@ const QuarterlySelectionComponent: React.FC = () => {
       </div>
       
       {/* Verification Modal */}
-      {selectedDossier && (
+      {selectedAudit && (
         <PruefensterModal
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
-          dossier={selectedDossier}
-          onVerify={handleVerifyDossier}
-          onReject={handleRejectDossier}
+          audit={selectedAudit}
+          onVerify={handleVerifyAudit}
+          onReject={handleRejectAudit}
         />
       )}
     </div>

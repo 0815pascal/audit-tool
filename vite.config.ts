@@ -17,7 +17,7 @@ export default defineConfig({
         target: 'http://localhost:5173',
         changeOrigin: true,
         secure: false,
-        configure: (proxy, _options) => {
+        configure: (proxy) => {
           proxy.on('error', (err) => {
             console.warn('Proxy error:', err);
           });

@@ -1,79 +1,56 @@
+import { createCaseId, QuarterPeriod, AuditId, UserId } from '../types';
 import axios from 'axios';
+import {
+  ApiCache,
+  AuditRecord,
+  CaseObj,
+  AuditStatistics,
+  AuditPayload,
+  Finding,
+  CacheKey,
+  createCacheKey
+} from './apiTypes';
+import {
+  UserAuditForSelection,
+  AuditForSelection,
+  ISODateString
+} from '../types';
+import { HTTP_METHOD } from '../enums';
 
 // Create an axios instance with base URL and improved error handling
 const api = axios.create({
   baseURL: '/api',
   // Add request timeout
-  timeout: 10000,
+  timeout: 30000,
   // Accept all status codes to handle them in catch blocks
-  validateStatus: (_) => true
+  validateStatus: () => true
 });
 
-// Create a cache for API responses
-const apiCache = new Map<string, { data: any, timestamp: number }>();
+// Cache TTL configuration
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes in milliseconds
 
+// Create specialized caches for different data types
+const auditCache: ApiCache<AuditRecord[]> = new Map();
+const caseCache: ApiCache<CaseObj[]> = new Map();
+const statisticsCache: ApiCache<AuditStatistics> = new Map();
+
 // Check if cached data is still valid
-const isCacheValid = (cacheKey: string): boolean => {
-  if (apiCache.has(cacheKey)) {
-    const { timestamp } = apiCache.get(cacheKey)!;
+const isCacheValid = <T>(cache: ApiCache<T>, cacheKey: CacheKey): boolean => {
+  const cachedItem = cache.get(cacheKey);
+  if (cachedItem) {
+    const { timestamp } = cachedItem;
     return Date.now() - timestamp < CACHE_TTL;
   }
   return false;
 };
 
-// Data types returned by the backend
-export interface ClaimOwner {
-  userId: number;
-  role: string;
-}
-
-export interface CaseObj {
-  caseNumber: number;
-  claimOwner: ClaimOwner;
-  claimsStatus: string;
-  coverageAmount: number;
-  caseStatus: string;
-}
-
-export interface Auditor {
-  userId: number;
-  role: string;
-}
-
-export interface AuditRecord {
-  auditId: number;
-  quarter: string;
-  caseObj?: {
-    caseNumber: number;
-    claimOwner?: {
-      userId: number;
-      role: string;
-    };
-    coverageAmount?: number;
-    claimsStatus?: string;
-    caseStatus?: string;
-  };
-  auditor: {
-    userId: number;
-    role: string;
-  };
-  isAkoReviewed: boolean;
-}
-
-export interface Finding {
-  findingId: number;
-  type: string;
-  description: string;
-}
-
 // Fetch all audits for a given quarter (e.g. "Q1-2024")
-export const getAuditsByQuarter = async (quarter: string): Promise<AuditRecord[]> => {
-  const cacheKey = `quarter-${quarter}`;
+export const getAuditsByQuarter = async (quarter: QuarterPeriod): Promise<AuditRecord[]> => {
+  const cacheKey = createCacheKey('quarter', quarter);
   
   // Check cache first
-  if (isCacheValid(cacheKey)) {
-    return apiCache.get(cacheKey)!.data;
+  if (isCacheValid(auditCache, cacheKey)) {
+    return auditCache.get(cacheKey)!.data;
   }
   
   try {
@@ -93,7 +70,7 @@ export const getAuditsByQuarter = async (quarter: string): Promise<AuditRecord[]
     }
     
     // Cache the response
-    apiCache.set(cacheKey, { 
+    auditCache.set(cacheKey, { 
       data: response.data,
       timestamp: Date.now()
     });
@@ -106,12 +83,12 @@ export const getAuditsByQuarter = async (quarter: string): Promise<AuditRecord[]
 };
 
 // Fetch audits performed by a specific auditor
-export const getAuditsByAuditor = async (auditorId: number): Promise<AuditRecord[]> => {
-  const cacheKey = `auditor-${auditorId}`;
+export const getAuditsByAuditor = async (auditorId: UserId): Promise<AuditRecord[]> => {
+  const cacheKey = createCacheKey('auditor', auditorId);
   
   // Check cache first
-  if (isCacheValid(cacheKey)) {
-    return apiCache.get(cacheKey)!.data;
+  if (isCacheValid(auditCache, cacheKey)) {
+    return auditCache.get(cacheKey)!.data;
   }
   
   try {
@@ -131,7 +108,7 @@ export const getAuditsByAuditor = async (auditorId: number): Promise<AuditRecord
     }
     
     // Cache the response
-    apiCache.set(cacheKey, { 
+    auditCache.set(cacheKey, { 
       data: response.data,
       timestamp: Date.now()
     });
@@ -145,7 +122,7 @@ export const getAuditsByAuditor = async (auditorId: number): Promise<AuditRecord
 
 // Start a new audit for a case in the given quarter
 export const createAudit = async (
-  payload: { quarter: string; caseObj: { caseNumber: number }; auditor: { userId: number } }
+  payload: AuditPayload
 ): Promise<AuditRecord> => {
   try {
     console.log(`[API] Creating audit for case ${payload.caseObj.caseNumber}`);
@@ -165,8 +142,8 @@ export const createAudit = async (
 
 // Update an existing audit record
 export const updateAudit = async (
-  auditId: number,
-  payload: { quarter: string; caseObj: { caseNumber: number }; auditor: { userId: number } }
+  auditId: AuditId,
+  payload: AuditPayload
 ): Promise<AuditRecord> => {
   try {
     console.log(`[API] Updating audit ${auditId}`);
@@ -186,8 +163,8 @@ export const updateAudit = async (
 
 // Add a finding to an audit
 export const addFindingToAudit = async (
-  auditId: number,
-  payload: { type: string; description: string }
+  auditId: AuditId,
+  payload: { type: Finding['type']; description: string }
 ): Promise<Finding> => {
   try {
     console.log(`[API] Adding finding to audit ${auditId}`);
@@ -205,8 +182,8 @@ export const addFindingToAudit = async (
   }
 };
 
-// Get all findings for a given audit
-export const getFindingsByAudit = async (auditId: number): Promise<Finding[]> => {
+// Get all findings for an audit
+export const getFindingsByAudit = async (auditId: AuditId): Promise<Finding[]> => {
   try {
     console.log(`[API] Fetching findings for audit ${auditId}`);
     const response = await api.get<Finding[]>(`/audits/${auditId}/findings`);
@@ -229,21 +206,21 @@ export const getFindingsByAudit = async (auditId: number): Promise<Finding[]> =>
   }
 };
 
-// Select cases available for audit in a given quarter
-export const selectCasesForAudit = async (quarter: string): Promise<CaseObj[]> => {
-  const cacheKey = `select-cases-${quarter}`;
+// Select cases for audit in a given quarter
+export const selectCasesForAudit = async (quarter: QuarterPeriod): Promise<CaseObj[]> => {
+  const cacheKey = createCacheKey('cases', quarter);
   
   // Check cache first
-  if (isCacheValid(cacheKey)) {
-    return apiCache.get(cacheKey)!.data;
+  if (isCacheValid(caseCache, cacheKey)) {
+    return caseCache.get(cacheKey)!.data;
   }
   
   try {
-    console.log(`[API] Selecting cases for quarter ${quarter}`);
-    const response = await api.get<CaseObj[]>(`/audits/select-cases/${quarter}`);
+    console.log(`[API] Selecting cases for audit in quarter ${quarter}`);
+    const response = await api.get<CaseObj[]>(`/cases/select?quarter=${quarter}`);
     
     if (response.status >= 400) {
-      console.warn(`[API] Error ${response.status} selecting cases for quarter ${quarter}`);
+      console.warn(`[API] Error ${response.status} selecting cases for audit`);
       return [];
     }
     
@@ -253,43 +230,138 @@ export const selectCasesForAudit = async (quarter: string): Promise<CaseObj[]> =
       return [];
     }
     
+    // Process the response to ensure proper typing
+    const typedData = response.data.map(caseObj => ({
+      ...caseObj,
+      caseNumber: createCaseId(Number(caseObj.caseNumber))
+    }));
+    
     // Cache the response
-    apiCache.set(cacheKey, { 
-      data: response.data,
+    caseCache.set(cacheKey, { 
+      data: typedData,
       timestamp: Date.now()
     });
     
-    return response.data;
+    return typedData;
   } catch (error) {
-    console.error(`[API] Error selecting cases for quarter ${quarter}:`, error);
+    console.error(`[API] Error selecting cases for audit:`, error);
     return [];
   }
 };
 
-// Export audit results as CSV. Users can trigger download directly via window.location
-export const exportAuditReport = (quarter: string): void => {
-  window.location.assign(`/api/audit-reports/export/${quarter}`);
+// Export audit report
+export const exportAuditReport = (quarter: QuarterPeriod): void => {
+  window.open(`/api/audits/export?quarter=${quarter}`, '_blank');
 };
 
-// Fetch audit statistics for the quarter
-export interface AuditStatistics {
-  totalAudits: number;
-  averageScore: number;
-}
-
-export const getAuditStatistics = async (quarter: string): Promise<AuditStatistics> => {
+// Get audit statistics for a quarter
+export const getAuditStatistics = async (quarter: QuarterPeriod): Promise<AuditStatistics> => {
+  const cacheKey = createCacheKey('stats', quarter);
+  
+  // Check cache first
+  if (isCacheValid(statisticsCache, cacheKey)) {
+    return statisticsCache.get(cacheKey)!.data;
+  }
+  
   try {
     console.log(`[API] Fetching statistics for quarter ${quarter}`);
-    const response = await api.get<AuditStatistics>(`/audit-reports/statistics/${quarter}`);
+    const response = await api.get<AuditStatistics>(`/audits/statistics?quarter=${quarter}`);
     
     if (response.status >= 400) {
-      console.warn(`[API] Error ${response.status} fetching statistics for quarter ${quarter}`);
-      return { totalAudits: 0, averageScore: 0 };
+      console.warn(`[API] Error ${response.status} fetching statistics`);
+      throw new Error(`Failed to fetch statistics: ${response.status}`);
     }
     
-    return response.data;
+    const data = response.data;
+    
+    // Cache the response
+    statisticsCache.set(cacheKey, { 
+      data,
+      timestamp: Date.now()
+    });
+    
+    return data;
   } catch (error) {
-    console.error(`[API] Error fetching statistics for quarter ${quarter}:`, error);
-    return { totalAudits: 0, averageScore: 0 };
+    console.error(`[API] Error fetching statistics:`, error);
+    throw error;
   }
-}; 
+};
+
+/**
+ * Get a random audit for a user, with optional quarter and year
+ */
+export async function getRandomAuditForUser(
+  userId: UserId,
+  quarter?: string | QuarterPeriod,
+  year?: number
+): Promise<AuditRecord> {
+  try {
+    // Build the query parameters
+    const params = new URLSearchParams();
+    if (quarter) params.append('quarter', quarter.toString());
+    if (year) params.append('year', year.toString());
+    
+    // Make the API request
+    const response = await fetch(
+      `/api/audits/random/${userId}${params.toString() ? `?${params}` : ''}`,
+      { method: HTTP_METHOD.GET }
+    );
+    
+    if (!response.ok) {
+      throw new Error(`Failed to get random audit: ${response.status} ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    
+    if (!data.success) {
+      throw new Error(data.error || 'Failed to get random audit');
+    }
+    
+    return data.data;
+  } catch (error) {
+    console.error('Error in getRandomAuditForUser:', error);
+    throw error;
+  }
+}
+
+/**
+ * Select quarterly dossiers for verification
+ */
+export async function selectQuarterlyDossiers(
+  quarterKey: string,
+  userIds: UserId[]
+): Promise<{
+  quarterKey: string;
+  userQuarterlyAudits: UserAuditForSelection[];
+  previousQuarterRandomAudits: AuditForSelection[];
+  lastSelectionDate: ISODateString;
+}> {
+  try {
+    // Make the API request
+    const response = await fetch('/api/verification/select-quarterly', {
+      method: HTTP_METHOD.POST,
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        quarterKey,
+        userIds
+      })
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Failed to select quarterly dossiers: ${response.status} ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    
+    if (!data.success) {
+      throw new Error(data.error || 'Failed to select quarterly dossiers');
+    }
+    
+    return data.data;
+  } catch (error) {
+    console.error('Error in selectQuarterlyDossiers:', error);
+    throw error;
+  }
+} 

@@ -1,4 +1,6 @@
 import React from 'react';
+import { SelectOption } from '../../types';
+import { BUTTON_COLOR, BUTTON_SIZE, INPUT_TYPE_ENUM } from '../../enums';
 
 /**
  * Common form controls that can be reused across the application
@@ -8,32 +10,32 @@ import React from 'react';
 interface ButtonProps {
   onClick: () => void;
   children: React.ReactNode;
-  color?: 'primary' | 'success' | 'danger' | 'info' | 'text';
+  color?: BUTTON_COLOR;
   disabled?: boolean;
-  size?: 'small' | 'medium' | 'large';
+  size?: BUTTON_SIZE;
 }
 
 export const Button: React.FC<ButtonProps> = ({
   onClick,
   children,
-  color = 'primary',
+  color = BUTTON_COLOR.PRIMARY,
   disabled = false,
-  size = 'medium'
+  size = BUTTON_SIZE.MEDIUM
 }) => {
   // Color mapping
   const colorMap = {
-    primary: 'var(--primary-color)',
-    success: 'var(--success-color)',
-    danger: '#d24723',
-    info: '#00008f',
-    text: 'transparent'
+    [BUTTON_COLOR.PRIMARY]: 'var(--primary-color)',
+    [BUTTON_COLOR.SUCCESS]: 'var(--success-color)',
+    [BUTTON_COLOR.DANGER]: '#d24723',
+    [BUTTON_COLOR.INFO]: '#00008f',
+    [BUTTON_COLOR.TEXT]: 'transparent'
   };
   
   // Size mapping
   const sizeMap = {
-    small: { padding: '6px 12px', fontSize: '0.9rem' },
-    medium: { padding: '8px 16px', fontSize: '1rem' },
-    large: { padding: '10px 20px', fontSize: '1.1rem' }
+    [BUTTON_SIZE.SMALL]: { padding: '6px 12px', fontSize: '0.9rem' },
+    [BUTTON_SIZE.MEDIUM]: { padding: '8px 16px', fontSize: '1rem' },
+    [BUTTON_SIZE.LARGE]: { padding: '10px 20px', fontSize: '1.1rem' }
   };
   
   return (
@@ -42,7 +44,7 @@ export const Button: React.FC<ButtonProps> = ({
       disabled={disabled}
       style={{
         backgroundColor: colorMap[color],
-        color: color === 'text' ? 'var(--primary-color)' : 'white',
+        color: color === BUTTON_COLOR.TEXT ? 'var(--primary-color)' : 'white',
         padding: sizeMap[size].padding,
         fontSize: sizeMap[size].fontSize,
         border: 'none',
@@ -88,7 +90,7 @@ export const Checkbox: React.FC<CheckboxProps> = ({
 }) => (
   <div className="checkbox-container">
     <input
-      type="checkbox"
+      type={INPUT_TYPE_ENUM.CHECKBOX}
       id={id}
       checked={checked}
       onChange={onChange}
@@ -151,32 +153,42 @@ export const Card: React.FC<CardProps> = ({
 );
 
 // Select dropdown component
-interface SelectProps {
+interface SelectProps<T = string> {
   id: string;
   label?: string;
-  options: { value: string; label: string }[];
-  value: string;
-  onChange: (value: string) => void;
+  options: SelectOption<T>[];
+  value: T;
+  onChange: (value: T) => void;
 }
 
-export const Select: React.FC<SelectProps> = ({
+export const Select = <T extends string>({
   id,
   label,
   options,
   value,
   onChange
-}) => (
-  <div style={{ display: 'flex', flexDirection: 'column', marginRight: '1rem' }}>
-    {label && <label htmlFor={id} style={{ marginBottom: '0.25rem' }}>{label}</label>}
-    <select
-      id={id}
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      style={{ padding: '6px', borderRadius: '4px', border: '1px solid #ccc' }}
-    >
-      {options.map(opt => (
-        <option key={opt.value} value={opt.value}>{opt.label}</option>
-      ))}
-    </select>
-  </div>
-); 
+}: SelectProps<T>) => {
+  // Use type assertion since we know our onChange will handle the proper conversion
+  const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    onChange(e.target.value as T);
+  };
+  
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', marginRight: '1rem' }}>
+      {label && <label htmlFor={id} style={{ marginBottom: '0.25rem' }}>{label}</label>}
+      <select
+        id={id}
+        value={value}
+        onChange={handleChange}
+        style={{ padding: '6px', borderRadius: '4px', border: '1px solid #ccc' }}
+      >
+        <option value="">-- Select --</option>
+        {options.map(opt => (
+          <option key={String(opt.value)} value={String(opt.value)}>
+            {opt.label}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}; 

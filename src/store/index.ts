@@ -1,5 +1,6 @@
 import { configureStore } from '@reduxjs/toolkit';
-import verificationReducer from './verificationSlice';
+import caseAuditReducer from './caseAuditSlice';
+import userReducer from './userSlice';
 
 // Wrap store creation in try/catch
 let storeInstance;
@@ -8,7 +9,8 @@ try {
   console.log('Creating Redux store...');
   storeInstance = configureStore({
     reducer: {
-      verification: verificationReducer,
+      caseAudit: caseAuditReducer,
+      user: userReducer
     },
     middleware: (getDefaultMiddleware) => 
       getDefaultMiddleware({

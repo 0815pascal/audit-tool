@@ -1,19 +1,22 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
-import Toast, { ToastType } from '../components/common/Toast';
+/* eslint-disable react-refresh/only-export-components */
+import React, { createContext, useState, useCallback } from 'react';
+import Toast from '../components/common/Toast';
+import { ToastType, ToastData, ContextProviderProps } from '../types';
+import { TOAST_TYPE } from '../enums';
 
-interface ToastContextType {
+// Define the context type
+export interface ToastContextType {
   showToast: (message: string, type?: ToastType) => void;
 }
 
-const ToastContext = createContext<ToastContextType | undefined>(undefined);
+// Create and export the context
+export const ToastContext = createContext<ToastContextType | undefined>(undefined);
 
-export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [toast, setToast] = useState<{
-    message: string;
-    type: ToastType;
-  } | null>(null);
+// Export only the provider component
+export const ToastProvider: React.FC<ContextProviderProps> = ({ children }) => {
+  const [toast, setToast] = useState<ToastData | null>(null);
 
-  const showToast = useCallback((message: string, type: ToastType = 'success') => {
+  const showToast = useCallback((message: string, type: ToastType = TOAST_TYPE.SUCCESS) => {
     setToast({ message, type });
   }, []);
 
@@ -35,10 +38,6 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   );
 };
 
-export const useToast = () => {
-  const context = useContext(ToastContext);
-  if (context === undefined) {
-    throw new Error('useToast must be used within a ToastProvider');
-  }
-  return context;
-}; 
+// Import the hook from the dedicated file to avoid Fast Refresh warnings
+import { useToast } from '../hooks/useToast';
+export { useToast }; 

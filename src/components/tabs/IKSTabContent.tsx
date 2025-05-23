@@ -1,57 +1,55 @@
 import React, { useState } from 'react';
-import { useVerificationHandlers } from '../../hooks/useVerificationHandlers';
-import { Dossier } from '../../types';
+import { useCaseAuditHandlers } from '../../hooks/useCaseAuditHandlers';
+import { 
+  VerifiedAudit, 
+  ClaimsStatus, 
+  CaseType, 
+  createEmptyFindings, 
+  createPolicyId,
+  ensureUserId
+} from '../../types';
+import {
+  CaseAudit,
+  CaseAuditId,
+  ensureCaseAuditId
+} from '../../caseAuditTypes';
 import { PruefensterModal } from '../common/PruefensterModal';
 import QuarterlySelectionComponent from '../QuarterlySelectionComponent';
 
-// Define VerifiedDossier interface directly to avoid dependencies
-interface VerifiedDossier {
-  id: string;
-  userId: string;
-  userName: string;
-  date: string;
-  clientName: string;
-  policyNumber: string;
-  caseNumber: number;
-  dossierName: string;
-  totalAmount: number;
-  isFullyVerified: boolean;
-  hasIncorrectCalculations: boolean;
-  verificationDate: string | null;
-  quarter: string;
-  claimsStatus: string;
-  coverageAmount: number;
-  auditorCode: string;
-  progress: string;
-  progressPercent: number;
-  quarterlyStatus: { verified: boolean };
-}
-
-// Convert VerifiedDossier to Dossier
-const verifiedDossierToDossier = (verifiedDossier: VerifiedDossier): Dossier => ({
-  id: verifiedDossier.id,
-  userId: verifiedDossier.userId,
-  date: verifiedDossier.date,
-  clientName: verifiedDossier.clientName,
-  policyNumber: verifiedDossier.policyNumber,
-  caseNumber: verifiedDossier.caseNumber,
-  dossierRisk: 0,
-  dossierName: verifiedDossier.dossierName,
-  totalAmount: verifiedDossier.totalAmount,
-  isVerified: verifiedDossier.isFullyVerified,
-  claimsStatus: (verifiedDossier.claimsStatus as 'FULL_COVER' | 'PARTIAL_COVER' | 'DECLINED' | 'PENDING'),
-  coverageAmount: verifiedDossier.coverageAmount,
-  verifier: verifiedDossier.auditorCode || '',
-  comment: '',
-  rating: '',
-  specialFindings: {},
-  detailedFindings: {},
-  quarter: verifiedDossier.quarter,
-  year: parseInt(verifiedDossier.quarter.split('-')[1]),
-  isAkoReviewed: false,
-  isSpecialist: false,
-  caseType: 'USER_QUARTERLY'
-});
+// Convert VerifiedAudit to CaseAudit
+const verifiedAuditToCaseAudit = (verifiedAudit: VerifiedAudit): CaseAudit => {
+  // Safely convert policyNumber 
+  let policyNum = createPolicyId(0); // Default value
+  
+  // We know from VerifiedAudit interface that policyNumber is of type PolicyId
+  // so we can use it directly without conversion
+  policyNum = verifiedAudit.policyNumber;
+  
+  return {
+    id: verifiedAudit.id,
+    userId: verifiedAudit.userId,
+    date: verifiedAudit.date,
+    clientName: verifiedAudit.clientName,
+    policyNumber: policyNum,
+    caseNumber: verifiedAudit.caseNumber,
+    dossierRisk: 0,
+    dossierName: verifiedAudit.dossierName,
+    totalAmount: verifiedAudit.totalAmount,
+    isVerified: verifiedAudit.isFullyVerified,
+    claimsStatus: verifiedAudit.claimsStatus as ClaimsStatus,
+    coverageAmount: verifiedAudit.coverageAmount,
+    verifier: ensureUserId(verifiedAudit.auditorCode || ''),
+    comment: '',
+    rating: '',
+    specialFindings: createEmptyFindings(),
+    detailedFindings: createEmptyFindings(),
+    quarter: verifiedAudit.quarter,
+    year: parseInt(verifiedAudit.quarter.split('-')[1]),
+    isAkoReviewed: false,
+    isSpecialist: false,
+    caseType: 'USER_QUARTERLY' as CaseType
+  };
+};
 
 interface IksTabContentProps {
   userQuarterlyStatus?: {
@@ -66,60 +64,69 @@ interface IksTabContentProps {
 }
 
 export const IksTabContent: React.FC<IksTabContentProps> = () => {
-  const { handleVerify, handleReject } = useVerificationHandlers();
-  const [selectedDossier, setSelectedDossier] = useState<VerifiedDossier | null>(null);
+  const { handleVerify, handleReject } = useCaseAuditHandlers();
+  const [selectedAudit, setSelectedAudit] = useState<VerifiedAudit | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const handleVerifyDossier = (dossierId: string) => {
-    if (selectedDossier) {
-      const dossier = verifiedDossierToDossier(selectedDossier);
+  const handleVerifyAudit = (auditId: CaseAuditId) => {
+    if (selectedAudit) {
+      const audit = verifiedAuditToCaseAudit(selectedAudit);
       handleVerify(
-        dossierId,
-        dossier.verifier || '',
+        auditId,
+        audit.verifier,
         {
-          comment: dossier.comment || '',
-          rating: dossier.rating || '',
-          specialFindings: dossier.specialFindings || {},
-          detailedFindings: dossier.detailedFindings || {}
+          comment: audit.comment || '',
+          rating: audit.rating || '',
+          specialFindings: audit.specialFindings || createEmptyFindings(),
+          detailedFindings: audit.detailedFindings || createEmptyFindings()
         }
       );
       setIsModalOpen(false);
-      setSelectedDossier(null);
+      setSelectedAudit(null);
     }
   };
 
-  const handleRejectDossier = (dossierId: string) => {
-    if (selectedDossier) {
-      const dossier = verifiedDossierToDossier(selectedDossier);
+  const handleRejectAudit = (auditId: CaseAuditId) => {
+    if (selectedAudit) {
+      const audit = verifiedAuditToCaseAudit(selectedAudit);
       handleReject(
-        dossierId,
-        dossier.verifier || '',
+        auditId,
+        audit.verifier,
         {
-          comment: dossier.comment || '',
-          rating: dossier.rating || '',
-          specialFindings: dossier.specialFindings || {},
-          detailedFindings: dossier.detailedFindings || {}
+          comment: audit.comment || '',
+          rating: audit.rating || '',
+          specialFindings: audit.specialFindings || createEmptyFindings(),
+          detailedFindings: audit.detailedFindings || createEmptyFindings()
         }
       );
       setIsModalOpen(false);
-      setSelectedDossier(null);
+      setSelectedAudit(null);
     }
+  };
+
+  // Wrapper functions to handle string IDs from modal
+  const handleVerifyWrapper = (id: string | CaseAuditId) => {
+    handleVerifyAudit(ensureCaseAuditId(id));
+  };
+
+  const handleRejectWrapper = (id: string | CaseAuditId) => {
+    handleRejectAudit(ensureCaseAuditId(id));
   };
 
   return (
     <div className="iks-tab-content">
       <QuarterlySelectionComponent />
 
-      {selectedDossier && (
+      {selectedAudit && (
         <PruefensterModal
           isOpen={isModalOpen}
           onClose={() => {
             setIsModalOpen(false);
-            setSelectedDossier(null);
+            setSelectedAudit(null);
           }}
-          dossier={verifiedDossierToDossier(selectedDossier)}
-          onVerify={handleVerifyDossier}
-          onReject={handleRejectDossier}
+          audit={verifiedAuditToCaseAudit(selectedAudit)}
+          onVerify={handleVerifyWrapper}
+          onReject={handleRejectWrapper}
         />
       )}
     </div>

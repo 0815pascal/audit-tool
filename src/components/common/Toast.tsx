@@ -1,8 +1,8 @@
 import React, { useEffect } from 'react';
+import { ToastType, ComponentProps } from '../../types';
+import { TOAST_TYPE } from '../../enums';
 
-export type ToastType = 'success' | 'error' | 'info' | 'warning';
-
-interface ToastProps {
+interface ToastProps extends Omit<ComponentProps<HTMLDivElement>, 'children'> {
   message: string;
   type?: ToastType;
   duration?: number;
@@ -11,9 +11,10 @@ interface ToastProps {
 
 const Toast: React.FC<ToastProps> = ({
   message,
-  type = 'success',
+  type = TOAST_TYPE.SUCCESS,
   duration = 3000,
-  onClose
+  onClose,
+  ...props
 }) => {
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -25,13 +26,13 @@ const Toast: React.FC<ToastProps> = ({
 
   const getBackgroundColor = () => {
     switch (type) {
-      case 'success':
+      case TOAST_TYPE.SUCCESS:
         return 'bg-green-500';
-      case 'error':
+      case TOAST_TYPE.ERROR:
         return 'bg-red-500';
-      case 'warning':
+      case TOAST_TYPE.WARNING:
         return 'bg-yellow-500';
-      case 'info':
+      case TOAST_TYPE.INFO:
         return 'bg-blue-500';
       default:
         return 'bg-green-500';
@@ -39,7 +40,7 @@ const Toast: React.FC<ToastProps> = ({
   };
 
   return (
-    <div className="fixed bottom-4 right-4 z-50">
+    <div className="fixed bottom-4 right-4 z-50" {...props}>
       <div
         className={`${getBackgroundColor()} text-white px-6 py-3 rounded-lg shadow-lg flex items-center justify-between min-w-[300px]`}
       >

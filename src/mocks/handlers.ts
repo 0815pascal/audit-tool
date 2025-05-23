@@ -1,181 +1,213 @@
-// @ts-nocheck
 import { http, HttpResponse } from 'msw';
-import { User } from '../types';
+import { 
+  User, 
+  createUserId, 
+  ClaimsStatus, 
+  CaseStatus, 
+  UserId, 
+  CaseId, 
+  QuarterPeriod,
+  isQuarterPeriod,
+  QuarterNumber,
+  FindingType,
+  createCaseId,
+  CaseType,
+  RatingValue,
+  DetailedFindingsRecord,
+  SpecialFindingsRecord,
+  createEmptyDetailedFindings,
+  createEmptySpecialFindings,
+  ISODateString,
+  createAuditId,
+  UserRole
+} from '../types';
+import { 
+  CLAIMS_STATUS, 
+  CASE_STATUS, 
+  CASE_TYPES, 
+  FINDING_TYPES 
+} from '../constants';
+import { USER_ROLE_ENUM } from '../enums';
 
 // Mock data directly in the handlers file
 export const users: User[] = [
-  { id: '1', name: 'John Smith', department: '5', role: 'SPECIALIST', isActive: true, initials: 'JS' },
-  { id: '2', name: 'Jane Doe', department: '5', role: 'REGULAR', isActive: true, initials: 'JD' },
-  { id: '3', name: 'Robert Johnson', department: '5', role: 'REGULAR', isActive: true, initials: 'RJ' },
-  { id: '4', name: 'Emily Davis', department: '5', role: 'TEAM_LEADER', isActive: true, initials: 'ED' },
-  { id: '5', name: 'Michael Brown', department: '5', role: 'REGULAR', isActive: true, initials: 'MB' },
-  { id: '6', name: 'Sarah Wilson', department: '5', role: 'SPECIALIST', isActive: true, initials: 'SW' },
-  { id: '7', name: 'David Thompson', department: '5', role: 'REGULAR', isActive: true, initials: 'DT' },
-  { id: '8', name: 'Lisa Garcia', department: '5', role: 'REGULAR', isActive: true, initials: 'LG' },
+  { id: createUserId('1'), name: 'John Smith', department: '5', role: USER_ROLE_ENUM.SPECIALIST, isActive: true, initials: 'JS' },
+  { id: createUserId('2'), name: 'Jane Doe', department: '5', role: USER_ROLE_ENUM.STAFF, isActive: true, initials: 'JD' },
+  { id: createUserId('3'), name: 'Robert Johnson', department: '5', role: USER_ROLE_ENUM.STAFF, isActive: true, initials: 'RJ' },
+  { id: createUserId('4'), name: 'Emily Davis', department: '5', role: USER_ROLE_ENUM.TEAM_LEADER, isActive: true, initials: 'ED' },
+  { id: createUserId('5'), name: 'Michael Brown', department: '5', role: USER_ROLE_ENUM.STAFF, isActive: true, initials: 'MB' },
+  { id: createUserId('6'), name: 'Sarah Wilson', department: '5', role: USER_ROLE_ENUM.SPECIALIST, isActive: true, initials: 'SW' },
+  { id: createUserId('7'), name: 'David Thompson', department: '5', role: USER_ROLE_ENUM.STAFF, isActive: true, initials: 'DT' },
+  { id: createUserId('8'), name: 'Lisa Garcia', department: '5', role: USER_ROLE_ENUM.STAFF, isActive: true, initials: 'LG' },
 ];
 
-const mockCases = [
+// Define interface for our mock cases
+interface MockCase extends Record<string, unknown> {
+  id: string;
+  userId: string;
+  date: ISODateString;
+  clientName: string;
+  policyNumber: number;
+  caseNumber: number;
+  dossierRisk: number;
+  dossierName: string;
+  totalAmount: number;
+  isVerified: boolean;
+  claimsStatus: ClaimsStatus;
+  coverageAmount: number;
+  verifier: string;
+  comment: string;
+  rating: RatingValue;
+  specialFindings: SpecialFindingsRecord;
+  detailedFindings: DetailedFindingsRecord;
+  quarter: string;
+  year: number;
+  isAkoReviewed: boolean;
+  isSpecialist: boolean;
+  caseType: CaseType;
+}
+
+const mockCases: MockCase[] = [
   {
     id: '1',
     userId: '1',
-    date: '2025-04-10',
+    date: '2025-04-10' as ISODateString,
     clientName: 'Thomas Anderson',
-    policyNumber: '12345',
-    caseNumber: 10045,
+    policyNumber: 12345,
+    caseNumber: 30045678,
     dossierRisk: 123456,
     dossierName: 'Matrix Incorporated',
     totalAmount: 525,
     isVerified: false,
-    claimsStatus: 'FULL_COVER',
+    claimsStatus: CLAIMS_STATUS.FULL_COVER,
     coverageAmount: 525,
     verifier: '',
     comment: '',
     rating: '',
-    specialFindings: {},
-    detailedFindings: {},
+    specialFindings: createEmptySpecialFindings(),
+    detailedFindings: createEmptyDetailedFindings(),
     quarter: '1',
     year: 2025,
     isAkoReviewed: false,
     isSpecialist: true,
-    caseType: 'USER_QUARTERLY'
+    caseType: CASE_TYPES.USER_QUARTERLY
   },
   {
     id: '2',
     userId: '2',
-    date: '2025-04-16',
+    date: '2025-04-16' as ISODateString,
     clientName: 'Alice Johnson',
-    policyNumber: '67890',
-    caseNumber: 10046,
+    policyNumber: 67890,
+    caseNumber: 30046789,
     dossierRisk: 234567,
     dossierName: 'Wonderland Holdings',
     totalAmount: 360,
     isVerified: false,
-    claimsStatus: 'FULL_COVER',
+    claimsStatus: CLAIMS_STATUS.FULL_COVER,
     coverageAmount: 360,
     verifier: '',
     comment: '',
     rating: '',
-    specialFindings: {},
-    detailedFindings: {},
+    specialFindings: createEmptySpecialFindings(),
+    detailedFindings: createEmptyDetailedFindings(),
     quarter: '1',
     year: 2025,
     isAkoReviewed: false,
     isSpecialist: false,
-    caseType: 'USER_QUARTERLY'
+    caseType: CASE_TYPES.USER_QUARTERLY
   },
   {
     id: '3',
     userId: '3',
-    date: '2025-04-25',
+    date: '2025-04-25' as ISODateString,
     clientName: 'Mark Wilson',
-    policyNumber: '34567',
-    caseNumber: 10047,
+    policyNumber: 34567,
+    caseNumber: 30047891,
     dossierRisk: 345678,
     dossierName: 'Wilson Family Trust',
     totalAmount: 440,
     isVerified: false,
-    claimsStatus: 'PARTIAL_COVER',
+    claimsStatus: CLAIMS_STATUS.PARTIAL_COVER,
     coverageAmount: 440,
     verifier: '',
     comment: '',
     rating: '',
-    specialFindings: {},
-    detailedFindings: {},
+    specialFindings: createEmptySpecialFindings(),
+    detailedFindings: createEmptyDetailedFindings(),
     quarter: '1',
     year: 2025,
     isAkoReviewed: false,
     isSpecialist: false,
-    caseType: 'USER_QUARTERLY'
+    caseType: CASE_TYPES.USER_QUARTERLY
   },
   {
     id: '4',
     userId: '4',
-    date: '2025-05-08',
+    date: '2025-05-08' as ISODateString,
     clientName: 'Sarah Miller',
-    policyNumber: '89012',
-    caseNumber: 10048,
+    policyNumber: 89012,
+    caseNumber: 30048012,
     dossierRisk: 456789,
     dossierName: 'Miller Automotive Group',
     totalAmount: 875,
     isVerified: false,
-    claimsStatus: 'FULL_COVER',
+    claimsStatus: CLAIMS_STATUS.FULL_COVER,
     coverageAmount: 875,
     verifier: '',
     comment: '',
     rating: '',
-    specialFindings: {},
-    detailedFindings: {},
+    specialFindings: createEmptySpecialFindings(),
+    detailedFindings: createEmptyDetailedFindings(),
     quarter: '2',
     year: 2025,
     isAkoReviewed: false,
     isSpecialist: true,
-    caseType: 'USER_QUARTERLY'
+    caseType: CASE_TYPES.USER_QUARTERLY
   },
   {
     id: '5',
     userId: '5',
-    date: '2025-05-19',
+    date: '2025-05-19' as ISODateString,
     clientName: 'David Brown',
-    policyNumber: '45678',
-    caseNumber: 10049,
+    policyNumber: 45678,
+    caseNumber: 30049234,
     dossierRisk: 567890,
     dossierName: 'Brown Medical Associates',
     totalAmount: 970,
     isVerified: false,
-    claimsStatus: 'FULL_COVER',
+    claimsStatus: CLAIMS_STATUS.FULL_COVER,
     coverageAmount: 970,
     verifier: '',
     comment: '',
     rating: '',
-    specialFindings: {},
-    detailedFindings: {},
+    specialFindings: createEmptySpecialFindings(),
+    detailedFindings: createEmptyDetailedFindings(),
     quarter: '2',
     year: 2025,
     isAkoReviewed: false,
     isSpecialist: false,
-    caseType: 'USER_QUARTERLY'
+    caseType: CASE_TYPES.USER_QUARTERLY
   }
 ];
-
-// Claims status options from API docs
-const CLAIMS_STATUS = {
-  FULL_COVER: "Full cover",
-  PARTIAL_COVER: "Partial cover",
-  NO_COVER: "No cover"
-};
-
-// Finding types from API docs
-const FINDING_TYPES = {
-  INCORRECT_FACT_ASSESSMENT: "Incorrect fact assessment",
-  PROCEDURAL_ERROR: "Procedural error",
-  DOCUMENTATION_ISSUE: "Documentation issue"
-};
-
-// Role types
-const ROLES = {
-  TEAM_LEADER: "TEAM_LEADER",
-  SPECIALIST: "SPECIALIST",
-  MANAGER: "MANAGER"
-};
 
 // Auditor codes for mock
 const auditorCodes = ['PF', 'TF'];
 
 // Safely parse string to integer with fallback
-const safeParseInt = (value, fallback = 0) => {
-  const parsed = parseInt(value);
+const safeParseInt = (value: string | number | undefined, fallback = 0): number => {
+  const parsed = parseInt(String(value));
   return isNaN(parsed) ? fallback : parsed;
 };
 
 // Safely extract numeric part from string ID
-const getNumericId = (id) => {
+const getNumericId = (id: string | number | undefined): number => {
   if (!id) return Math.floor(Math.random() * 1000) + 1;
   const matches = id.toString().match(/\d+/);
   return matches ? parseInt(matches[0]) : Math.floor(Math.random() * 1000) + 1;
 };
 
 // Parse quarter string (Q1-2023) to get quarter number and year
-const parseQuarter = (quarterStr) => {
+const parseQuarter = (quarterStr: string): { quarterNum: number; year: number } | null => {
   if (!quarterStr) return null;
   
   try {
@@ -207,46 +239,92 @@ const parseQuarter = (quarterStr) => {
   }
 };
 
+// Define interfaces for our mock data
+interface CaseObj {
+  caseNumber: CaseId;
+  claimOwner: {
+    userId: UserId | number;
+    role: UserRole;
+  };
+  claimsStatus: ClaimsStatus;
+  coverageAmount: number;
+  caseStatus: CaseStatus;
+}
+
+interface AuditObj {
+  auditId: number;
+  quarter: QuarterPeriod;
+  caseObj: CaseObj;
+  auditor: {
+    userId: UserId | number;
+    role: UserRole;
+  };
+  isAkoReviewed: boolean;
+}
+
+// Define the FindingObj interface for consistent return types
+interface FindingObj {
+  findingId: number;
+  type: FindingType | string;
+  description: string;
+}
+
 // Utility to convert our case data to the API case format
-const caseToCaseObj = (caseData) => {
+const caseToCaseObj = (caseData: Record<string, unknown>): CaseObj | null => {
   if (!caseData) return null;
   
   return {
-    caseNumber: caseData.caseNumber || 0,
+    caseNumber: createCaseId(safeParseInt(caseData.caseNumber as string | number, 0)),
     claimOwner: {
-      userId: safeParseInt(caseData.userId, 1),
-      role: ROLES.TEAM_LEADER
+      userId: typeof caseData.userId === 'string' 
+        ? createUserId(caseData.userId) 
+        : safeParseInt(caseData.userId as string, 1),
+      role: USER_ROLE_ENUM.TEAM_LEADER
     },
-    claimsStatus: caseData.claimsStatus || CLAIMS_STATUS.FULL_COVER,
-    coverageAmount: caseData.coverageAmount || caseData.totalAmount || 0,
-    caseStatus: "COMPENSATED"
+    claimsStatus: caseData.claimsStatus as ClaimsStatus || CLAIMS_STATUS.FULL_COVER,
+    coverageAmount: caseData.coverageAmount as number || (caseData.totalAmount as number) || 0,
+    caseStatus: CASE_STATUS.COMPENSATED
   };
 };
 
 // Convert our case to API audit format
-const caseToAudit = (caseData, quarter, auditorIndex = 0) => {
+const caseToAudit = (caseData: Record<string, unknown>, quarter: string): AuditObj | null => {
   if (!caseData) return null;
   
-  // Cycle through auditor codes
-  const auditorId = (getNumericId(caseData.id) % 2) + 1;
+  let formattedQuarter = quarter || "Q1-2023";
+  // Ensure quarter is in the right format
+  if (!isQuarterPeriod(formattedQuarter)) {
+    const currentDate = new Date();
+    const currentQuarter = Math.floor(currentDate.getMonth() / 3) + 1 as QuarterNumber;
+    formattedQuarter = `Q${currentQuarter}-${currentDate.getFullYear()}`;
+  }
   
   return {
-    auditId: getNumericId(caseData.id),
-    quarter: quarter || "Q1-2023",
-    caseObj: caseToCaseObj(caseData),
+    auditId: getNumericId(caseData.id as string),
+    quarter: formattedQuarter as QuarterPeriod,
+    caseObj: caseToCaseObj(caseData) || {
+      caseNumber: createCaseId(0),
+      claimOwner: {
+        userId: 1,
+        role: USER_ROLE_ENUM.TEAM_LEADER
+      },
+      claimsStatus: CLAIMS_STATUS.FULL_COVER,
+      coverageAmount: 0,
+      caseStatus: CASE_STATUS.COMPENSATED
+    },
     auditor: {
-      userId: auditorId,
-      role: ROLES.SPECIALIST
+      userId: 1,
+      role: USER_ROLE_ENUM.SPECIALIST
     },
     isAkoReviewed: false
   };
 };
 
 // Generate findings for an audit
-const generateFindings = (auditId) => {
-  const numericId = safeParseInt(auditId, 1);
+const generateFindings = (auditId: string | number): FindingObj[] => {
+  const numericId = safeParseInt(auditId as string, 1);
   const count = Math.floor(Math.random() * 3); // 0-2 findings per audit
-  const findings = [];
+  const findings: FindingObj[] = [];
   
   for (let i = 0; i < count; i++) {
     const findingTypes = Object.keys(FINDING_TYPES);
@@ -263,7 +341,46 @@ const generateFindings = (auditId) => {
 };
 
 // In-memory storage for created audits
-const auditStore = new Map();
+const auditStore = new Map<number, AuditObj>();
+
+// Calculate previous quarter info
+const getPreviousQuarterInfo = (quarterNum: number, year: number) => {
+  let prevQuarterNum = quarterNum - 1;
+  let prevYear = year;
+
+  if (prevQuarterNum < 1) {
+    prevQuarterNum = 4;
+    prevYear--;
+  }
+  
+  return {
+    quarter: prevQuarterNum as QuarterNumber,
+    year: prevYear
+  };
+};
+
+// Update the interface definition
+interface AuditRequestData {
+  quarter?: string;
+  caseObj?: {
+    caseNumber?: string | number;
+    claimOwner?: {
+      userId?: string | number;
+      role?: UserRole;
+    };
+    claimsStatus?: ClaimsStatus;
+    coverageAmount?: number;
+    caseStatus?: CaseStatus;
+    [key: string]: unknown;
+  };
+  auditor?: {
+    userId?: string | number;
+    role?: UserRole;
+    [key: string]: unknown;
+  };
+  type?: string;
+  description?: string;
+}
 
 export const handlers = [
   // Get audits by quarter
@@ -272,7 +389,8 @@ export const handlers = [
       const { quarter } = params;
       console.log(`[MSW] Handling request for quarter: ${quarter}`);
       
-      const parsedQuarter = parseQuarter(quarter);
+      const quarterValue = Array.isArray(quarter) ? quarter[0] : quarter ?? '';
+      const parsedQuarter = parseQuarter(quarterValue);
       
       if (!parsedQuarter) {
         console.warn(`[MSW] Could not parse quarter string: ${quarter}`);
@@ -302,7 +420,7 @@ export const handlers = [
       const audits = filteredCases
         .map(caseItem => {
           try {
-            return caseToAudit(caseItem, quarter);
+            return caseToAudit(caseItem, quarterValue);
           } catch (e) {
             console.warn(`[MSW] Error converting case ${caseItem.id} to audit:`, e);
             return null;
@@ -312,7 +430,7 @@ export const handlers = [
       
       // Add any audits from our store that match this quarter
       let storeAudits = 0;
-      for (const [id, audit] of auditStore.entries()) {
+      for (const [_, audit] of auditStore.entries()) {
         if (audit.quarter === quarter) {
           audits.push(audit);
           storeAudits++;
@@ -332,7 +450,8 @@ export const handlers = [
   http.get('/api/audits/auditor/:auditorId', ({ params }) => {
     try {
       const { auditorId } = params;
-      const numericAuditorId = safeParseInt(auditorId);
+      const auditorIdValue = Array.isArray(auditorId) ? auditorId[0] : auditorId;
+      const numericAuditorId = safeParseInt(auditorIdValue);
       console.log(`[MSW] Handling request for auditor: ${auditorId}`);
       
       // Filter cases to create mock audits for the given auditor
@@ -355,7 +474,7 @@ export const handlers = [
         .filter(audit => audit !== null);
       
       // Add any audits from our store that match this auditor
-      for (const [id, audit] of auditStore.entries()) {
+      for (const [_, audit] of auditStore.entries()) {
         if (audit.auditor && audit.auditor.userId === numericAuditorId) {
           audits.push(audit);
         }
@@ -373,34 +492,49 @@ export const handlers = [
   // Create Audit
   http.post('/api/audits', async ({ request }) => {
     try {
-      let requestData = {};
+      let requestData: AuditRequestData = {};
       
       try {
-        requestData = await request.json();
-      } catch (e) {
+        requestData = await request.json() as typeof requestData;
+      } catch (error) {
+        // Ignore parse error but log warning
         console.warn("[MSW] Failed to parse request body for /api/audits POST");
       }
       
       // Generate a new audit ID
       const auditId = Math.floor(Math.random() * 10000) + 1;
       
+      // Create valid quarter format if needed
+      let quarter = requestData.quarter;
+      if (!quarter || !isQuarterPeriod(quarter)) {
+        const now = new Date();
+        const currentQuarter = Math.floor((now.getMonth()) / 3) + 1 as QuarterNumber;
+        quarter = `Q${currentQuarter}-${now.getFullYear()}` as QuarterPeriod;
+      }
+      
       // Create a new audit object
-      const newAudit = {
+      const newAudit: AuditObj = {
         auditId,
-        quarter: requestData.quarter || `Q${Math.floor((new Date().getMonth()) / 3) + 1}-${new Date().getFullYear()}`,
-        caseObj: requestData.caseObj || {
-          caseNumber: Math.floor(Math.random() * 100000) + 1,
+        quarter: quarter as QuarterPeriod,
+        caseObj: {
+          caseNumber: createCaseId(Math.floor(Math.random() * 100000) + 1),
           claimOwner: {
-            userId: requestData.caseObj?.caseNumber ? safeParseInt(requestData.caseObj.caseNumber) : 1,
-            role: ROLES.TEAM_LEADER
+            userId: typeof requestData.caseObj === 'object' && requestData.caseObj?.claimOwner?.userId !== undefined 
+              ? safeParseInt(String(requestData.caseObj.claimOwner.userId)) 
+              : 1,
+            role: typeof requestData.caseObj === 'object' && requestData.caseObj?.claimOwner?.role !== undefined
+              ? requestData.caseObj.claimOwner.role
+              : USER_ROLE_ENUM.TEAM_LEADER
           },
-          claimsStatus: CLAIMS_STATUS.FULL_COVER,
-          coverageAmount: 10000.00,
-          caseStatus: "COMPENSATED"
+          claimsStatus: (requestData.caseObj?.claimsStatus as ClaimsStatus) || CLAIMS_STATUS.FULL_COVER,
+          coverageAmount: requestData.caseObj?.coverageAmount || 10000.00,
+          caseStatus: (requestData.caseObj?.caseStatus as CaseStatus) || CASE_STATUS.COMPENSATED
         },
-        auditor: requestData.auditor || {
-          userId: 2,
-          role: ROLES.SPECIALIST
+        auditor: {
+          userId: requestData.auditor?.userId !== undefined 
+            ? safeParseInt(requestData.auditor.userId as string | number) 
+            : 2,
+          role: requestData.auditor?.role || USER_ROLE_ENUM.SPECIALIST
         },
         isAkoReviewed: false
       };
@@ -419,18 +553,18 @@ export const handlers = [
         auditId: Math.floor(Math.random() * 10000) + 1,
         quarter: `Q${Math.floor((new Date().getMonth()) / 3) + 1}-${new Date().getFullYear()}`,
         caseObj: {
-          caseNumber: Math.floor(Math.random() * 100000) + 1,
+          caseNumber: Math.floor(30000000 + Math.random() * 1000000),
           claimOwner: {
             userId: 1,
-            role: ROLES.TEAM_LEADER
+            role: USER_ROLE_ENUM.TEAM_LEADER
           },
           claimsStatus: CLAIMS_STATUS.FULL_COVER,
           coverageAmount: 10000.00,
-          caseStatus: "COMPENSATED"
+          caseStatus: CASE_STATUS.COMPENSATED
         },
         auditor: {
           userId: 2,
-          role: ROLES.SPECIALIST
+          role: USER_ROLE_ENUM.SPECIALIST
         },
         isAkoReviewed: false
       };
@@ -443,13 +577,35 @@ export const handlers = [
   http.put('/api/audits/:auditId', async ({ params, request }) => {
     try {
       const { auditId } = params;
-      const numericAuditorId = safeParseInt(auditId);
+      const auditIdValue = Array.isArray(auditId) ? auditId[0] : auditId;
+      const numericAuditorId = safeParseInt(auditIdValue);
       
-      let requestData = {};
+      let requestData: AuditRequestData = {
+        type: "DOCUMENTATION_ISSUE",
+        description: "No description provided"
+      };
+      
       try {
-        requestData = await request.json();
-      } catch (e) {
-        console.warn("[MSW] Failed to parse request body for /api/audits PUT");
+        const jsonData = await request.json();
+        if (jsonData && typeof jsonData === 'object') {
+          requestData = {
+            type: jsonData.type || requestData.type,
+            description: jsonData.description || requestData.description,
+            quarter: jsonData.quarter || requestData.quarter,
+            caseObj: jsonData.caseObj || requestData.caseObj,
+            auditor: jsonData.auditor || requestData.auditor
+          };
+        }
+      } catch (error) {
+        // Ignore parse error but log warning
+        console.warn("[MSW] Failed to parse request body, using default data");
+      }
+      
+      // Fix requestData.quarter if needed
+      if (requestData.quarter && !isQuarterPeriod(requestData.quarter)) {
+        const now = new Date();
+        const currentQuarter = Math.floor((now.getMonth()) / 3) + 1 as QuarterNumber;
+        requestData.quarter = `Q${currentQuarter}-${now.getFullYear()}` as QuarterPeriod;
       }
       
       // Get existing audit or create a placeholder
@@ -457,22 +613,26 @@ export const handlers = [
       
       if (!existingAudit) {
         // If not in our store, create a new one with this ID
+        const now = new Date();
+        const currentQuarter = Math.floor((now.getMonth()) / 3) + 1 as QuarterNumber;
+        const quarterStr = `Q${currentQuarter}-${now.getFullYear()}` as QuarterPeriod;
+        
         existingAudit = {
           auditId: numericAuditorId,
-          quarter: `Q${Math.floor((new Date().getMonth()) / 3) + 1}-${new Date().getFullYear()}`,
+          quarter: requestData.quarter as QuarterPeriod || quarterStr,
           caseObj: {
-            caseNumber: Math.floor(Math.random() * 100000) + 1,
+            caseNumber: createCaseId(Math.floor(Math.random() * 100000) + 1),
             claimOwner: {
               userId: 1,
-              role: ROLES.TEAM_LEADER
+              role: USER_ROLE_ENUM.TEAM_LEADER
             },
-            claimsStatus: CLAIMS_STATUS.FULL_COVER,
+            claimsStatus: CLAIMS_STATUS.FULL_COVER as ClaimsStatus,
             coverageAmount: 10000.00,
-            caseStatus: "COMPENSATED"
+            caseStatus: CASE_STATUS.COMPENSATED as CaseStatus
           },
           auditor: {
             userId: 2,
-            role: ROLES.SPECIALIST
+            role: USER_ROLE_ENUM.SPECIALIST
           },
           isAkoReviewed: false
         };
@@ -481,14 +641,47 @@ export const handlers = [
       // Update audit with new data
       const updatedAudit = {
         ...existingAudit,
-        ...(requestData.quarter && { quarter: requestData.quarter }),
+        ...(requestData.quarter && { quarter: requestData.quarter as QuarterPeriod }),
         ...(requestData.caseObj && { caseObj: {
           ...existingAudit.caseObj,
-          ...requestData.caseObj
+          // Safely handle caseObj properties
+          ...(typeof requestData.caseObj === 'object' ? 
+            // Only include properties that can be safely typed
+            {
+              ...(requestData.caseObj.caseNumber !== undefined && { 
+                caseNumber: createCaseId(safeParseInt(requestData.caseObj.caseNumber as string | number))
+              }),
+              ...(requestData.caseObj.claimOwner && {
+                claimOwner: {
+                  ...existingAudit.caseObj.claimOwner,
+                  ...(requestData.caseObj.claimOwner.userId !== undefined && {
+                    userId: safeParseInt(String(requestData.caseObj.claimOwner.userId))
+                  }),
+                  ...(requestData.caseObj.claimOwner.role && {
+                    role: requestData.caseObj.claimOwner.role
+                  })
+                }
+              }),
+              ...(requestData.caseObj.claimsStatus && {
+                claimsStatus: requestData.caseObj.claimsStatus as ClaimsStatus
+              }),
+              ...(requestData.caseObj.coverageAmount !== undefined && {
+                coverageAmount: safeParseInt(requestData.caseObj.coverageAmount as string | number, existingAudit.caseObj.coverageAmount)
+              }),
+              ...(requestData.caseObj.caseStatus && {
+                caseStatus: requestData.caseObj.caseStatus as CaseStatus
+              })
+            } : {})
         }}),
         ...(requestData.auditor && { auditor: {
           ...existingAudit.auditor,
-          ...requestData.auditor
+          // Safely handle auditor properties
+          ...(requestData.auditor.userId !== undefined && {
+            userId: safeParseInt(String(requestData.auditor.userId))
+          }),
+          ...(requestData.auditor.role && {
+            role: requestData.auditor.role
+          })
         }})
       };
       
@@ -502,22 +695,22 @@ export const handlers = [
       console.error("[MSW] Error in /api/audits/:auditId PUT handler:", error);
       
       // Return a fallback updated audit
-      const fallbackAudit = {
-        auditId: safeParseInt(params.auditId, 1),
-        quarter: `Q${Math.floor((new Date().getMonth()) / 3) + 1}-${new Date().getFullYear()}`,
+      const fallbackAudit: AuditObj = {
+        auditId: safeParseInt(Array.isArray(params.auditId) ? params.auditId[0] : params.auditId, 1),
+        quarter: `Q${Math.floor((new Date().getMonth()) / 3) + 1}-${new Date().getFullYear()}` as QuarterPeriod,
         caseObj: {
-          caseNumber: Math.floor(Math.random() * 100000) + 1,
+          caseNumber: createCaseId(Math.floor(Math.random() * 100000) + 1),
           claimOwner: {
             userId: 1,
-            role: ROLES.TEAM_LEADER
+            role: USER_ROLE_ENUM.TEAM_LEADER
           },
-          claimsStatus: CLAIMS_STATUS.FULL_COVER,
+          claimsStatus: CLAIMS_STATUS.FULL_COVER as ClaimsStatus,
           coverageAmount: 10000.00,
-          caseStatus: "COMPENSATED"
+          caseStatus: CASE_STATUS.COMPENSATED as CaseStatus
         },
         auditor: {
           userId: 2,
-          role: ROLES.SPECIALIST
+          role: USER_ROLE_ENUM.SPECIALIST
         },
         isAkoReviewed: false
       };
@@ -533,7 +726,8 @@ export const handlers = [
       console.log(`[MSW] Getting findings for audit ${auditId}`);
       
       // Generate mock findings for this audit
-      const findings = generateFindings(auditId);
+      const auditIdValue = Array.isArray(auditId) ? auditId[0] : auditId;
+      const findings = generateFindings(auditIdValue ?? 1);
       
       return HttpResponse.json(findings, { status: 200 });
     } catch (error) {
@@ -547,15 +741,21 @@ export const handlers = [
     try {
       const { auditId } = params;
       
-      // Default finding if request parsing fails
-      let requestData = {
+      let requestData: { type: string; description: string; } = {
         type: "DOCUMENTATION_ISSUE",
         description: "No description provided"
       };
       
       try {
-        requestData = await request.json();
-      } catch (e) {
+        const jsonData = await request.json();
+        if (jsonData && typeof jsonData === 'object') {
+          requestData = {
+            type: jsonData.type || requestData.type,
+            description: jsonData.description || requestData.description
+          };
+        }
+      } catch (error) {
+        // Ignore parse error but log warning
         console.warn("[MSW] Failed to parse request body, using default data");
       }
       
@@ -624,7 +824,7 @@ export const handlers = [
       console.log(`[MSW] Exporting report for quarter ${quarter}`);
       
       // Create a mock CSV with header and some sample data
-      let csv = 'Case-ID,Claims Manager,Finding Type,Finding Description,Auditor\n';
+      let csv = 'CaseID,Claims Manager,Finding Type,Finding Description,Auditor\n';
       
       // Add some sample data
       mockCases.slice(0, 5).forEach((caseItem, index) => {
@@ -634,7 +834,7 @@ export const handlers = [
           const auditorCode = auditorCodes[index % auditorCodes.length];
           
           csv += `${caseItem.caseNumber},${userName},${findingType},"Sample finding description",${auditorCode}\n`;
-        } catch (e) {
+        } catch (error) {
           csv += `${index+1000},Unknown,DOCUMENTATION_ISSUE,"Sample finding description",XX\n`;
         }
       });
@@ -665,5 +865,244 @@ export const handlers = [
         'Access-Control-Allow-Headers': 'Content-Type, Authorization'
       }
     });
-  })
+  }),
+
+  // Get user by ID
+  http.get('/api/users/:id', ({ params }) => {
+    const userId = params.id as string;
+    const user = users.find(u => u.id === createUserId(userId));
+    
+    if (user) {
+      return HttpResponse.json({ success: true, data: user });
+    }
+    
+    return new HttpResponse(
+      JSON.stringify({ success: false, error: 'User not found' }),
+      { status: 404 }
+    );
+  }),
+
+  // User handlers
+  http.get('/api/users', () => {
+    return HttpResponse.json({ 
+      success: true, 
+      data: users
+    });
+  }),
+  
+  http.get('/api/users/:id', ({ params }) => {
+    const user = users.find(u => u.id === createUserId(params.id as string));
+    
+    if (!user) {
+      return HttpResponse.json(
+        { success: false, error: 'User not found' },
+        { status: 404 }
+      );
+    }
+    
+    return HttpResponse.json({ 
+      success: true, 
+      data: user
+    });
+  }),
+  
+  // Verification handlers
+  
+  // Handler for getting audits by user/auditor
+  http.get('/api/audits/auditor/:userId', ({ params }) => {
+    const { userId } = params;
+    const userIdValue = userId ? userId.toString() : '';
+    
+    // Generate audit objects for this user
+    const auditCount = getNumericId(userIdValue) % 5 + 1; // 1-5 audits based on ID
+    const now = new Date();
+    const currentQuarter = Math.floor(now.getMonth() / 3) + 1;
+    const year = now.getFullYear();
+    
+    const audits = Array.from({ length: auditCount }, (_, i) => {
+      const caseNumber = createCaseId(30040000 + getNumericId(userIdValue) * 100 + i);
+      const caseObj = {
+        caseNumber,
+        claimOwner: {
+          userId: createUserId(userIdValue),
+          role: Math.random() > 0.7 ? USER_ROLE_ENUM.SPECIALIST : USER_ROLE_ENUM.STAFF
+        },
+        coverageAmount: Math.floor(Math.random() * 100000) + 500,
+        claimsStatus: Math.random() > 0.7 ? CLAIMS_STATUS.PARTIAL_COVER : CLAIMS_STATUS.FULL_COVER as ClaimsStatus,
+        caseStatus: CASE_STATUS.COMPENSATED as CaseStatus
+      };
+      
+      return {
+        auditId: (getNumericId(userIdValue) * 1000 + i + 1),
+        quarter: `Q${currentQuarter}-${year}` as QuarterPeriod,
+        caseObj,
+        auditor: {
+          userId: createUserId(userIdValue),
+          role: Math.random() > 0.7 ? USER_ROLE_ENUM.SPECIALIST : USER_ROLE_ENUM.STAFF
+        },
+        isAkoReviewed: Math.random() > 0.8 // 20% chance of being reviewed
+      };
+    });
+    
+    return HttpResponse.json({ 
+      success: true, 
+      data: audits
+    });
+  }),
+  
+  // Get random audit for user
+  http.get('/api/audits/random/:userId', ({ params, request }) => {
+    try {
+      const { userId } = params;
+      const url = new URL(request.url);
+      const quarter = url.searchParams.get('quarter');
+      const year = url.searchParams.get('year');
+      
+      console.log(`[MSW] Getting random audit for user ${userId}, quarter ${quarter}, year ${year}`);
+      
+      // Parse the user ID
+      const userIdValue = Array.isArray(userId) ? userId[0] : userId;
+      const numericUserId = safeParseInt(userIdValue);
+      
+      // Parse the quarter (e.g., "Q1-2023")
+      let quarterPeriod: QuarterPeriod;
+      if (!quarter || !isQuarterPeriod(quarter)) {
+        const currentYear = year ? parseInt(year) : new Date().getFullYear();
+        const currentQuarter = Math.floor((new Date().getMonth()) / 3) + 1 as QuarterNumber;
+        quarterPeriod = `Q${currentQuarter}-${currentYear}` as QuarterPeriod;
+      } else {
+        quarterPeriod = quarter as QuarterPeriod;
+      }
+      
+      // Try to find a suitable audit for this user
+      const filteredAudits = mockCases
+        .filter(caseItem => {
+          // Some logic to determine if this case should be assigned to this user
+          return getNumericId(caseItem.id) % 5 === numericUserId % 5;
+        })
+        .slice(0, 3); // Limit to 3 possible audits
+      
+      if (filteredAudits.length > 0) {
+        // Pick one randomly
+        const randomIndex = Math.floor(Math.random() * filteredAudits.length);
+        const randomCase = filteredAudits[randomIndex];
+        const auditRecord = caseToAudit(randomCase, quarterPeriod);
+        
+        // Add dossierRisk to the audit record
+        const auditWithRisk = {
+          ...auditRecord,
+          dossierRisk: Math.floor(Math.random() * 10) + 1
+        };
+        
+        console.log(`[MSW] Found random audit for user ${userId}`);
+        return HttpResponse.json({
+          success: true,
+          data: auditWithRisk
+        }, { status: 200 });
+      }
+      
+      // If no audit found, create a fallback audit
+      console.log(`[MSW] Creating fallback audit for user ${userId}`);
+      const fallbackAudit = {
+        auditId: createAuditId((Math.floor(Math.random() * 10000) + 1).toString()),
+        quarter: quarterPeriod,
+        caseObj: {
+          caseNumber: createCaseId(Math.floor(Math.random() * 10000) + 1),
+          claimOwner: {
+            userId: numericUserId,
+            role: USER_ROLE_ENUM.SPECIALIST
+          },
+          coverageAmount: 0,
+          claimsStatus: CLAIMS_STATUS.FULL_COVER,
+          caseStatus: CASE_STATUS.COMPENSATED
+        },
+        isAkoReviewed: false,
+        auditor: {
+          userId: numericUserId,
+          role: USER_ROLE_ENUM.SPECIALIST
+        },
+        dossierRisk: Math.floor(Math.random() * 10) + 1
+      };
+      
+      return HttpResponse.json({
+        success: true,
+        data: fallbackAudit
+      }, { status: 200 });
+      
+    } catch (error) {
+      console.error("[MSW] Error in /api/audits/random/:userId handler:", error);
+      
+      // Return error response
+      return HttpResponse.json({
+        success: false,
+        error: "Failed to get random audit"
+      }, { status: 500 });
+    }
+  }),
+  
+  // Handler for selecting quarterly dossiers
+  http.post('/api/verification/select-quarterly', async ({ request }) => {
+    try {
+      const body = await request.json() as { quarterKey: string; userIds: string[] };
+      const { quarterKey } = body;
+      
+      // Parse the quarter key (e.g., "Q1-2023")
+      const [quarterStr, yearStr] = quarterKey.split('-');
+      const quarterNum = parseInt(quarterStr.replace('Q', ''));
+      const year = parseInt(yearStr);
+      
+      // Calculate previous quarter (use the function)
+      const { quarter: prevQuarterNum, year: prevYear } = getPreviousQuarterInfo(quarterNum, year);
+      
+      // Use these values
+      console.log(`[MSW] Previous quarter: Q${prevQuarterNum}-${prevYear}`);
+      
+      // Generate mock user audits (would be one per eligible user)
+      const userQuarterlyAudits = users
+        .filter(user => user.isActive)
+        .map(user => {
+          const id = `QUARTERLY-${user.id}-${Date.now()}`;
+          return {
+            id,
+            auditId: id,
+            dossierId: id,
+            userId: user.id,
+            coverageAmount: Math.floor(
+              Math.random() * (user.role === USER_ROLE_ENUM.STAFF ? 30000 : 150000)
+            ),
+            claimsStatus: CLAIMS_STATUS.FULL_COVER as ClaimsStatus,
+            isAkoReviewed: false
+          };
+        });
+      
+      // Generate mock previous quarter audits for quality control
+      const previousQuarterRandomAudits = Array.from({ length: 5 }).map((_, index) => {
+        const id = `PREV-QUARTER-${Date.now()}-${index}`;
+        return {
+          id,
+          dossierId: id,
+          auditId: id,
+          coverageAmount: Math.floor(Math.random() * 100000),
+          claimsStatus: CLAIMS_STATUS.FULL_COVER as ClaimsStatus,
+          isAkoReviewed: false
+        };
+      });
+      
+      return HttpResponse.json({
+        success: true,
+        data: {
+          quarterKey,
+          userQuarterlyAudits,
+          previousQuarterRandomAudits,
+          lastSelectionDate: new Date().toISOString()
+        }
+      });
+    } catch (error) {
+      console.error('Error in quarterly dossier selection handler:', error);
+      return HttpResponse.json(
+        { success: false, error: 'Failed to select quarterly dossiers' },
+        { status: 500 }
+      );
+    }
+  }),
 ]; 
