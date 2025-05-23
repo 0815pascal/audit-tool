@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import React, { createContext, useState, useCallback } from 'react';
+import React, { createContext, useState, useCallback, useContext } from 'react';
 import Toast from '../components/common/Toast';
 import { ToastType, ToastData, ContextProviderProps } from '../types';
 import { TOAST_TYPE } from '../enums';
@@ -11,6 +11,15 @@ export interface ToastContextType {
 
 // Create and export the context
 export const ToastContext = createContext<ToastContextType | undefined>(undefined);
+
+// Define the useToast hook directly here to avoid circular dependency
+export const useToast = (): ToastContextType => {
+  const context = useContext(ToastContext);
+  if (context === undefined) {
+    throw new Error('useToast must be used within a ToastProvider');
+  }
+  return context;
+};
 
 // Export only the provider component
 export const ToastProvider: React.FC<ContextProviderProps> = ({ children }) => {
@@ -36,8 +45,4 @@ export const ToastProvider: React.FC<ContextProviderProps> = ({ children }) => {
       )}
     </ToastContext.Provider>
   );
-};
-
-// Import the hook from the dedicated file to avoid Fast Refresh warnings
-import { useToast } from '../hooks/useToast';
-export { useToast }; 
+}; 

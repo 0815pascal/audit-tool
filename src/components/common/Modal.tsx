@@ -11,6 +11,7 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, title, onClose, children }
   if (!isOpen) return null;
   return (
     <div
+      className="modal-overlay"
       onClick={onClose}
       style={{
         position: 'fixed',
@@ -26,6 +27,10 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, title, onClose, children }
       }}
     >
       <div
+        className="modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modal-title"
         onClick={(e) => e.stopPropagation()}
         style={{
           backgroundColor: 'white',
@@ -38,7 +43,7 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, title, onClose, children }
         }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-          <h3 style={{ margin: 0 }}>{title}</h3>
+          <h3 id="modal-title" style={{ margin: 0 }}>{title}</h3>
           <button onClick={onClose} style={{ fontSize: '1.5rem', lineHeight: 1, border: 'none', background: 'transparent', cursor: 'pointer', color: '#333' }}>
             &times;
           </button>

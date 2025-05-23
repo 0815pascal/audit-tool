@@ -53,10 +53,10 @@ export const useUsers = () => {
   
   // Fetch users when the hook is initialized or if the user list is empty
   useEffect(() => {
-    if (status === 'idle' && allUsers.length === 0) {
+    if (status === 'idle' && allUsers.length === 0 && !isLoading) {
       dispatch(fetchUsers());
     }
-  }, [dispatch, status, allUsers.length]);
+  }, [dispatch, status, allUsers.length, isLoading]);
   
   // Get a user by ID
   const getUserById = useCallback(

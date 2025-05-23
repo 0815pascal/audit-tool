@@ -15,7 +15,6 @@ import {
   CaseId, 
   UserId, 
   RatingValue, 
-  FindingType, 
   FindingsRecord,
   QuarterPeriod
 } from './types';
@@ -70,6 +69,15 @@ export interface StoredCaseAuditData extends CaseAuditData {
   isIncorrect: boolean;
   status: CaseAuditStatus;
   steps: Record<string, CaseAuditStep>;
+  // Additional fields for compatibility with StoredVerificationData
+  quarter: string;
+  year: number;
+  caseType: CaseType;
+  coverageAmount: number;
+  claimsStatus: ClaimsStatus;
+  dossierName: string;
+  isAkoReviewed?: boolean;
+  lastUpdated?: string;
 }
 
 // Action payload for case audit operations
@@ -80,6 +88,12 @@ export interface CaseAuditActionPayload extends BaseAuditActionPayload, CaseAudi
 // Specific payload for verifying an audit
 export interface VerifyCaseAuditPayload extends CaseAuditActionPayload {
   rating: RatingValue;
+  isVerified: boolean;
+}
+
+// For backward compatibility
+export interface VerifyAuditActionPayload extends CaseAuditActionPayload {
+  isVerified: boolean;
 }
 
 // Summary version of CaseAudit with only essential fields
@@ -133,14 +147,18 @@ export interface CaseAuditState {
       }
     }
   };
-  quarterlyAudits: {
-    quarter: QuarterPeriod;
-    lastSelectionDate: ISODateString | null;
+  quarterlySelection: Dictionary<{
+    quarterKey: string;
+    lastSelectionDate?: string;
     userQuarterlyAudits: CaseAuditId[];
     previousQuarterRandomAudits: CaseAuditId[];
-  };
-  loading: boolean;
-  error: string | null;
+  }>;
+  userRoles: Dictionary<{
+    role: string;
+    department: string;
+  }>;
+  loading?: boolean;
+  error?: string | null;
 }
 
 // Utility function to get case audit data from state

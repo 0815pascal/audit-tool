@@ -1,6 +1,6 @@
-/* eslint-disable react-refresh/only-export-components */
 import React from 'react';
 import { TabView } from './TabNavigationTypes';
+import { TAB_VIEWS_DISPLAY } from '../constants';
 
 interface TabNavigationProps {
   activeTab: TabView;
@@ -19,17 +19,17 @@ const TabNavigation: React.FC<TabNavigationProps> = ({ activeTab, onTabChange })
         }}
       >
         <TabButton 
-          label="Audit Log" 
+          label={TAB_VIEWS_DISPLAY[TabView.AUDIT_LOG]} 
           isActive={activeTab === TabView.AUDIT_LOG} 
           onClick={() => onTabChange(TabView.AUDIT_LOG)} 
         />
         <TabButton 
-          label="IKS" 
+          label={TAB_VIEWS_DISPLAY[TabView.IKS]} 
           isActive={activeTab === TabView.IKS} 
           onClick={() => onTabChange(TabView.IKS)} 
         />
         <TabButton 
-          label="Users" 
+          label={TAB_VIEWS_DISPLAY[TabView.USERS]} 
           isActive={activeTab === TabView.USERS} 
           onClick={() => onTabChange(TabView.USERS)} 
         />

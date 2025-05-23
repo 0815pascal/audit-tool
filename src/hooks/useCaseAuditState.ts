@@ -1,14 +1,9 @@
 import { useCallback } from 'react';
 import { useAppSelector, useAppDispatch } from '../store/hooks';
 import {
-  VerificationData,
-  StoredVerificationData,
-  VerificationStatus,
   QuarterlyStatus,
   formatQuarterPeriod,
-  VerificationStep,
-  createUserId,
-  createVerificationAuditId
+  createUserId
 } from '../types';
 import {
   verifyAudit,
@@ -20,6 +15,13 @@ import {
   updateStepComment,
   getCurrentQuarter
 } from '../store/caseAuditSlice';
+import {
+  createCaseAuditId,
+  CaseAuditData,
+  CaseAuditStatus,
+  CaseAuditStep,
+  StoredCaseAuditData
+} from '../caseAuditTypes';
 
 interface UseCaseAuditStateOptions {
   auditId?: string;
@@ -50,20 +52,20 @@ export function useCaseAuditState(options: UseCaseAuditStateOptions = {}) {
   });
 
   // Current audit status
-  const auditStatus = auditData?.status || 'not-verified';
+  const auditStatus = auditData?.status || CaseAuditStatus.NOT_VERIFIED;
 
   // Check if audit is verified
   const isVerified = auditData?.isVerified || false;
 
   // Save audit data (in-progress)
-  const saveAuditData = useCallback((data: VerificationData, verifier: string) => {
+  const saveAuditData = useCallback((data: CaseAuditData, verifier: string) => {
     if (!auditId || !userId) {
       console.error('Cannot save audit data: auditId or userId missing');
       return;
     }
     
     dispatch(updateAuditInProgress({
-      auditId: createVerificationAuditId(auditId),
+      auditId: createCaseAuditId(auditId),
       userId: createUserId(userId),
       verifier: createUserId(verifier),
       ...data
@@ -71,14 +73,14 @@ export function useCaseAuditState(options: UseCaseAuditStateOptions = {}) {
   }, [dispatch, auditId, userId]);
 
   // Verify audit
-  const doVerifyAudit = useCallback((data: VerificationData, verifier: string) => {
+  const doVerifyAudit = useCallback((data: CaseAuditData, verifier: string) => {
     if (!auditId || !userId) {
       console.error('Cannot verify audit: auditId or userId missing');
       return;
     }
     
     dispatch(verifyAudit({
-      auditId: createVerificationAuditId(auditId),
+      auditId: createCaseAuditId(auditId),
       userId: createUserId(userId),
       isVerified: true,
       verifier: createUserId(verifier),
@@ -87,14 +89,14 @@ export function useCaseAuditState(options: UseCaseAuditStateOptions = {}) {
   }, [dispatch, auditId, userId]);
 
   // Reject audit
-  const doRejectAudit = useCallback((data: VerificationData, verifier: string) => {
+  const doRejectAudit = useCallback((data: CaseAuditData, verifier: string) => {
     if (!auditId || !userId) {
       console.error('Cannot reject audit: auditId or userId missing');
       return;
     }
     
     dispatch(rejectAudit({
-      auditId: createVerificationAuditId(auditId),
+      auditId: createCaseAuditId(auditId),
       userId: createUserId(userId),
       verifier: createUserId(verifier),
       ...data
@@ -102,14 +104,14 @@ export function useCaseAuditState(options: UseCaseAuditStateOptions = {}) {
   }, [dispatch, auditId, userId]);
 
   // Update audit status
-  const updateStatus = useCallback((status: VerificationStatus) => {
+  const updateStatus = useCallback((status: CaseAuditStatus) => {
     if (!auditId || !userId) {
       console.error('Cannot update status: auditId or userId missing');
       return;
     }
     
     dispatch(updateAuditStatus({
-      auditId: createVerificationAuditId(auditId),
+      auditId: createCaseAuditId(auditId),
       userId: createUserId(userId),
       status
     }));
@@ -123,7 +125,7 @@ export function useCaseAuditState(options: UseCaseAuditStateOptions = {}) {
     }
     
     dispatch(verifyStep({
-      auditId: createVerificationAuditId(auditId),
+      auditId: createCaseAuditId(auditId),
       userId: createUserId(userId),
       stepId,
       isVerified
@@ -138,7 +140,7 @@ export function useCaseAuditState(options: UseCaseAuditStateOptions = {}) {
     }
     
     dispatch(markStepIncorrect({
-      auditId: createVerificationAuditId(auditId),
+      auditId: createCaseAuditId(auditId),
       userId: createUserId(userId),
       stepId,
       isIncorrect
@@ -153,7 +155,7 @@ export function useCaseAuditState(options: UseCaseAuditStateOptions = {}) {
     }
     
     dispatch(updateStepComment({
-      auditId: createVerificationAuditId(auditId),
+      auditId: createCaseAuditId(auditId),
       userId: createUserId(userId),
       stepId,
       comment
@@ -161,30 +163,30 @@ export function useCaseAuditState(options: UseCaseAuditStateOptions = {}) {
   }, [dispatch, auditId, userId]);
 
   // Get audit step
-  const getAuditStep = useCallback((stepId: string): VerificationStep | undefined => {
+  const getAuditStep = useCallback((stepId: string): CaseAuditStep | undefined => {
     if (!auditData) return undefined;
     return auditData.steps[stepId];
   }, [auditData]);
 
   type CaseAuditStateReturn = {
-    // State
-    auditData: StoredVerificationData | undefined;
-    quarterlyStatus: QuarterlyStatus | undefined;
-    auditStatus: VerificationStatus;
-    isVerified: boolean;
-    
-    // Actions
-    saveAuditData: (data: VerificationData, verifier: string) => void;
-    verifyAudit: (data: VerificationData, verifier: string) => void;
-    rejectAudit: (data: VerificationData, verifier: string) => void;
-    updateStatus: (status: VerificationStatus) => void;
-    verifyStep: (stepId: string, isVerified: boolean) => void;
-    markStepIncorrect: (stepId: string, isIncorrect: boolean) => void;
-    updateStepComment: (stepId: string, comment: string) => void;
-    
-    // Helpers
-    getAuditStep: (stepId: string) => VerificationStep | undefined;
-  };
+  // State
+  auditData: StoredCaseAuditData | undefined;
+  quarterlyStatus: QuarterlyStatus | undefined;
+  auditStatus: CaseAuditStatus;
+  isVerified: boolean;
+  
+  // Actions
+  saveAuditData: (data: CaseAuditData, verifier: string) => void;
+  verifyAudit: (data: CaseAuditData, verifier: string) => void;
+  rejectAudit: (data: CaseAuditData, verifier: string) => void;
+  updateStatus: (status: CaseAuditStatus) => void;
+  verifyStep: (stepId: string, isVerified: boolean) => void;
+  markStepIncorrect: (stepId: string, isIncorrect: boolean) => void;
+  updateStepComment: (stepId: string, comment: string) => void;
+  
+  // Helpers
+  getAuditStep: (stepId: string) => CaseAuditStep | undefined;
+};
 
   return {
     // State
@@ -205,32 +207,4 @@ export function useCaseAuditState(options: UseCaseAuditStateOptions = {}) {
     // Helpers
     getAuditStep
   } as CaseAuditStateReturn;
-}
-
-// For backward compatibility
-export type UseVerificationStateOptions = UseCaseAuditStateOptions;
-
-/**
- * @deprecated Use useCaseAuditState instead
- */
-export function useVerificationState(options: UseVerificationStateOptions = {}) {
-  const caseAuditState = useCaseAuditState(options);
-  
-  // Map the new names to the old interface
-  return {
-    verificationData: caseAuditState.auditData,
-    quarterlyStatus: caseAuditState.quarterlyStatus,
-    verificationStatus: caseAuditState.auditStatus,
-    isVerified: caseAuditState.isVerified,
-    
-    saveVerificationData: caseAuditState.saveAuditData,
-    verifyAudit: caseAuditState.verifyAudit,
-    rejectAudit: caseAuditState.rejectAudit,
-    updateStatus: caseAuditState.updateStatus,
-    verifyStep: caseAuditState.verifyStep,
-    markStepIncorrect: caseAuditState.markStepIncorrect,
-    updateStepComment: caseAuditState.updateStepComment,
-    
-    getVerificationStep: caseAuditState.getAuditStep
-  };
 } 

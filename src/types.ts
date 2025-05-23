@@ -1,4 +1,3 @@
-// Import enums from enums.ts
 import {
   FINDING_CATEGORY,
   TOAST_TYPE,
@@ -18,6 +17,13 @@ import {
   STATUS_DISPLAY_ENUM,
   INPUT_TYPE_ENUM
 } from './enums';
+
+// Import CaseAuditId and related types from caseAuditTypes.ts
+import { 
+  CaseAuditId, 
+  CaseAuditStatus, 
+  CaseAudit
+} from './caseAuditTypes';
 
 // Base types as string literals (enum-like)
 export type UserRole = USER_ROLE_ENUM;
@@ -184,35 +190,13 @@ export interface BaseEntity<T = string> {
   id: T;
 }
 
-// Extended version with Redux-specific fields
-export interface StoredVerificationData extends VerificationData {
-  isVerified: boolean;
-  verificationDate: ISODateString | null;
-  userId: UserId;
-  quarter: QuarterNumber;
-  year: number;
-  verifier: UserId;
-  status: VerificationStatus;
-  caseType: CaseType;
-  coverageAmount: number;
-  claimsStatus: ClaimsStatus;
-  isAkoReviewed: boolean;
-  lastUpdated?: ISODateString;
-  steps: Record<string, VerificationStep>;
-}
+// Type alias for backward compatibility during migration
+export type VerificationAuditId = CaseAuditId;
 
 // Common action payload types
 export interface BaseAuditActionPayload {
-  auditId: VerificationAuditId;
+  auditId: CaseAuditId;
   userId: UserId;
-}
-
-export interface VerificationActionPayload extends BaseAuditActionPayload, VerificationData {
-  verifier: UserId;
-}
-
-export interface VerifyAuditActionPayload extends VerificationActionPayload {
-  isVerified: boolean;
 }
 
 export interface StepActionPayload extends BaseAuditActionPayload {
@@ -220,7 +204,7 @@ export interface StepActionPayload extends BaseAuditActionPayload {
 }
 
 export interface StatusUpdatePayload extends BaseAuditActionPayload {
-  status: VerificationStatus;
+  status: CaseAuditStatus;
 }
 
 // Common types for user quarterly status
@@ -292,17 +276,26 @@ export interface Quarter {
 
 // Type for quarterly selection data
 export interface QuarterlySelection {
-  userQuarterlyAudits: VerificationAuditId[];
-  previousQuarterRandomAudits: VerificationAuditId[];
-  lastSelectionDate: ISODateString;
+  quarterKey: string;
+  lastSelectionDate?: string;
+  userQuarterlyAudits: CaseAuditId[];
+  previousQuarterRandomAudits: CaseAuditId[];
 }
 
 // Type for audit quarterly selection payloads
-export interface AuditForSelection extends BaseEntity<VerificationAuditId> {
-  auditId: VerificationAuditId; // Explicitly include auditId for selection operations
+export interface AuditForSelection extends BaseEntity<CaseAuditId> {
+  auditId: CaseAuditId; // Explicitly include auditId for selection operations
+  userId: string;
+  status?: VERIFICATION_STATUS_ENUM;
   coverageAmount: number;
-  claimsStatus: ClaimsStatus;
-  isAkoReviewed: boolean;
+  claimsStatus?: string;
+  verifier?: string;
+  comment?: string;
+  rating?: string;
+  specialFindings?: FindingsRecord;
+  detailedFindings?: FindingsRecord;
+  isVerified?: boolean;
+  isAkoReviewed?: boolean;
 }
 
 // Type for user audit selection with userId
@@ -321,32 +314,13 @@ export interface BaseUserFields {
 // Type for user role info - use the relevant fields from BaseUserFields
 export type UserRoleInfo = Pick<BaseUserFields, 'role' | 'department'>;
 
-// Type for case audit state with more precise record types
-export interface CaseAuditState {
-  verifiedAudits: Dictionary<StoredVerificationData>;
-  userQuarterlyStatus: QuarterlyStatusByUserRecord;
-  quarterlySelection: Dictionary<QuarterlySelection>;
-  userRoles: Dictionary<UserRoleInfo>;
-  currentUserId: UserId;
-}
-
-// For backward compatibility
-export type VerificationState = CaseAuditState;
-
-// Summary version of VerificationAudit with only essential fields
-export interface VerificationAuditSummary extends BaseEntity<VerificationAuditId> {
-  userId?: UserId;
-  coverageAmount: number;
-  claimsStatus: ClaimsStatus;
-  isAkoReviewed: boolean;
-}
-
 // Branded ID types for better type safety
 export type UserId = string & { readonly __brand: unique symbol };
 export type CaseId = number & { readonly __brand: unique symbol };
-export type AuditId = string & { readonly __brand: unique symbol };
 export type PolicyId = number & { readonly __brand: unique symbol };
-export type VerificationAuditId = string & { readonly __brand: unique symbol };
+
+// Define AuditId as an alias to CaseAuditId for backward compatibility
+export type AuditId = CaseAuditId;
 
 // Type guard functions for branded types
 export function isUserId(value: unknown): value is UserId {
@@ -368,24 +342,8 @@ export function isCaseId(value: unknown): value is CaseId {
   return Object.prototype.hasOwnProperty.call(value, '__brand');
 }
 
-export function isAuditId(value: unknown): value is AuditId {
-  if (typeof value !== 'string') {
-    return false;
-  }
-  
-  return Object.prototype.hasOwnProperty.call(value, '__brand');
-}
-
 export function isPolicyId(value: unknown): value is PolicyId {
   if (typeof value !== 'number') {
-    return false;
-  }
-  
-  return Object.prototype.hasOwnProperty.call(value, '__brand');
-}
-
-export function isVerificationAuditId(value: unknown): value is VerificationAuditId {
-  if (typeof value !== 'string') {
     return false;
   }
   
@@ -401,24 +359,8 @@ export function createCaseId(id: number): CaseId {
   return id as CaseId;
 }
 
-export function createAuditId(id: string): AuditId {
-  return id as AuditId;
-}
-
 export function createPolicyId(id: number): PolicyId {
   return id as PolicyId;
-}
-
-export function createVerificationAuditId(id: string): VerificationAuditId {
-  return id as VerificationAuditId;
-}
-
-// Keep for backward compatibility - but mark as deprecated
-/**
- * @deprecated Use createVerificationAuditId() instead.
- */
-export function createDossierId(id: string): VerificationAuditId {
-  return createVerificationAuditId(id);
 }
 
 // Generic utility function to safely convert a string or number to a branded ID type
@@ -443,11 +385,7 @@ export function ensureBrandedId<T, V extends string | number>(
 
 // Improved shorthand helper functions for common ID types
 export function ensureUserId(id: string | UserId): UserId {
-  return ensureBrandedId(id, createUserId, isUserId);
-}
-
-export function ensureVerificationAuditId(id: string | VerificationAuditId): VerificationAuditId {
-  return ensureBrandedId(id, createVerificationAuditId, isVerificationAuditId);
+  return typeof id === 'string' ? createUserId(id) : id;
 }
 
 export function ensurePolicyId(id: number | PolicyId): PolicyId {
@@ -470,54 +408,7 @@ export interface CalculationStep extends Omit<VerificationStep, 'id'> {
   value: number;
 }
 
-// Core dossier data without verification fields
-/**
- * Core structure of a verification audit without verification-specific fields
- * 
- * This represents the base properties needed to identify and display an audit case
- * that needs verification. It includes all the metadata from the original
- * audit case but structured for the internal application.
- */
-export interface VerificationAuditCore extends BaseEntity<VerificationAuditId> {
-  userId: UserId;
-  date: ISODateString;  // Make it explicit this is an ISO date string
-  clientName: string;
-  policyNumber: PolicyId;
-  caseNumber: CaseId;
-  dossierRisk: number;
-  dossierName: string;
-  totalAmount: number;
-  coverageAmount: number;
-  isAkoReviewed: boolean;
-  isSpecialist: boolean;
-  quarter: QuarterPeriod; // Make consistent with other code by explicitly showing it's a quarter period
-  year: number;
-  claimsStatus: ClaimsStatus;
-  caseType: CaseType;
-}
-
-// Full audit with verification data
-/**
- * Represents a verification audit in the application
- * 
- * A VerificationAudit is the internal representation of an audit case that has been
- * prepared for verification. It is derived from an external AuditRecord
- * but includes additional fields for the verification workflow:
- * 
- * - It contains all the core audit case information from CaseObj
- * - It adds verification-specific fields like comments, ratings, findings
- * - It includes verification status and metadata
- * 
- * VerificationAudits are created by transforming AuditRecords via the auditToVerificationAudit function
- * and are the primary data structure used throughout the verification workflow.
- */
-export interface VerificationAudit extends VerificationAuditCore, VerificationData {
-  isVerified: boolean;
-  verifier: UserId;
-  status?: VerificationStatus;
-}
-
-export interface VerifiedAudit extends Omit<VerificationAudit, 'isVerified' | 'year'> {
+export interface VerifiedAudit extends Omit<CaseAudit, 'isVerified' | 'year'> {
   // Verification metadata
   isFullyVerified: boolean;  // Rename of isVerified 
   hasIncorrectCalculations: boolean;
@@ -622,25 +513,6 @@ export const createEmptySpecialFindings = (): SpecialFindingsRecord => {
   };
 };
 
-// Get case audit data from Redux state with a more generic type
-export function getCaseAuditData(
-  state: { caseAudit: CaseAuditState }, 
-  auditId: VerificationAuditId
-): StoredVerificationData | undefined {
-  return state.caseAudit.verifiedAudits[auditId];
-}
-
-// For backward compatibility
-export function getVerificationData(
-  state: { caseAudit: CaseAuditState } | { verification: VerificationState }, 
-  auditId: VerificationAuditId
-): StoredVerificationData | undefined {
-  if ('caseAudit' in state) {
-    return state.caseAudit.verifiedAudits[auditId];
-  }
-  return state.verification.verifiedAudits[auditId];
-}
-
 // Helper to format a quarter period (Q1-2023 format)
 export function formatQuarterPeriod(quarter: QuarterNumber, year: number): QuarterPeriod {
   return `Q${quarter}-${year}`;
@@ -694,60 +566,3 @@ export interface ToastData {
 
 // Context provider related types
 export type ContextProviderProps = PropsWithChildren;
-
-/**
- * Generic type for context hooks that enforces proper error handling
- * 
- * This ensures that context hooks properly check for undefined context
- * and throw an appropriate error message when used outside their provider.
- */
-export interface UseContextHook<T> {
-  (): T;
-}
-
-/**
- * Helper function to create a type-safe context hook
- * 
- * @param useContextFn The React useContext function
- * @param context The React context
- * @param hookName The name of the hook for error messages
- * @returns A type-safe hook function
- */
-export function createContextHook<T>(
-  useContextFn: <C>(context: React.Context<C>) => C,
-  context: React.Context<T | undefined>,
-  hookName: string
-): UseContextHook<T> {
-  return () => {
-    const contextValue = useContextFn(context);
-    if (contextValue === undefined) {
-      throw new Error(`${hookName} must be used within its Provider`);
-    }
-    return contextValue;
-  };
-}
-
-// Async hook related types
-export interface AsyncHookState<TData, TError = string> {
-  data: TData | null;
-  isLoading: boolean;
-  isError: boolean;
-  error: TError | null;
-}
-
-export interface AsyncHookActions<TData, TParams, TError = string> {
-  execute: (params: TParams) => Promise<TData>;
-  reset: () => void;
-  setData: (data: TData) => void;
-  setError: (error: TError) => void;
-}
-
-export type AsyncHookResult<TData, TParams, TError = string> = 
-  AsyncHookState<TData, TError> & 
-  AsyncHookActions<TData, TParams, TError>;
-
-// Import the TabView type from the component for backward compatibility
-import { TabView as ComponentTabView } from './components/TabNavigationTypes';
-
-// Re-export TabView to maintain backward compatibility
-export type TabView = ComponentTabView;

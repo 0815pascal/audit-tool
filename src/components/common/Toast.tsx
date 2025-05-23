@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { ToastType, ComponentProps } from '../../types';
-import { TOAST_TYPE } from '../../enums';
+import { TOAST_TYPE, TOAST_BG_COLOR_ENUM, TIME_MS_ENUM } from '../../enums';
 
 interface ToastProps extends Omit<ComponentProps<HTMLDivElement>, 'children'> {
   message: string;
@@ -12,7 +12,7 @@ interface ToastProps extends Omit<ComponentProps<HTMLDivElement>, 'children'> {
 const Toast: React.FC<ToastProps> = ({
   message,
   type = TOAST_TYPE.SUCCESS,
-  duration = 3000,
+  duration = TIME_MS_ENUM.TOAST_DURATION,
   onClose,
   ...props
 }) => {
@@ -27,15 +27,15 @@ const Toast: React.FC<ToastProps> = ({
   const getBackgroundColor = () => {
     switch (type) {
       case TOAST_TYPE.SUCCESS:
-        return 'bg-green-500';
+        return TOAST_BG_COLOR_ENUM.SUCCESS;
       case TOAST_TYPE.ERROR:
-        return 'bg-red-500';
+        return TOAST_BG_COLOR_ENUM.ERROR;
       case TOAST_TYPE.WARNING:
-        return 'bg-yellow-500';
+        return TOAST_BG_COLOR_ENUM.WARNING;
       case TOAST_TYPE.INFO:
-        return 'bg-blue-500';
+        return TOAST_BG_COLOR_ENUM.INFO;
       default:
-        return 'bg-green-500';
+        return TOAST_BG_COLOR_ENUM.SUCCESS;
     }
   };
 

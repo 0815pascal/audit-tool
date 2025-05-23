@@ -3,24 +3,19 @@ import Header from './components/Header';
 import TabNavigation from './components/TabNavigation';
 import { AuditLogTabContent, IksTabContent } from './components/tabs';
 import UserListComponent from './components/UserListComponent';
-import { useCaseAuditHandlers } from './hooks/useCaseAuditHandlers';
-import { useAppSelector } from './store/hooks';
-import { selectUserQuarterlyStatus, getCurrentQuarter } from './store/caseAuditSlice';
+import { useTabNavigation } from './hooks/useTabNavigation';
 import { TabView } from './components/TabNavigationTypes';
 
 function App() {
-  const { activeTab, handleTabChange } = useCaseAuditHandlers();
-  const userQuarterlyStatus = useAppSelector(selectUserQuarterlyStatus);
-  const { quarter, year } = useAppSelector(getCurrentQuarter);
-  const currentQuarter = `${quarter}-${year}`;
+  const { activeTab, handleTabChange } = useTabNavigation();
 
   return (
-    <div className="app">
+    <div className="app" data-testid="app-container">
       <Header />
       <TabNavigation activeTab={activeTab} onTabChange={handleTabChange} />
       
       {activeTab === TabView.AUDIT_LOG && <AuditLogTabContent />}
-      {activeTab === TabView.IKS && <IksTabContent userQuarterlyStatus={userQuarterlyStatus} currentQuarter={currentQuarter} />}
+      {activeTab === TabView.IKS && <IksTabContent />}
       {activeTab === TabView.USERS && <UserListComponent />}
     </div>
   );

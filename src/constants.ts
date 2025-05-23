@@ -92,7 +92,11 @@ export const USER_ROLES_DISPLAY: Record<UserRole, string> = {
 };
 
 // Tab views
-export const TAB_VIEWS = TabView;
+export const TAB_VIEWS = {
+  AUDIT_LOG: TabView.AUDIT_LOG,
+  IKS: TabView.IKS,
+  USERS: TabView.USERS
+};
 
 // Tab view display names
 export const TAB_VIEWS_DISPLAY: Record<TabView, string> = {

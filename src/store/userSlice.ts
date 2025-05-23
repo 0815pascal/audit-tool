@@ -162,11 +162,22 @@ export const {
 
 // Selectors
 export const selectAllUsers = (state: RootState) => state.user.users;
-export const selectActiveUsers = (state: RootState) => state.user.users.filter(user => user.isActive);
+
+
+// Memoized selectors to prevent unnecessary rerenders
+export const selectActiveUsers = createSelector(
+  [selectAllUsers],
+  (users) => users.filter(user => user.isActive)
+);
+
 export const selectUserById = (state: RootState, userId: UserId) => 
   state.user.users.find(user => user.id === userId);
-export const selectUsersByRole = (state: RootState, role: UserRole) => 
-  state.user.users.filter(user => user.role === role);
+
+export const selectUsersByRole = createSelector(
+  [selectAllUsers, (_state: RootState, role: UserRole) => role],
+  (users, role) => users.filter(user => user.role === role)
+);
+
 export const selectSelectedUser = (state: RootState) => {
   const selectedId = state.user.selectedUserId;
   return selectedId ? state.user.users.find(user => user.id === selectedId) : null;
@@ -177,15 +188,26 @@ export const selectStatus = (state: RootState) => state.user.status;
 export const selectIsSuccess = (state: RootState) => state.user.isSuccess;
 export const selectIsError = (state: RootState) => state.user.isError;
 
-// Role-specific selectors
-export const selectTeamLeaders = (state: RootState) => 
-  state.user.users.filter(user => user.role === USER_ROLE_ENUM.TEAM_LEADER);
-export const selectSpecialists = (state: RootState) => 
-  state.user.users.filter(user => user.role === USER_ROLE_ENUM.SPECIALIST);
-export const selectStaffUsers = (state: RootState) => 
-  state.user.users.filter(user => user.role === USER_ROLE_ENUM.STAFF);
-export const selectReaderUsers = (state: RootState) => 
-  state.user.users.filter(user => user.role === USER_ROLE_ENUM.READER);
+// Role-specific memoized selectors
+export const selectTeamLeaders = createSelector(
+  [selectAllUsers],
+  (users) => users.filter(user => user.role === USER_ROLE_ENUM.TEAM_LEADER)
+);
+
+export const selectSpecialists = createSelector(
+  [selectAllUsers],
+  (users) => users.filter(user => user.role === USER_ROLE_ENUM.SPECIALIST)
+);
+
+export const selectStaffUsers = createSelector(
+  [selectAllUsers],
+  (users) => users.filter(user => user.role === USER_ROLE_ENUM.STAFF)
+);
+
+export const selectReaderUsers = createSelector(
+  [selectAllUsers],
+  (users) => users.filter(user => user.role === USER_ROLE_ENUM.READER)
+);
 
 // Memoized selectors
 export const selectUserCount = createSelector(

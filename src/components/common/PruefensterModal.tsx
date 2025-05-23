@@ -13,7 +13,6 @@ import {
   CaseAudit,
   CaseAuditData,
   CaseAuditId,
-  CaseAuditStatus,
   ensureCaseAuditId
 } from '../../caseAuditTypes';
 import { Checkbox, TextArea, Button, Select } from './FormControls';
@@ -25,15 +24,12 @@ import { INPUT_TYPE_ENUM, VERIFICATION_STATUS_ENUM, RATING_VALUE_ENUM, DETAILED_
 // Import the users directly from the mock data
 import { users } from '../../mocks/handlers';
 
-// Import the case audit handlers from the hooks directory
-import { useCaseAuditHandlers } from '../../hooks/useCaseAuditHandlers';
-
 interface PruefensterModalProps {
   isOpen: boolean;
   onClose: () => void;
   audit: CaseAudit;
-  onVerify?: (auditId: string | CaseAuditId) => void;
-  onReject?: (auditId: string | CaseAuditId) => void;
+  onVerify?: (auditId: string | CaseAuditId, verifierId: string, caseAuditData: CaseAuditData) => void;
+  onReject?: (auditId: string | CaseAuditId, verifierId: string, caseAuditData: CaseAuditData) => void;
 }
 
 export const PruefensterModal: React.FC<PruefensterModalProps> = ({
@@ -47,10 +43,11 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
   const dispatch = useAppDispatch();
   const currentUserId = useAppSelector(state => state.caseAudit.currentUserId);
   
-  const [currentStatus, setCurrentStatus] = useState<CaseAuditStatus>(
-    audit.status || (audit.isVerified ? VERIFICATION_STATUS_ENUM.VERIFIED : VERIFICATION_STATUS_ENUM.NOT_VERIFIED)
+  const [currentStatus, setCurrentStatus] = useState<VERIFICATION_STATUS_ENUM>(
+    audit.status as unknown as VERIFICATION_STATUS_ENUM || 
+    (audit.isVerified ? VERIFICATION_STATUS_ENUM.VERIFIED : VERIFICATION_STATUS_ENUM.NOT_VERIFIED)
   );
-  
+
   const ratingOptions: RatingOption[] = [
     { value: RATING_VALUE_ENUM.NOT_FULFILLED, label: '🟥 Überwiegend nicht erfüllt' },
     { value: RATING_VALUE_ENUM.PARTIALLY_FULFILLED, label: '🟧 Teilweise nicht erfüllt' },
@@ -79,7 +76,7 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
     { value: DETAILED_FINDING_ENUM.BPR_WRONG, label: 'BPR nicht richtig instruiert.' },
     { value: DETAILED_FINDING_ENUM.COMMUNICATION_POOR, label: 'Kommunikation mit VN verbesserungswürdig.' },
   ];
-  
+
   const [comment, setComment] = useState(audit.comment || '');
   const [rating, setRating] = useState<RatingValue>(audit.rating || '');
   const [verifier, setVerifier] = useState('');
@@ -127,42 +124,41 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
       setComment(audit.comment || '');
       setRating(audit.rating || '');
       
-      // Define getCurrentUserInitials inside the effect
-      const getCurrentUserInitials = (): string => {
-        // Try to get the current user from the mock data
+      // Helper function to get user initials by user ID
+      const getUserInitials = (userId: string): string => {
         try {
-          const currentUser = users.find(u => u.id === currentUserId);
-          if (currentUser && 'initials' in currentUser && currentUser.initials) {
-            console.log('Found current user initials:', currentUser.initials);
-            return currentUser.initials;
+          const user = users.find(u => u.id === userId);
+          if (user && 'initials' in user && user.initials) {
+            console.log(`Found initials for user ${userId}:`, user.initials);
+            return user.initials;
           }
         } catch (error) {
-          console.error('Error finding current user initials:', error);
+          console.error(`Error finding initials for user ${userId}:`, error);
         }
         
-        // If we can't find the user, generate initials from the currentUserId
-        const initials = currentUserId?.substring(0, 2).toUpperCase() || 'XX';
-        console.log('Generated fallback initials for current user:', initials);
+        // If we can't find the user, generate initials from the userId
+        const initials = userId?.substring(0, 2).toUpperCase() || 'XX';
+        console.log(`Generated fallback initials for user ${userId}:`, initials);
         return initials;
       };
       
-      // If the audit already has a verifier, use that
-      // Otherwise, use the current user's initials
+      // Set verifier to initials (whether from existing audit or current user)
       if (audit.verifier) {
-        console.log('Using existing verifier:', audit.verifier);
-        // Handle UserId (branded type) - we need to convert to string for display
-        // Use type assertion to handle the branded type
+        console.log('Using existing verifier ID:', audit.verifier);
+        // Convert verifier ID to string and get initials
         const verifierId = audit.verifier.toString?.() || String(audit.verifier);
-        setVerifier(verifierId);
+        const verifierInitials = getUserInitials(verifierId);
+        setVerifier(verifierInitials);
       } else {
         // Use the current user's initials as the verifier
-        const currentUserInitials = getCurrentUserInitials();
+        const currentUserInitials = getUserInitials(currentUserId || '');
         console.log('Setting verifier to current user initials:', currentUserInitials);
         setVerifier(currentUserInitials);
       }
       
       // Update the current status based on audit
-      setCurrentStatus(audit.status || (audit.isVerified ? VERIFICATION_STATUS_ENUM.VERIFIED : VERIFICATION_STATUS_ENUM.NOT_VERIFIED));
+      setCurrentStatus(audit.status as unknown as VERIFICATION_STATUS_ENUM || 
+        (audit.isVerified ? VERIFICATION_STATUS_ENUM.VERIFIED : VERIFICATION_STATUS_ENUM.NOT_VERIFIED));
       
       // Update findings with all options set to false by default
       setSelectedFindings(() => {
@@ -219,6 +215,23 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
   const saveFormState = () => {
     setCurrentStatus(VERIFICATION_STATUS_ENUM.IN_PROGRESS);
     
+    // Convert verifier initials back to user ID
+    let verifierId = currentUserId; // Default to current user
+    
+    if (verifier) {
+      // Find user by initials
+      const userByInitials = users.find(u => 
+        'initials' in u && u.initials === verifier.toUpperCase()
+      );
+      
+      if (userByInitials) {
+        verifierId = userByInitials.id;
+      } else {
+        // If we can't find by initials, use current user
+        console.warn(`Could not find user with initials ${verifier}, using current user`);
+      }
+    }
+    
     const caseAuditData: CaseAuditData = {
       comment,
       rating,
@@ -226,10 +239,18 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
       detailedFindings: selectedDetailedFindings
     };
     
+    console.log('=== DEBUG: saveFormState ===');
+    console.log('audit.id:', audit.id);
+    console.log('audit.userId:', audit.userId);
+    console.log('verifierId:', verifierId);
+    console.log('caseAuditData:', caseAuditData);
+    console.log('rating being saved:', rating);
+    console.log('=== END DEBUG ===');
+    
     dispatch(updateAuditInProgress({
       auditId: ensureCaseAuditId(audit.id),
       userId: ensureUserId(audit.userId),
-      verifier: ensureUserId(verifier),
+      verifier: ensureUserId(verifierId || currentUserId),
       ...caseAuditData
     }));
     
@@ -242,7 +263,44 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
       return;
     }
     
-    onVerify(audit.id);
+    console.log('=== DEBUG: handleVerify ===');
+    console.log('Before verification - rating:', rating);
+    console.log('audit.id:', audit.id);
+    
+    // Convert verifier initials back to user ID
+    let verifierId = currentUserId; // Default to current user
+    
+    if (verifier) {
+      // Find user by initials
+      const userByInitials = users.find(u => 
+        'initials' in u && u.initials === verifier.toUpperCase()
+      );
+      
+      if (userByInitials) {
+        verifierId = userByInitials.id;
+      } else {
+        // If we can't find by initials, use current user
+        console.warn(`Could not find user with initials ${verifier}, using current user`);
+      }
+    }
+    
+    // Prepare the current form data
+    const currentFormData = {
+      comment,
+      rating,
+      specialFindings: selectedFindings,
+      detailedFindings: selectedDetailedFindings
+    };
+    
+    console.log('Current form data being passed:', currentFormData);
+    console.log('=== END DEBUG ===');
+    
+    // Save the form state to Redux for persistence
+    saveFormState();
+    
+    // Pass the current form data directly to the verification handler
+    // instead of relying on Redux state that might not be updated yet
+    onVerify(audit.id, ensureUserId(verifierId || currentUserId), currentFormData);
     
     showToast('Audit verified', TOAST_TYPE.SUCCESS);
   };
@@ -253,7 +311,36 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
       return;
     }
     
-    onReject(audit.id);
+    // Convert verifier initials back to user ID
+    let verifierId = currentUserId; // Default to current user
+    
+    if (verifier) {
+      // Find user by initials
+      const userByInitials = users.find(u => 
+        'initials' in u && u.initials === verifier.toUpperCase()
+      );
+      
+      if (userByInitials) {
+        verifierId = userByInitials.id;
+      } else {
+        // If we can't find by initials, use current user
+        console.warn(`Could not find user with initials ${verifier}, using current user`);
+      }
+    }
+    
+    // Prepare the current form data
+    const currentFormData = {
+      comment,
+      rating,
+      specialFindings: selectedFindings,
+      detailedFindings: selectedDetailedFindings
+    };
+    
+    // Save the form state to Redux for persistence
+    saveFormState();
+    
+    // Pass the current form data directly to the rejection handler
+    onReject(audit.id, ensureUserId(verifierId || currentUserId), currentFormData);
     
     showToast('Audit rejected', TOAST_TYPE.ERROR);
   };
@@ -322,6 +409,7 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
             label="Kommentar"
             value={comment}
             onChange={setComment}
+            placeholder="Geben Sie hier Ihren Kommentar ein..."
             rows={4}
           />
         </div>
@@ -368,6 +456,13 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
 
         <div className="d-flex justify-content-end gap-2">
           <Button
+            onClick={handleCloseModal}
+            color={BUTTON_COLOR.TEXT}
+            size={BUTTON_SIZE.LARGE}
+          >
+            Abbrechen
+          </Button>
+          <Button
             onClick={handleReject}
             color={BUTTON_COLOR.DANGER}
             size={BUTTON_SIZE.LARGE}
@@ -380,14 +475,7 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
             size={BUTTON_SIZE.LARGE}
             disabled={!verifier.trim()}
           >
-            Genehmigen
-          </Button>
-          <Button
-            onClick={saveFormState}
-            color={BUTTON_COLOR.PRIMARY}
-            size={BUTTON_SIZE.LARGE}
-          >
-            Zwischenspeichern
+            Bestätigen
           </Button>
         </div>
       </div>

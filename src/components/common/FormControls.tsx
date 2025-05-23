@@ -1,6 +1,6 @@
 import React from 'react';
 import { SelectOption } from '../../types';
-import { BUTTON_COLOR, BUTTON_SIZE, INPUT_TYPE_ENUM } from '../../enums';
+import { BUTTON_COLOR, BUTTON_SIZE, INPUT_TYPE_ENUM, UI_COLOR_ENUM } from '../../enums';
 
 /**
  * Common form controls that can be reused across the application
@@ -24,11 +24,11 @@ export const Button: React.FC<ButtonProps> = ({
 }) => {
   // Color mapping
   const colorMap = {
-    [BUTTON_COLOR.PRIMARY]: 'var(--primary-color)',
-    [BUTTON_COLOR.SUCCESS]: 'var(--success-color)',
-    [BUTTON_COLOR.DANGER]: '#d24723',
-    [BUTTON_COLOR.INFO]: '#00008f',
-    [BUTTON_COLOR.TEXT]: 'transparent'
+    [BUTTON_COLOR.PRIMARY]: UI_COLOR_ENUM.PRIMARY,
+    [BUTTON_COLOR.SUCCESS]: UI_COLOR_ENUM.SUCCESS,
+    [BUTTON_COLOR.DANGER]: UI_COLOR_ENUM.DANGER,
+    [BUTTON_COLOR.INFO]: UI_COLOR_ENUM.INFO,
+    [BUTTON_COLOR.TEXT]: UI_COLOR_ENUM.TRANSPARENT
   };
   
   // Size mapping
@@ -44,7 +44,7 @@ export const Button: React.FC<ButtonProps> = ({
       disabled={disabled}
       style={{
         backgroundColor: colorMap[color],
-        color: color === BUTTON_COLOR.TEXT ? 'var(--primary-color)' : 'white',
+        color: color === BUTTON_COLOR.TEXT ? UI_COLOR_ENUM.PRIMARY : UI_COLOR_ENUM.WHITE,
         padding: sizeMap[size].padding,
         fontSize: sizeMap[size].fontSize,
         border: 'none',
@@ -180,7 +180,7 @@ export const Select = <T extends string>({
         id={id}
         value={value}
         onChange={handleChange}
-        style={{ padding: '6px', borderRadius: '4px', border: '1px solid #ccc' }}
+        style={{ padding: '6px', borderRadius: '4px', border: `1px solid ${UI_COLOR_ENUM.BORDER}` }}
       >
         <option value="">-- Select --</option>
         {options.map(opt => (

@@ -18,7 +18,6 @@ import {
   createEmptyDetailedFindings,
   createEmptySpecialFindings,
   ISODateString,
-  createAuditId,
   UserRole
 } from '../types';
 import { 
@@ -28,6 +27,8 @@ import {
   FINDING_TYPES 
 } from '../constants';
 import { USER_ROLE_ENUM } from '../enums';
+import { createCaseAuditId } from '../caseAuditTypes';
+import { DEFAULT_VALUE_ENUM } from '../enums';
 
 // Mock data directly in the handlers file
 export const users: User[] = [
@@ -211,8 +212,8 @@ const parseQuarter = (quarterStr: string): { quarterNum: number; year: number } 
   if (!quarterStr) return null;
   
   try {
-    // Handle both formats: "Q1-2023" and "Q1 2023"
-    const match = quarterStr.match(/Q(\d+)[\s-](\d{4})/);
+  // Handle both formats: "Q1-2023" and "Q1 2023"
+  const match = quarterStr.match(/Q(\d+)[\s-](\d{4})/);
     if (!match) {
       // Try alternate format without Q prefix: "1-2023"
       const altMatch = quarterStr.match(/(\d+)[\s-](\d{4})/);
@@ -223,11 +224,11 @@ const parseQuarter = (quarterStr: string): { quarterNum: number; year: number } 
         year: parseInt(altMatch[2])
       };
     }
-    
-    return {
-      quarterNum: parseInt(match[1]),
-      year: parseInt(match[2])
-    };
+  
+  return {
+    quarterNum: parseInt(match[1]),
+    year: parseInt(match[2])
+  };
   } catch (error) {
     console.warn("Error parsing quarter string:", quarterStr, error);
     // Provide fallback values for current quarter
@@ -303,7 +304,7 @@ const caseToAudit = (caseData: Record<string, unknown>, quarter: string): AuditO
     auditId: getNumericId(caseData.id as string),
     quarter: formattedQuarter as QuarterPeriod,
     caseObj: caseToCaseObj(caseData) || {
-      caseNumber: createCaseId(0),
+      caseNumber: createCaseId(Math.floor(DEFAULT_VALUE_ENUM.DEFAULT_CASE_NUMBER + Math.random() * DEFAULT_VALUE_ENUM.CASE_NUMBER_RANGE)),
       claimOwner: {
         userId: 1,
         role: USER_ROLE_ENUM.TEAM_LEADER
@@ -430,7 +431,7 @@ export const handlers = [
       
       // Add any audits from our store that match this quarter
       let storeAudits = 0;
-      for (const [_, audit] of auditStore.entries()) {
+      for (const [, audit] of auditStore.entries()) {
         if (audit.quarter === quarter) {
           audits.push(audit);
           storeAudits++;
@@ -474,7 +475,7 @@ export const handlers = [
         .filter(audit => audit !== null);
       
       // Add any audits from our store that match this auditor
-      for (const [_, audit] of auditStore.entries()) {
+      for (const [, audit] of auditStore.entries()) {
         if (audit.auditor && audit.auditor.userId === numericAuditorId) {
           audits.push(audit);
         }
@@ -498,7 +499,7 @@ export const handlers = [
         requestData = await request.json() as typeof requestData;
       } catch (error) {
         // Ignore parse error but log warning
-        console.warn("[MSW] Failed to parse request body for /api/audits POST");
+        console.warn("[MSW] Failed to parse request body for /api/audits POST", error);
       }
       
       // Generate a new audit ID
@@ -517,7 +518,7 @@ export const handlers = [
         auditId,
         quarter: quarter as QuarterPeriod,
         caseObj: {
-          caseNumber: createCaseId(Math.floor(Math.random() * 100000) + 1),
+          caseNumber: createCaseId(Math.floor(DEFAULT_VALUE_ENUM.DEFAULT_CASE_NUMBER + Math.random() * DEFAULT_VALUE_ENUM.CASE_NUMBER_RANGE)),
           claimOwner: {
             userId: typeof requestData.caseObj === 'object' && requestData.caseObj?.claimOwner?.userId !== undefined 
               ? safeParseInt(String(requestData.caseObj.claimOwner.userId)) 
@@ -553,7 +554,7 @@ export const handlers = [
         auditId: Math.floor(Math.random() * 10000) + 1,
         quarter: `Q${Math.floor((new Date().getMonth()) / 3) + 1}-${new Date().getFullYear()}`,
         caseObj: {
-          caseNumber: Math.floor(30000000 + Math.random() * 1000000),
+          caseNumber: Math.floor(DEFAULT_VALUE_ENUM.DEFAULT_CASE_NUMBER + Math.random() * DEFAULT_VALUE_ENUM.CASE_NUMBER_RANGE),
           claimOwner: {
             userId: 1,
             role: USER_ROLE_ENUM.TEAM_LEADER
@@ -598,7 +599,7 @@ export const handlers = [
         }
       } catch (error) {
         // Ignore parse error but log warning
-        console.warn("[MSW] Failed to parse request body, using default data");
+        console.warn("[MSW] Failed to parse request body, using default data", error);
       }
       
       // Fix requestData.quarter if needed
@@ -621,7 +622,7 @@ export const handlers = [
           auditId: numericAuditorId,
           quarter: requestData.quarter as QuarterPeriod || quarterStr,
           caseObj: {
-            caseNumber: createCaseId(Math.floor(Math.random() * 100000) + 1),
+            caseNumber: createCaseId(Math.floor(DEFAULT_VALUE_ENUM.DEFAULT_CASE_NUMBER + Math.random() * DEFAULT_VALUE_ENUM.CASE_NUMBER_RANGE)),
             claimOwner: {
               userId: 1,
               role: USER_ROLE_ENUM.TEAM_LEADER
@@ -699,7 +700,7 @@ export const handlers = [
         auditId: safeParseInt(Array.isArray(params.auditId) ? params.auditId[0] : params.auditId, 1),
         quarter: `Q${Math.floor((new Date().getMonth()) / 3) + 1}-${new Date().getFullYear()}` as QuarterPeriod,
         caseObj: {
-          caseNumber: createCaseId(Math.floor(Math.random() * 100000) + 1),
+          caseNumber: createCaseId(Math.floor(DEFAULT_VALUE_ENUM.DEFAULT_CASE_NUMBER + Math.random() * DEFAULT_VALUE_ENUM.CASE_NUMBER_RANGE)),
           claimOwner: {
             userId: 1,
             role: USER_ROLE_ENUM.TEAM_LEADER
@@ -756,7 +757,7 @@ export const handlers = [
         }
       } catch (error) {
         // Ignore parse error but log warning
-        console.warn("[MSW] Failed to parse request body, using default data");
+        console.warn("[MSW] Failed to parse request body, using default data", error);
       }
       
       // Create a new finding with an ID
@@ -834,7 +835,8 @@ export const handlers = [
           const auditorCode = auditorCodes[index % auditorCodes.length];
           
           csv += `${caseItem.caseNumber},${userName},${findingType},"Sample finding description",${auditorCode}\n`;
-        } catch (error) {
+        } catch (err) {
+          console.warn(`[MSW] Error creating CSV row: ${err}`);
           csv += `${index+1000},Unknown,DOCUMENTATION_ISSUE,"Sample finding description",XX\n`;
         }
       });
@@ -858,7 +860,7 @@ export const handlers = [
   // Handle OPTIONS requests for CORS
   http.options('*', () => {
     return new HttpResponse(null, {
-      status: 200,
+        status: 200,
       headers: {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
@@ -954,7 +956,7 @@ export const handlers = [
   http.get('/api/audits/random/:userId', ({ params, request }) => {
     try {
       const { userId } = params;
-      const url = new URL(request.url);
+    const url = new URL(request.url);
       const quarter = url.searchParams.get('quarter');
       const year = url.searchParams.get('year');
       
@@ -1004,10 +1006,10 @@ export const handlers = [
       // If no audit found, create a fallback audit
       console.log(`[MSW] Creating fallback audit for user ${userId}`);
       const fallbackAudit = {
-        auditId: createAuditId((Math.floor(Math.random() * 10000) + 1).toString()),
+        auditId: createCaseAuditId((Math.floor(Math.random() * 10000) + 1).toString()),
         quarter: quarterPeriod,
         caseObj: {
-          caseNumber: createCaseId(Math.floor(Math.random() * 10000) + 1),
+          caseNumber: createCaseId(Math.floor(DEFAULT_VALUE_ENUM.DEFAULT_CASE_NUMBER + Math.random() * DEFAULT_VALUE_ENUM.CASE_NUMBER_RANGE)),
           claimOwner: {
             userId: numericUserId,
             role: USER_ROLE_ENUM.SPECIALIST
@@ -1104,5 +1106,24 @@ export const handlers = [
         { status: 500 }
       );
     }
+  }),
+
+  // Get current logged-in user
+  http.get('/api/auth/current-user', () => {
+    // In production, this would return information about the currently logged-in user
+    // For our mock, we pretend the logged-in user is the team leader with id '4'
+    const currentUser = users.find(u => u.id === createUserId('4'));
+    
+    if (currentUser) {
+      return HttpResponse.json({ 
+        success: true, 
+        data: currentUser
+      });
+    }
+    
+    return HttpResponse.json(
+      { success: false, error: 'No current user found' },
+      { status: 404 }
+    );
   }),
 ]; 

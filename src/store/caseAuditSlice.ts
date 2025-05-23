@@ -1,26 +1,36 @@
-import { createSlice, PayloadAction, createSelector } from '@reduxjs/toolkit';
+import { createSlice, PayloadAction, createSelector, createAsyncThunk } from '@reduxjs/toolkit';
 import { 
   UserRole, 
   RatingValue, 
-  VerificationAudit,
-  VerificationAuditSummary,
-  StoredVerificationData,
-  VerificationActionPayload,
-  VerifyAuditActionPayload,
   StepActionPayload,
   StatusUpdatePayload,
   AuditForSelection,
   UserAuditForSelection,
   createEmptyFindings,
-  VerificationState,
   createValidYear,
   createUserId,
   createISODateString,
-  createVerificationAuditId
+  QuarterPeriod,
+  QuarterNumber,
+  Quarter,
+  formatQuarterPeriod,
+  User,
+  ApiResponse,
+  ApiSuccessResponse
 } from '../types';
 import { VERIFICATION_STATUS_ENUM, CASE_TYPE_ENUM, CLAIMS_STATUS_ENUM, USER_ROLE_ENUM } from '../enums';
-
-import { Quarter, QuarterNumber, QuarterPeriod } from '../types';
+import { 
+  createCaseAuditId,
+  CaseAuditStep,
+  StoredCaseAuditData,
+  CaseAudit,
+  CaseAuditSummary,
+  CaseAuditActionPayload,
+  VerifyAuditActionPayload,
+  CaseAuditState
+} from '../caseAuditTypes';
+import { mapVerificationStatusToCaseAuditStatus } from '../utils/statusUtils';
+import { ensureUserId } from '../types';
 
 // Memoize the getCurrentQuarter function to avoid creating new objects on each call
 let cachedQuarter: Quarter | null = null;
@@ -54,15 +64,32 @@ export const formatQuarterYear = (quarter: QuarterNumber, year: number): Quarter
   return `Q${quarter}-${year}`;
 };
 
-// Create a default StoredVerificationData object with standard values
-const createDefaultVerificationData = (userId: string): StoredVerificationData => {
+// Using utility function for status mapping from utils/statusUtils.ts
+
+// Extended version of StoredCaseAuditData with additional fields for backward compatibility
+interface ExtendedStoredCaseAuditData extends StoredCaseAuditData {
+  lastUpdated?: string;
+}
+
+// Initialize a proper version of CaseAuditState
+const initialState: CaseAuditState = {
+  verifiedAudits: {},
+  userQuarterlyStatus: {},
+  userRoles: {}, // Remove mock data - this should be populated from API
+  currentUserId: createUserId(''), // No default user - should be fetched from API
+  quarterlySelection: {} // For backward compatibility
+};
+
+// Create a default StoredCaseAuditData object with standard values
+const createDefaultCaseAuditData = (userId: string): StoredCaseAuditData => {
   const { quarter, year } = getCurrentQuarter();
   
-  return {
+  const data: ExtendedStoredCaseAuditData = {
     isVerified: false,
+    isIncorrect: false, // Required by StoredCaseAuditData
     verificationDate: null,
     userId: createUserId(userId),
-    quarter,
+    quarter: formatQuarterPeriod(quarter, year),
     year,
     steps: {},
     verifier: createUserId(''),
@@ -70,30 +97,29 @@ const createDefaultVerificationData = (userId: string): StoredVerificationData =
     rating: '' as RatingValue,
     specialFindings: createEmptyFindings(),
     detailedFindings: createEmptyFindings(),
-    status: VERIFICATION_STATUS_ENUM.NOT_VERIFIED,
+    status: mapVerificationStatusToCaseAuditStatus(VERIFICATION_STATUS_ENUM.NOT_VERIFIED),
     caseType: CASE_TYPE_ENUM.USER_QUARTERLY,
     coverageAmount: 0,
     claimsStatus: CLAIMS_STATUS_ENUM.FULL_COVER,
-    isAkoReviewed: false
+    isAkoReviewed: false,
+    dossierName: 'Default Dossier'
+  };
+  
+  return data;
+};
+
+// Create step object with proper id
+const createStepWithId = (stepId: string, isVerified: boolean = false, isIncorrect: boolean = false, comment: string = ''): CaseAuditStep => {
+  return {
+    id: stepId,
+    isVerified,
+    isIncorrect,
+    comment
   };
 };
 
-const initialState: VerificationState = {
-  verifiedAudits: {},
-  userQuarterlyStatus: {},
-  quarterlySelection: {},
-  userRoles: {
-    '1': { role: USER_ROLE_ENUM.SPECIALIST, department: '5' },
-    '2': { role: USER_ROLE_ENUM.STAFF, department: '5' },
-    '3': { role: USER_ROLE_ENUM.STAFF, department: '5' },
-    '4': { role: USER_ROLE_ENUM.TEAM_LEADER, department: '5' },
-    '5': { role: USER_ROLE_ENUM.STAFF, department: '5' }
-  },
-  currentUserId: createUserId('4') // Default as team leader
-};
-
 // This function will run on initialization to migrate any legacy data format
-const migrateUserQuarterlyStatus = (state: VerificationState): void => {
+const migrateUserQuarterlyStatus = (state: CaseAuditState): void => {
   // Check if we have any user quarterly status data
   if (Object.keys(state.userQuarterlyStatus).length > 0) {
     // Loop through each user
@@ -117,6 +143,29 @@ const migrateUserQuarterlyStatus = (state: VerificationState): void => {
     });
   }
 };
+
+// Create async thunk for fetching current user
+export const fetchCurrentUser = createAsyncThunk<
+  User,
+  void,
+  { rejectValue: string }
+>(
+  'caseAudit/fetchCurrentUser',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await fetch('/api/auth/current-user');
+      const data = await response.json() as ApiResponse<User>;
+      
+      if (!data.success) {
+        return rejectWithValue(data.error || 'Failed to fetch current user');
+      }
+      
+      return (data as ApiSuccessResponse<User>).data;
+    } catch (error) {
+      return rejectWithValue(error instanceof Error ? error.message : 'Failed to fetch current user');
+    }
+  }
+);
 
 const caseAuditSlice = createSlice({
   name: 'caseAudit',
@@ -143,26 +192,27 @@ const caseAuditSlice = createSlice({
         const pastQuarter = pastQuarterValue as QuarterNumber;
         
         // Add a sample past dossier verification for U001
-        const pastDossier1: StoredVerificationData = {
+        const pastDossier1: StoredCaseAuditData = {
           isVerified: true,
+          isIncorrect: false,
           verificationDate: createISODateString(new Date(pastYear, (pastQuarter - 1) * 3 + 2, 15)),
           userId: createUserId('1'),
-          quarter: pastQuarter,
+          quarter: formatQuarterPeriod(pastQuarter, pastYear),
           year: pastYear,
           steps: {
-            'S1': { isVerified: true, isIncorrect: false, comment: '' },
-            'S2': { isVerified: true, isIncorrect: false, comment: '' }
+            'S1': createStepWithId('S1', true, false, ''),
+            'S2': createStepWithId('S2', true, false, '')
           },
           verifier: createUserId(''),
           comment: '',
           rating: '',
           specialFindings: createEmptyFindings(),
           detailedFindings: createEmptyFindings(),
-          status: VERIFICATION_STATUS_ENUM.VERIFIED,
+          status: mapVerificationStatusToCaseAuditStatus(VERIFICATION_STATUS_ENUM.VERIFIED),
           caseType: CASE_TYPE_ENUM.USER_QUARTERLY,
           coverageAmount: 0,
           claimsStatus: CLAIMS_STATUS_ENUM.FULL_COVER,
-          isAkoReviewed: false
+          dossierName: 'Sample Past Dossier 1'
         };
         
         state.verifiedAudits['INV001-PAST'] = pastDossier1;
@@ -179,26 +229,27 @@ const caseAuditSlice = createSlice({
         // Cast to QuarterNumber type
         const pastQuarter2 = pastQuarter2Value as QuarterNumber;
         
-        const pastDossier2: StoredVerificationData = {
+        const pastDossier2: StoredCaseAuditData = {
           isVerified: true,
+          isIncorrect: false,
           verificationDate: createISODateString(new Date(pastYear2.valueOf(), (pastQuarter2 - 1) * 3 + 2, 10)),
           userId: createUserId('2'),
-          quarter: pastQuarter2,
+          quarter: formatQuarterPeriod(pastQuarter2, pastYear2),
           year: pastYear2,
           steps: {
-            'S1': { isVerified: true, isIncorrect: false, comment: '' },
-            'S2': { isVerified: true, isIncorrect: false, comment: '' }
+            'S1': createStepWithId('S1', true, false, ''),
+            'S2': createStepWithId('S2', true, false, '')
           },
           verifier: createUserId(''),
           comment: '',
           rating: '',
           specialFindings: createEmptyFindings(),
           detailedFindings: createEmptyFindings(),
-          status: VERIFICATION_STATUS_ENUM.VERIFIED,
+          status: mapVerificationStatusToCaseAuditStatus(VERIFICATION_STATUS_ENUM.VERIFIED),
           caseType: CASE_TYPE_ENUM.USER_QUARTERLY,
           coverageAmount: 0,
           claimsStatus: CLAIMS_STATUS_ENUM.FULL_COVER,
-          isAkoReviewed: false
+          dossierName: 'Sample Past Dossier 2'
         };
         
         state.verifiedAudits['INV002-PAST'] = pastDossier2;
@@ -229,7 +280,8 @@ const caseAuditSlice = createSlice({
         // Add quarterlySelection entry for Q1-2025
         if (!state.quarterlySelection[quarterKey1]) {
           state.quarterlySelection[quarterKey1] = {
-            userQuarterlyAudits: [createVerificationAuditId('INV001-PAST')],
+            quarterKey: quarterKey1,
+            userQuarterlyAudits: [createCaseAuditId('INV001-PAST')],
             previousQuarterRandomAudits: [],
             lastSelectionDate: createISODateString(new Date(pastYear.valueOf(), (pastQuarter - 1) * 3 + 2, 15))
           };
@@ -244,16 +296,12 @@ const caseAuditSlice = createSlice({
       
       // Initialize audit data if it doesn't exist
       if (!state.verifiedAudits[auditId]) {
-        state.verifiedAudits[auditId] = createDefaultVerificationData(userId);
+        state.verifiedAudits[auditId] = createDefaultCaseAuditData(userId);
       }
       
       // Initialize step data if it doesn't exist
       if (!state.verifiedAudits[auditId].steps[stepId]) {
-        state.verifiedAudits[auditId].steps[stepId] = {
-          isVerified: false,
-          isIncorrect: false,
-          comment: ''
-        };
+        state.verifiedAudits[auditId].steps[stepId] = createStepWithId(stepId, false, false, '');
       }
       
       // Update step verification - if marking as verified, ensure incorrectness is turned off
@@ -271,16 +319,12 @@ const caseAuditSlice = createSlice({
       
       // Initialize audit data if it doesn't exist
       if (!state.verifiedAudits[auditId]) {
-        state.verifiedAudits[auditId] = createDefaultVerificationData(userId);
+        state.verifiedAudits[auditId] = createDefaultCaseAuditData(userId);
       }
       
       // Initialize step data if it doesn't exist
       if (!state.verifiedAudits[auditId].steps[stepId]) {
-        state.verifiedAudits[auditId].steps[stepId] = {
-          isVerified: false,
-          isIncorrect: false,
-          comment: ''
-        };
+        state.verifiedAudits[auditId].steps[stepId] = createStepWithId(stepId, false, false, '');
       }
       
       // Update step incorrectness - if marking as incorrect, ensure verification is turned off
@@ -298,16 +342,12 @@ const caseAuditSlice = createSlice({
       
       // Initialize audit data if it doesn't exist
       if (!state.verifiedAudits[auditId]) {
-        state.verifiedAudits[auditId] = createDefaultVerificationData(userId);
+        state.verifiedAudits[auditId] = createDefaultCaseAuditData(userId);
       }
       
       // Initialize step data if it doesn't exist
       if (!state.verifiedAudits[auditId].steps[stepId]) {
-        state.verifiedAudits[auditId].steps[stepId] = {
-          isVerified: false,
-          isIncorrect: false,
-          comment: ''
-        };
+        state.verifiedAudits[auditId].steps[stepId] = createStepWithId(stepId, false, false, '');
       }
       
       // Update step comment
@@ -324,7 +364,7 @@ const caseAuditSlice = createSlice({
       
       // Initialize audit data if it doesn't exist
       if (!state.verifiedAudits[auditId]) {
-        state.verifiedAudits[auditId] = createDefaultVerificationData(userId);
+        state.verifiedAudits[auditId] = createDefaultCaseAuditData(userId);
       }
       
       // Update audit verification
@@ -339,7 +379,7 @@ const caseAuditSlice = createSlice({
       if (isVerified) {
         state.verifiedAudits[auditId].verificationDate = createISODateString(new Date());
         // Explicitly set status to 'verified'
-        state.verifiedAudits[auditId].status = VERIFICATION_STATUS_ENUM.VERIFIED;
+        state.verifiedAudits[auditId].status = mapVerificationStatusToCaseAuditStatus(VERIFICATION_STATUS_ENUM.VERIFIED);
         
         // Update user quarterly status
         if (!state.userQuarterlyStatus[userId]) {
@@ -358,16 +398,29 @@ const caseAuditSlice = createSlice({
         // If marking as unverified/in progress
         state.verifiedAudits[auditId].verificationDate = null;
         
-        // Check if all current quarter audits for this user are verified
+        // Filter audits for the current quarter
         const userCurrentQuarterAudits = Object.values(state.verifiedAudits)
-          .filter(audit => 
-            audit.userId === userId && 
-            audit.quarter === quarter && 
-            audit.year === year
-          );
+          .filter(audit => {
+            // First check if the userId matches
+            if (audit.userId !== userId) return false;
+            
+            // Convert the stored quarter string to quarter/year values for comparison
+            const parts = (audit.quarter as string).split('-');
+            if (parts.length === 2) {
+              const auditQuarter = parseInt(parts[0].substring(1));
+              const auditYear = parseInt(parts[1]);
+              
+              // Now compare with the current quarter and year
+              return auditQuarter === quarter && auditYear === year;
+            }
+            
+            return false;
+          });
         
+        // Check if any other audits for this user in this quarter are still verified
         const anyRemainingVerifiedAudits = userCurrentQuarterAudits.some(
-          audit => Object.keys(state.verifiedAudits).includes(auditId) && 
+          audit => 
+            Object.keys(state.verifiedAudits).includes(auditId) && 
             audit !== state.verifiedAudits[auditId] && 
             audit.isVerified
         );
@@ -380,13 +433,13 @@ const caseAuditSlice = createSlice({
     },
     rejectAudit: (
       state, 
-      action: PayloadAction<VerificationActionPayload>
+      action: PayloadAction<CaseAuditActionPayload>
     ) => {
       const { auditId, userId, verifier, comment, rating, specialFindings, detailedFindings } = action.payload;
       
       // Initialize audit data if it doesn't exist
       if (!state.verifiedAudits[auditId]) {
-        state.verifiedAudits[auditId] = createDefaultVerificationData(userId);
+        state.verifiedAudits[auditId] = createDefaultCaseAuditData(userId);
       }
       
       // Update audit verification
@@ -397,7 +450,7 @@ const caseAuditSlice = createSlice({
       state.verifiedAudits[auditId].specialFindings = specialFindings;
       state.verifiedAudits[auditId].detailedFindings = detailedFindings;
       // Explicitly set status to 'not-verified'
-      state.verifiedAudits[auditId].status = VERIFICATION_STATUS_ENUM.NOT_VERIFIED;
+      state.verifiedAudits[auditId].status = mapVerificationStatusToCaseAuditStatus(VERIFICATION_STATUS_ENUM.NOT_VERIFIED);
     },
     updateAuditStatus: (
       state,
@@ -407,12 +460,14 @@ const caseAuditSlice = createSlice({
       
       // Initialize audit data if it doesn't exist
       if (!state.verifiedAudits[auditId]) {
-        state.verifiedAudits[auditId] = createDefaultVerificationData(userId);
+        state.verifiedAudits[auditId] = createDefaultCaseAuditData(userId);
       }
       
-      // Update audit status
+      // Update audit status - directly set status since both enums have the same string values
       state.verifiedAudits[auditId].status = status;
-      state.verifiedAudits[auditId].isVerified = status === VERIFICATION_STATUS_ENUM.VERIFIED;
+      
+      // Update isVerified based on the status value
+      state.verifiedAudits[auditId].isVerified = status === 'verified';
     },
     // Select audits for quarterly verification
     selectQuarterlyAudits: (
@@ -435,6 +490,7 @@ const caseAuditSlice = createSlice({
       
       // Store the quarterly selection
       state.quarterlySelection[quarterKey] = {
+        quarterKey: quarterKey,
         userQuarterlyAudits: userQuarterlyAudits.map(a => a.auditId),
         previousQuarterRandomAudits: previousQuarterRandomAudits.map(a => a.auditId),
         lastSelectionDate: createISODateString(new Date())
@@ -442,11 +498,16 @@ const caseAuditSlice = createSlice({
       
       // Add the audits to verification state
       userQuarterlyAudits.forEach(audit => {
-        state.verifiedAudits[audit.auditId] = {
+        const claimsStatus = audit.claimsStatus ? 
+          (audit.claimsStatus as CLAIMS_STATUS_ENUM) : 
+          CLAIMS_STATUS_ENUM.FULL_COVER;
+          
+        const newAudit: StoredCaseAuditData = {
           isVerified: false,
+          isIncorrect: false,
           verificationDate: null,
           userId: audit.userId,
-          quarter,
+          quarter: formatQuarterPeriod(quarter, year),
           year,
           steps: {},
           verifier: createUserId(''),
@@ -454,21 +515,24 @@ const caseAuditSlice = createSlice({
           rating: '' as RatingValue,
           specialFindings: createEmptyFindings(),
           detailedFindings: createEmptyFindings(),
-          status: VERIFICATION_STATUS_ENUM.NOT_VERIFIED,
+          status: mapVerificationStatusToCaseAuditStatus(VERIFICATION_STATUS_ENUM.NOT_VERIFIED),
           caseType: CASE_TYPE_ENUM.USER_QUARTERLY,
           coverageAmount: audit.coverageAmount,
-          claimsStatus: audit.claimsStatus,
-          isAkoReviewed: audit.isAkoReviewed
+          claimsStatus: claimsStatus,
+          dossierName: `Audit ${audit.auditId}`
         };
+        
+        state.verifiedAudits[audit.auditId] = newAudit;
       });
       
       // Add the random previous quarter audits
       previousQuarterRandomAudits.forEach(audit => {
-        state.verifiedAudits[audit.auditId] = {
+        const newRandomAudit: StoredCaseAuditData = {
           isVerified: false,
+          isIncorrect: false,
           verificationDate: null,
           userId: createUserId(''), // Random audits are not tied to a specific user
-          quarter,
+          quarter: formatQuarterPeriod(quarter, year),
           year,
           steps: {},
           verifier: createUserId(''),
@@ -476,12 +540,14 @@ const caseAuditSlice = createSlice({
           rating: '' as RatingValue,
           specialFindings: createEmptyFindings(),
           detailedFindings: createEmptyFindings(),
-          status: VERIFICATION_STATUS_ENUM.NOT_VERIFIED,
+          status: mapVerificationStatusToCaseAuditStatus(VERIFICATION_STATUS_ENUM.NOT_VERIFIED),
           caseType: CASE_TYPE_ENUM.PREVIOUS_QUARTER_RANDOM,
           coverageAmount: audit.coverageAmount,
-          claimsStatus: audit.claimsStatus,
-          isAkoReviewed: audit.isAkoReviewed
+          claimsStatus: audit.claimsStatus as CLAIMS_STATUS_ENUM || CLAIMS_STATUS_ENUM.FULL_COVER,
+          dossierName: `Random Audit ${audit.auditId}`
         };
+        
+        state.verifiedAudits[audit.auditId] = newRandomAudit;
       });
     },
     
@@ -505,13 +571,13 @@ const caseAuditSlice = createSlice({
     // Add new action to handle in-progress verification state
     updateAuditInProgress: (
       state,
-      action: PayloadAction<VerificationActionPayload>
+      action: PayloadAction<CaseAuditActionPayload>
     ) => {
       const { auditId, userId, verifier, comment, rating, specialFindings, detailedFindings } = action.payload;
       
       // Initialize audit data if it doesn't exist
       if (!state.verifiedAudits[auditId]) {
-        state.verifiedAudits[auditId] = createDefaultVerificationData(userId);
+        state.verifiedAudits[auditId] = createDefaultCaseAuditData(userId);
       }
       
       // Update audit with in-progress data
@@ -522,12 +588,46 @@ const caseAuditSlice = createSlice({
       state.verifiedAudits[auditId].detailedFindings = detailedFindings;
       
       // Set status to in-progress
-      state.verifiedAudits[auditId].status = VERIFICATION_STATUS_ENUM.IN_PROGRESS;
+      state.verifiedAudits[auditId].status = mapVerificationStatusToCaseAuditStatus(VERIFICATION_STATUS_ENUM.IN_PROGRESS);
       
       // Mark when the form was last updated
       // We don't use verificationDate as that's only for completed verifications
-      state.verifiedAudits[auditId].lastUpdated = createISODateString(new Date());
+      (state.verifiedAudits[auditId] as ExtendedStoredCaseAuditData).lastUpdated = createISODateString(new Date());
+    },
+    // Set current user
+    setCurrentUser: (state, action: PayloadAction<string>) => {
+      state.currentUserId = ensureUserId(action.payload);
+      // User roles should be populated separately from API/MSW through setUserRoles action
+    },
+    // Action to populate user roles from API response
+    setUserRoles: (state, action: PayloadAction<Record<string, { role: UserRole; department: string }>>) => {
+      state.userRoles = action.payload;
+    },
+    // Action to update a single user's role
+    setUserRole: (state, action: PayloadAction<{ userId: string; role: UserRole; department: string }>) => {
+      const { userId, role, department } = action.payload;
+      state.userRoles[userId] = { role, department };
     }
+  },
+  extraReducers: (builder) => {
+    builder
+      // Handle fetchCurrentUser lifecycle
+      .addCase(fetchCurrentUser.pending, () => {
+        // Could add loading state here if needed
+      })
+      .addCase(fetchCurrentUser.fulfilled, (state, action: PayloadAction<User>) => {
+        const user = action.payload;
+        state.currentUserId = ensureUserId(user.id.toString());
+        // Also set the user role
+        state.userRoles[user.id.toString()] = {
+          role: user.role,
+          department: user.department || 'Unknown'
+        };
+      })
+      .addCase(fetchCurrentUser.rejected, (_, action) => {
+        console.error('Failed to fetch current user:', action.payload);
+        // Could add error handling here if needed
+      });
   }
 });
 
@@ -541,28 +641,30 @@ export const {
   updateAuditStatus,
   selectQuarterlyAudits,
   updateUserRole,
-  updateAuditInProgress
+  updateAuditInProgress,
+  setCurrentUser,
+  setUserRoles,
+  setUserRole
 } = caseAuditSlice.actions;
 
 // Selectors
-export const selectVerificationData = (state: { caseAudit: VerificationState }) => 
+export const selectAuditData = (state: { caseAudit: CaseAuditState }) => 
   state.caseAudit.verifiedAudits;
 
-export const selectUserQuarterlyStatus = (state: { caseAudit: VerificationState }) =>
+export const selectUserQuarterlyStatus = (state: { caseAudit: CaseAuditState }) =>
   state.caseAudit.userQuarterlyStatus;
 
 // Selector to get all user roles
-export const selectAllUserRoles = (state: { caseAudit: VerificationState }) =>
+export const selectAllUserRoles = (state: { caseAudit: CaseAuditState }) =>
   state.caseAudit.userRoles;
 
 // Define the interface used by selectors - inherits from User type
-import { User } from '../types';
 
 // Ensure consistency with User interface
 type UserForSelector = Pick<User, 'id' | 'name' | 'department' | 'role' | 'isActive'>;
 
 // Memoized selector for users needing verification
-export const selectUsersNeedingVerification = createSelector(
+export const selectUsersNeedingAudits = createSelector(
   [
     (_state, users: UserForSelector[]) => users
   ],
@@ -572,15 +674,15 @@ export const selectUsersNeedingVerification = createSelector(
     return users.map(user => ({
       ...user,
       // Add a derived field to ensure we're not returning the exact input
-      isVerificationNeeded: true
+      isAuditNeeded: true
     }));
   }
 );
 
 // Memoized selector for counting users that need verification
-export const selectUsersNeedingVerificationCount = createSelector(
+export const selectUsersNeedingAuditsCount = createSelector(
   [
-    (state: { caseAudit: VerificationState }) => state.caseAudit.verifiedAudits,
+    (state: { caseAudit: CaseAuditState }) => state.caseAudit.verifiedAudits,
     (_state, users: UserForSelector[]) => users
   ],
   (verifiedAudits, users) => {
@@ -589,7 +691,7 @@ export const selectUsersNeedingVerificationCount = createSelector(
     
     // Get all audits for current quarter
     const currentQuarterAudits = Object.values(verifiedAudits).filter(
-      audit => audit.quarter === quarter && audit.year === year
+      audit => audit.quarter === formatQuarterPeriod(quarter, year) && audit.year === year
     );
     
     // If there are no audits for the current quarter, all users need verification
@@ -599,10 +701,10 @@ export const selectUsersNeedingVerificationCount = createSelector(
     
     // Group audits by user
     const auditsByUser = currentQuarterAudits.reduce((acc, audit) => {
-      if (!acc[audit.userId]) {
-        acc[audit.userId] = [];
+      if (!acc[audit.userId as string]) {
+        acc[audit.userId as string] = [];
       }
-      acc[audit.userId].push(audit);
+      acc[audit.userId as string].push(audit);
       return acc;
     }, {} as Record<string, typeof currentQuarterAudits>);
     
@@ -619,7 +721,7 @@ export const selectUsersNeedingVerificationCount = createSelector(
       
       // Check if the user has any verified audits
       const hasVerifiedAudit = userAudits.some(audit => 
-        audit.isVerified && audit.status === VERIFICATION_STATUS_ENUM.VERIFIED
+        audit.isVerified && audit.status === mapVerificationStatusToCaseAuditStatus(VERIFICATION_STATUS_ENUM.VERIFIED)
       );
       
       // If they have no verified audits, they need verification
@@ -631,47 +733,64 @@ export const selectUsersNeedingVerificationCount = createSelector(
 );
 
 // Apply verification data to an audit
-export const applyVerificationDataToAudit = (
-  audit: VerificationAudit, 
-  verificationData: VerificationState['verifiedAudits']
-): VerificationAudit => {
+export const applyCaseAuditData = (
+  audit: CaseAudit, 
+  verifiedAudits: CaseAuditState['verifiedAudits']
+): CaseAudit => {
   // Find the verification data for this audit
-  const auditVerification = verificationData[audit.id];
+  const auditData = verifiedAudits[audit.id];
   
-  if (!auditVerification) return audit;
+  if (!auditData) return audit;
   
   // Ensure findings are the correct type
-  const specialFindings = auditVerification.specialFindings || createEmptyFindings();
-  const detailedFindings = auditVerification.detailedFindings || createEmptyFindings();
+  const specialFindings = auditData.specialFindings || createEmptyFindings();
+  const detailedFindings = auditData.detailedFindings || createEmptyFindings();
   
   // Create a deep copy of the audit with verification data applied
   return {
     ...audit,
     claimsStatus: audit.claimsStatus || CLAIMS_STATUS_ENUM.FULL_COVER,
     coverageAmount: audit.coverageAmount || audit.totalAmount,
-    isVerified: auditVerification.isVerified,
-    comment: auditVerification.comment || audit.comment,
-    rating: auditVerification.rating || audit.rating,
+    isVerified: auditData.isVerified,
+    comment: auditData.comment || audit.comment,
+    rating: auditData.rating || audit.rating,
     specialFindings,
     detailedFindings,
-    status: auditVerification.status || audit.status,
-    verifier: auditVerification.verifier || audit.verifier
+    status: auditData.status || audit.status
   };
 };
 
 // New selector to get quarterly selected audits
 export const selectQuarterlyAuditsForPeriod = createSelector(
   [
-    (state: { caseAudit: VerificationState }) => state.caseAudit.quarterlySelection,
-    (state: { caseAudit: VerificationState }) => state.caseAudit.verifiedAudits,
+    (state: { caseAudit: CaseAuditState }) => state.caseAudit.quarterlySelection,
+    (state: { caseAudit: CaseAuditState }) => state.caseAudit.verifiedAudits,
     (_state, quarterKey: string) => quarterKey
   ],
   (quarterlySelection, verifiedAudits, quarterKey) => {
+    // Guard against invalid quarterKey
+    if (!quarterKey || typeof quarterKey !== 'string' || !quarterKey.includes('-')) {
+      return {
+        userQuarterlyAudits: [],
+        previousQuarterRandomAudits: [],
+        lastSelectionDate: null
+      };
+    }
+
     // Parse quarter and year from quarterKey
     const [quarterStr, yearStr] = quarterKey.split('-');
     const quarterNum = parseInt(quarterStr.replace('Q', ''));
     const yearNum = parseInt(yearStr);
     
+    // Validate parsed values
+    if (isNaN(quarterNum) || isNaN(yearNum) || quarterNum < 1 || quarterNum > 4) {
+      return {
+        userQuarterlyAudits: [],
+        previousQuarterRandomAudits: [],
+        lastSelectionDate: null
+      };
+    }
+
     // If a selection exists for this quarter, use it
     if (quarterlySelection[quarterKey]) {
       // Get the audit IDs from the selection
@@ -696,7 +815,14 @@ export const selectQuarterlyAuditsForPeriod = createSelector(
     else {
       // Find all audits for this quarter and year
       const auditsForPeriod = Object.entries(verifiedAudits)
-        .filter(([, audit]) => audit.quarter === quarterNum && audit.year === yearNum)
+        .filter(([, audit]) => {
+          if (!audit) return false;
+          const auditQuarterStr = audit.quarter.split('-')[0].substring(1);
+          const auditYearStr = audit.quarter.split('-')[1];
+          const auditQuarter = parseInt(auditQuarterStr);
+          const auditYear = parseInt(auditYearStr);
+          return auditQuarter === quarterNum && auditYear === yearNum;
+        })
         .map(([id, audit]) => ({ id, ...audit }));
       
       // Split into user quarterly and previous quarter random based on caseType
@@ -718,7 +844,7 @@ export const selectQuarterlyAuditsForPeriod = createSelector(
 // Selector to get user role
 export const selectUserRole = createSelector(
   [
-    (state: { caseAudit: VerificationState }) => state.caseAudit.userRoles,
+    (state: { caseAudit: CaseAuditState }) => state.caseAudit.userRoles,
     (_state, userId: string) => userId
   ],
   (userRoles, userId) => {
@@ -728,7 +854,7 @@ export const selectUserRole = createSelector(
 
 // Check if a user can verify a specific audit
 export const canUserVerifyAudit = (
-  state: { caseAudit: VerificationState },
+  state: { caseAudit: CaseAuditState },
   userId: string,
   auditId: string
 ): boolean => {
@@ -765,15 +891,17 @@ export const canUserVerifyAudit = (
 
 // Helper function to get audits that meet coverage requirements for a user's role
 export const getAuditsForUserRole = (
-  audits: VerificationAuditSummary[],
+  audits: CaseAuditSummary[],
   userRole: UserRole
-): VerificationAuditSummary[] => {
+): CaseAuditSummary[] => {
   return audits.filter(audit => {
     // Check if audit is already reviewed by AKO Kredit
-    if (audit.isAkoReviewed) return false;
+    if ('isAkoReviewed' in audit && audit.isAkoReviewed) return false;
     
     // Check if audit has appropriate claims status
-    if (audit.claimsStatus !== CLAIMS_STATUS_ENUM.FULL_COVER && audit.claimsStatus !== CLAIMS_STATUS_ENUM.PARTIAL_COVER) {
+    if ('claimsStatus' in audit && 
+        audit.claimsStatus !== CLAIMS_STATUS_ENUM.FULL_COVER && 
+        audit.claimsStatus !== CLAIMS_STATUS_ENUM.PARTIAL_COVER) {
       return false;
     }
     

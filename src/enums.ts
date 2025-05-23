@@ -199,7 +199,8 @@ export enum TIME_MS_ENUM {
   ONE_MINUTE = 60 * 1000,
   ONE_HOUR = 60 * 60 * 1000,
   ONE_DAY = 24 * 60 * 60 * 1000,
-  ONE_WEEK = 7 * 24 * 60 * 60 * 1000
+  ONE_WEEK = 7 * 24 * 60 * 60 * 1000,
+  TOAST_DURATION = 3000
 }
 
 // Default values enum
@@ -207,7 +208,11 @@ export enum DEFAULT_VALUE_ENUM {
   RISK_SCORE = 1,
   EMPTY_USER_ID = '',
   FALLBACK_AUDIT_ID = 'fallback',
-  TEAM_LEADER_ID = '4'
+  TEAM_LEADER_ID = '4',
+  DEFAULT_POLICY_ID = 10000,
+  SAMPLE_POLICY_ID = 12345,
+  DEFAULT_CASE_NUMBER = 30000000,
+  CASE_NUMBER_RANGE = 1000000
 }
 
 // Quarter enum
@@ -232,4 +237,31 @@ export enum ERROR_TYPE_ENUM {
   API = 'api',
   FETCH = 'fetch',
   UNKNOWN = 'unknown'
+}
+
+// CSS color classes for toast background colors
+export enum TOAST_BG_COLOR_ENUM {
+  SUCCESS = 'bg-green-500',
+  ERROR = 'bg-red-500',
+  WARNING = 'bg-yellow-500',
+  INFO = 'bg-blue-500'
+}
+
+// CSS color constants for UI components
+export enum UI_COLOR_ENUM {
+  PRIMARY = 'var(--primary-color)',
+  SUCCESS = 'var(--success-color)',
+  DANGER = '#d24723',
+  INFO = '#00008f',
+  WHITE = 'white',
+  TRANSPARENT = 'transparent',
+  BORDER = '#ccc'
+}
+
+// CSS text alignment classes
+export enum TEXT_ALIGN_ENUM {
+  LEFT = 'text-left',
+  CENTER = 'text-center',
+  RIGHT = 'text-right',
+  JUSTIFY = 'text-justify'
 } 
