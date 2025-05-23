@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { USER_ROLE_ENUM, VERIFICATION_STATUS_ENUM, CASE_TYPE_ENUM } from '../enums'
+import { generateRealisticCaseNumber } from '../utils/caseIdGenerator'
 
 // Mock user data for testing
 const mockUsers = [
@@ -60,8 +61,8 @@ const generateUserAuditsForQuarter = (users: typeof mockUsers) => {
 }
 
 const generatePreviousQuarterRandomAudits = (count: number = 2) => {
-  return Array.from({ length: count }).map((_, index) => ({
-    id: `prev-quarter-${Date.now()}-${index}`,
+  return Array.from({ length: count }).map(() => ({
+    id: `prev-quarter-${generateRealisticCaseNumber()}`,
     userId: '', // Random audits not tied to specific user
     coverageAmount: Math.floor(Math.random() * 100000) + 5000,
     status: VERIFICATION_STATUS_ENUM.NOT_VERIFIED,

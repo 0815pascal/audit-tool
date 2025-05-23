@@ -41,7 +41,10 @@ interface AuditItem {
   comment?: string;
   rating?: string;
   specialFindings?: FindingsRecord;
-  detailedFindings?: FindingsRecord;
+  detailedFindings?: FindingsRecord;  
+  quarter?: string;
+  year?: number;
+  caseType?: string;
 }
 
 const QuarterlySelectionComponent: React.FC = () => {
@@ -415,6 +418,7 @@ const QuarterlySelectionComponent: React.FC = () => {
               <thead>
                 <tr>
                   <th data-testid="case-id-header">CaseID</th>
+                  <th data-testid="quarter-header">Quartal</th>
                   <th data-testid="responsible-user-header">Verantwortlicher Fallbearbeiter</th>
                   <th data-testid="verification-result-header">Prüfergebnis</th>
                   <th data-testid="verifier-header">Prüfer</th>
@@ -437,6 +441,7 @@ const QuarterlySelectionComponent: React.FC = () => {
                   return (
                     <tr key={audit.id}>
                       <td>{audit.id}</td>
+                      <td>{audit.quarter}</td>
                       <td>{user ? user.name : 'Unknown'}</td>
                       <td>{convertToVerificationStatus(audit.status) === VERIFICATION_STATUS_ENUM.VERIFIED ? 'Geprüft' : 
                            convertToVerificationStatus(audit.status) === VERIFICATION_STATUS_ENUM.IN_PROGRESS ? 'In Bearbeitung' : 'Nicht geprüft'}</td>
@@ -470,6 +475,7 @@ const QuarterlySelectionComponent: React.FC = () => {
                   return (
                     <tr key={audit.id}>
                       <td>{audit.id}</td>
+                      <td>{audit.quarter}</td>
                       <td>{user ? user.name : audit.userId}</td>
                       <td>{convertToVerificationStatus(audit.status) === VERIFICATION_STATUS_ENUM.VERIFIED ? 'Geprüft' : 
                            convertToVerificationStatus(audit.status) === VERIFICATION_STATUS_ENUM.IN_PROGRESS ? 'In Bearbeitung' : 'Nicht geprüft'}</td>

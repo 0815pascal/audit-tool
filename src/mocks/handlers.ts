@@ -29,6 +29,7 @@ import {
 import { USER_ROLE_ENUM } from '../enums';
 import { createCaseAuditId } from '../caseAuditTypes';
 import { DEFAULT_VALUE_ENUM } from '../enums';
+import { generateRealisticCaseNumber } from '../utils/caseIdGenerator';
 
 // Mock data directly in the handlers file
 export const users: User[] = [
@@ -1063,7 +1064,8 @@ export const handlers = [
       const userQuarterlyAudits = users
         .filter(user => user.isActive)
         .map(user => {
-          const id = `QUARTERLY-${user.id}-${Date.now()}`;
+          const caseNumber = generateRealisticCaseNumber();
+          const id = caseNumber; // Remove QUARTERLY prefix
           return {
             id,
             auditId: id,
@@ -1073,13 +1075,17 @@ export const handlers = [
               Math.random() * (user.role === USER_ROLE_ENUM.STAFF ? 30000 : 150000)
             ),
             claimsStatus: CLAIMS_STATUS.FULL_COVER as ClaimsStatus,
-            isAkoReviewed: false
+            isAkoReviewed: false,
+            quarter: quarterKey, // Add current quarter
+            year: year, // Add current year
+            caseType: 'USER_QUARTERLY' // Add case type
           };
         });
       
       // Generate mock previous quarter audits for quality control
-      const previousQuarterRandomAudits = Array.from({ length: 5 }).map((_, index) => {
-        const id = `PREV-QUARTER-${Date.now()}-${index}`;
+      const previousQuarterRandomAudits = Array.from({ length: 2 }).map((_, index) => {
+        const caseNumber = generateRealisticCaseNumber();
+        const id = caseNumber; // Remove PREV-QUARTER prefix
         // Assign to a random active user
         const activeUsers = users.filter(user => user.isActive && user.role !== USER_ROLE_ENUM.READER);
         const randomUser = activeUsers[index % activeUsers.length];
@@ -1091,7 +1097,10 @@ export const handlers = [
           userId: randomUser.id, // Assign to actual user
           coverageAmount: Math.floor(Math.random() * 100000),
           claimsStatus: CLAIMS_STATUS.FULL_COVER as ClaimsStatus,
-          isAkoReviewed: false
+          isAkoReviewed: false,
+          quarter: `Q${prevQuarterNum}-${prevYear}`, // Add previous quarter
+          year: prevYear, // Add previous quarter year
+          caseType: 'PREVIOUS_QUARTER_RANDOM' // Add case type
         };
       });
       

@@ -586,13 +586,16 @@ const caseAuditSlice = createSlice({
           (audit.claimsStatus as CLAIMS_STATUS_ENUM) : 
           CLAIMS_STATUS_ENUM.FULL_COVER;
           
+        // MSW adds quarter and year properties - use type assertion
+        const auditWithQuarter = audit as AuditForSelection & { quarter?: string; year?: number };
+        
         const newAudit: StoredCaseAuditData = {
           isVerified: false,
           isIncorrect: false,
           verificationDate: null,
           userId: audit.userId,
-          quarter: formatQuarterPeriod(quarter, year),
-          year,
+          quarter: auditWithQuarter.quarter || formatQuarterPeriod(quarter, year), // Use audit's quarter or fallback
+          year: auditWithQuarter.year || year, // Use audit's year or fallback
           steps: {},
           verifier: createUserId(''),
           comment: '',
@@ -611,13 +614,16 @@ const caseAuditSlice = createSlice({
       
       // Add the random previous quarter audits
       previousQuarterRandomAudits.forEach(audit => {
+        // MSW adds quarter and year properties - use type assertion
+        const auditWithQuarter = audit as AuditForSelection & { quarter?: string; year?: number };
+        
         const newRandomAudit: StoredCaseAuditData = {
           isVerified: false,
           isIncorrect: false,
           verificationDate: null,
           userId: ensureUserId(audit.userId), // Use the actual userId from the audit
-          quarter: formatQuarterPeriod(quarter, year),
-          year,
+          quarter: auditWithQuarter.quarter || formatQuarterPeriod(quarter, year), // Use audit's quarter or fallback
+          year: auditWithQuarter.year || year, // Use audit's year or fallback
           steps: {},
           verifier: createUserId(''),
           comment: '',
