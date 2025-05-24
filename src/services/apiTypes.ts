@@ -108,17 +108,9 @@ export interface AuditPayload {
   isAkoReviewed?: boolean;
 }
 
-export interface AuditStatistics {
-  totalAudits: number;
-  averageScore: number;
-}
-
-// Typed API response types
-export type AuditResponse = ApiResponse<AuditRecord>;
-export type AuditsResponse = ApiResponse<AuditRecord[]>;
-export type FindingsResponse = ApiResponse<Finding[]>;
-export type CasesResponse = ApiResponse<CaseObj[]>;
-export type StatisticsResponse = ApiResponse<AuditStatistics>;
+// Response types
+export type AuditResponse = ApiResponse<AuditRecord[]>;
+export type CaseResponse = ApiResponse<CaseObj[]>;
 
 // Common error types
 export interface ApiError {

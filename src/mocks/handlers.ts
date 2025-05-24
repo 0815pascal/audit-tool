@@ -192,9 +192,6 @@ const mockCases: MockCase[] = [
   }
 ];
 
-// Auditor codes for mock
-const auditorCodes = ['PF', 'TF'];
-
 // Safely parse string to integer with fallback
 const safeParseInt = (value: string | number | undefined, fallback = 0): number => {
   const parsed = parseInt(String(value));
@@ -324,12 +321,12 @@ const caseToAudit = (caseData: Record<string, unknown>, quarter: string): AuditO
 
 // Generate findings for an audit
 const generateFindings = (auditId: string | number): FindingObj[] => {
-  const numericId = safeParseInt(auditId as string, 1);
+  const numericId = getNumericId(auditId);
   const count = Math.floor(Math.random() * 3); // 0-2 findings per audit
   const findings: FindingObj[] = [];
   
   for (let i = 0; i < count; i++) {
-    const findingTypes = Object.keys(FINDING_TYPES);
+    const findingTypes = Object.keys(FINDING_TYPES) as (keyof typeof FINDING_TYPES)[];
     const randomType = findingTypes[Math.floor(Math.random() * findingTypes.length)];
     
     findings.push({
@@ -800,92 +797,7 @@ export const handlers = [
     }
   }),
 
-  // Get audit statistics
-  http.get('/api/audit-reports/statistics/:quarter', ({ params }) => {
-    try {
-      const { quarter } = params;
-      console.log(`[MSW] Getting statistics for quarter ${quarter}`);
-      
-      // Generate some mock statistics
-      const stats = {
-        totalAudits: Math.floor(Math.random() * 20) + 10, // 10-30 audits
-        averageScore: Math.floor(Math.random() * 30) + 70 // 70-100 score
-      };
-      
-      return HttpResponse.json(stats, { status: 200 });
-    } catch (error) {
-      console.error("[MSW] Error in /api/audit-reports/statistics/:quarter handler:", error);
-      return HttpResponse.json({ totalAudits: 0, averageScore: 0 }, { status: 200 });
-    }
-  }),
-
-  // Export audit results (CSV)
-  http.get('/api/audit-reports/export/:quarter', ({ params }) => {
-    try {
-      const { quarter } = params;
-      console.log(`[MSW] Exporting report for quarter ${quarter}`);
-      
-      // Create a mock CSV with header and some sample data
-      let csv = 'CaseID,Claims Manager,Finding Type,Finding Description,Auditor\n';
-      
-      // Add some sample data
-      mockCases.slice(0, 5).forEach((caseItem, index) => {
-        try {
-          const findingType = Object.keys(FINDING_TYPES)[index % Object.keys(FINDING_TYPES).length];
-          const userName = users.find(e => e.id === caseItem.userId)?.name || 'Unknown';
-          const auditorCode = auditorCodes[index % auditorCodes.length];
-          
-          csv += `${caseItem.caseNumber},${userName},${findingType},"Sample finding description",${auditorCode}\n`;
-        } catch (err) {
-          console.warn(`[MSW] Error creating CSV row: ${err}`);
-          csv += `${index+1000},Unknown,DOCUMENTATION_ISSUE,"Sample finding description",XX\n`;
-        }
-      });
-      
-      return new HttpResponse(csv, {
-        status: 200,
-        headers: { 
-          'Content-Type': 'text/csv',
-          'Content-Disposition': `attachment; filename="audit-report-${quarter || 'export'}.csv"`
-        }
-      });
-    } catch (error) {
-      console.error("[MSW] Error in /api/audit-reports/export/:quarter handler:", error);
-      return new HttpResponse('Case-ID,Claims Manager,Finding Type,Finding Description,Auditor\n', {
-        status: 200,
-        headers: { 'Content-Type': 'text/csv' }
-      });
-    }
-  }),
-
-  // Handle OPTIONS requests for CORS
-  http.options('*', () => {
-    return new HttpResponse(null, {
-        status: 200,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization'
-      }
-    });
-  }),
-
-  // Get user by ID
-  http.get('/api/users/:id', ({ params }) => {
-    const userId = params.id as string;
-    const user = users.find(u => u.id === createUserId(userId));
-    
-    if (user) {
-      return HttpResponse.json({ success: true, data: user });
-    }
-    
-    return new HttpResponse(
-      JSON.stringify({ success: false, error: 'User not found' }),
-      { status: 404 }
-    );
-  }),
-
-  // User handlers
+  // Get all users
   http.get('/api/users', () => {
     return HttpResponse.json({ 
       success: true, 

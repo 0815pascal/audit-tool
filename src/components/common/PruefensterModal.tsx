@@ -19,7 +19,7 @@ import { Checkbox, TextArea, Button, Select } from './FormControls';
 import { useToast } from '../../context/ToastContext';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { updateAuditInProgress, saveAuditVerificationThunk } from '../../store/caseAuditSlice';
-import { INPUT_TYPE_ENUM, VERIFICATION_STATUS_ENUM, RATING_VALUE_ENUM, DETAILED_FINDING_ENUM, SPECIAL_FINDING_ENUM, TOAST_TYPE, BUTTON_COLOR, BUTTON_SIZE } from '../../enums';
+import { VERIFICATION_STATUS_ENUM, RATING_VALUE_ENUM, DETAILED_FINDING_ENUM, SPECIAL_FINDING_ENUM, TOAST_TYPE, BUTTON_COLOR, BUTTON_SIZE } from '../../enums';
 
 // Import the users directly from the mock data
 import { users } from '../../mocks/handlers';

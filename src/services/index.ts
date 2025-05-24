@@ -7,7 +7,6 @@ export * from './apiUtils';
 export type {
   AuditRecord,
   CaseObj,
-  AuditStatistics,
   AuditPayload,
   Finding,
   CacheKey,
@@ -16,7 +15,7 @@ export type {
   FindingId
 } from './apiTypes';
 
-// Re-export only service functions from auditService
+// Re-export all API functions for centralized access
 export {
   getAuditsByQuarter,
   getAuditsByAuditor,
@@ -26,7 +25,6 @@ export {
   getFindingsByAudit,
   selectCasesForAudit,
   exportAuditReport,
-  getAuditStatistics,
   getRandomAuditForUser,
   selectQuarterlyDossiers
 } from './auditService';

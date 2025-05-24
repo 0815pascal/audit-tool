@@ -4,7 +4,6 @@ import {
   ApiCache,
   AuditRecord,
   CaseObj,
-  AuditStatistics,
   AuditPayload,
   Finding,
   CacheKey,
@@ -32,7 +31,6 @@ const CACHE_TTL = 5 * 60 * 1000; // 5 minutes in milliseconds
 // Create specialized caches for different data types
 const auditCache: ApiCache<AuditRecord[]> = new Map();
 const caseCache: ApiCache<CaseObj[]> = new Map();
-const statisticsCache: ApiCache<AuditStatistics> = new Map();
 
 // Check if cached data is still valid
 const isCacheValid = <T>(cache: ApiCache<T>, cacheKey: CacheKey): boolean => {
@@ -252,39 +250,6 @@ export const selectCasesForAudit = async (quarter: QuarterPeriod): Promise<CaseO
 // Export audit report
 export const exportAuditReport = (quarter: QuarterPeriod): void => {
   window.open(`/api/audits/export?quarter=${quarter}`, '_blank');
-};
-
-// Get audit statistics for a quarter
-export const getAuditStatistics = async (quarter: QuarterPeriod): Promise<AuditStatistics> => {
-  const cacheKey = createCacheKey('stats', quarter);
-  
-  // Check cache first
-  if (isCacheValid(statisticsCache, cacheKey)) {
-    return statisticsCache.get(cacheKey)!.data;
-  }
-  
-  try {
-    console.log(`[API] Fetching statistics for quarter ${quarter}`);
-    const response = await api.get<AuditStatistics>(`/audits/statistics?quarter=${quarter}`);
-    
-    if (response.status >= 400) {
-      console.warn(`[API] Error ${response.status} fetching statistics`);
-      throw new Error(`Failed to fetch statistics: ${response.status}`);
-    }
-    
-    const data = response.data;
-    
-    // Cache the response
-    statisticsCache.set(cacheKey, { 
-      data,
-      timestamp: Date.now()
-    });
-    
-    return data;
-  } catch (error) {
-    console.error(`[API] Error fetching statistics:`, error);
-    throw error;
-  }
 };
 
 /**
