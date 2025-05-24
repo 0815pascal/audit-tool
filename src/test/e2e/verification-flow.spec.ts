@@ -31,9 +31,6 @@ test.describe('IKS Audit Tool - Verification Data Persistence', () => {
     // Wait for modal to open
     await page.waitForSelector('.modal', { state: 'visible' });
     
-    // Enter verifier initials
-    await page.fill('input[id="verifier"]', 'ED');
-    
     // Select a Prüfergebnis value
     await page.selectOption('select[id="pruefenster-rating"]', 'EXCELLENTLY_FULFILLED');
     
@@ -60,9 +57,13 @@ test.describe('IKS Audit Tool - Verification Data Persistence', () => {
     const ratingSelect = page.locator('select[id="pruefenster-rating"]');
     await expect(ratingSelect).toHaveValue('EXCELLENTLY_FULFILLED');
     
-    // Check that other fields are also preserved
-    await expect(page.locator('input[id="verifier"]')).toHaveValue('ED');
+    // Check that comment field is also preserved
     await expect(page.locator('textarea[id="pruefenster-comment"]')).toHaveValue('Test comment for cancel scenario');
+    
+    // Check that verifier is populated in the Case Information section
+    const caseInfoSection = page.locator('.case-info-section');
+    const prueferText = await caseInfoSection.getByText('PRÜFER').locator('..').locator('span').last().textContent();
+    expect(prueferText).toMatch(/^[A-Z]{2,3}$/); // Should be initials like "ED"
     
     // Close modal
     await page.click('button:has-text("Abbrechen")');
@@ -84,9 +85,6 @@ test.describe('IKS Audit Tool - Verification Data Persistence', () => {
     
     // Wait for modal to open
     await page.waitForSelector('.modal', { state: 'visible' });
-    
-    // Enter verifier initials
-    await page.fill('input[id="verifier"]', 'ED');
     
     // Select a Prüfergebnis value
     await page.selectOption('select[id="pruefenster-rating"]', 'EXCELLENTLY_FULFILLED');
@@ -114,9 +112,13 @@ test.describe('IKS Audit Tool - Verification Data Persistence', () => {
     const ratingSelect = page.locator('select[id="pruefenster-rating"]');
     await expect(ratingSelect).toHaveValue('EXCELLENTLY_FULFILLED');
     
-    // Check that other fields are also preserved
-    await expect(page.locator('input[id="verifier"]')).toHaveValue('ED');
+    // Check that comment field is also preserved
     await expect(page.locator('textarea[id="pruefenster-comment"]')).toHaveValue('Test comment for verification');
+    
+    // Check that verifier is populated in the Case Information section
+    const caseInfoSection = page.locator('.case-info-section');
+    const prueferText = await caseInfoSection.getByText('PRÜFER').locator('..').locator('span').last().textContent();
+    expect(prueferText).toMatch(/^[A-Z]{2,3}$/); // Should be initials like "ED"
     
     // Close modal
     await page.click('button:has-text("Abbrechen")');

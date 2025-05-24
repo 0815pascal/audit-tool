@@ -96,7 +96,11 @@ export const Checkbox: React.FC<CheckboxProps> = ({
       onChange={onChange}
       disabled={disabled}
     />
-    <label htmlFor={id}>{label}</label>
+    <label htmlFor={id} style={{ 
+      textAlign: 'left', 
+      fontSize: '14px',
+      fontFamily: '"Source Sans Pro", "Helvetica Neue", Arial, sans-serif'
+    }}>{label}</label>
   </div>
 );
 

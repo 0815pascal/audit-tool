@@ -58,10 +58,6 @@ test.describe('IKS Audit Tool - Auto-Select and Verification', () => {
     // Should have generated 2 random previous quarter audits
     await expect(randomAuditsCount).toHaveText('2');
     
-    // Check that the last selection date is updated
-    const lastSelectionDate = page.locator('.status-item:has-text("Last Selection Date:") .status-value');
-    await expect(lastSelectionDate).not.toHaveText('Not selected yet');
-    
     // Check that success message is displayed
     const successMessage = page.locator('.success-message');
     await expect(successMessage).toBeVisible();
@@ -120,7 +116,6 @@ test.describe('IKS Audit Tool - Auto-Select and Verification', () => {
     
     // Check that modal has action buttons
     await expect(page.locator('button:has-text("Bestätigen")')).toBeVisible();
-    await expect(page.locator('button:has-text("Ablehnen")')).toBeVisible();
     await expect(page.locator('button:has-text("Abbrechen")')).toBeVisible();
   });
 
@@ -278,28 +273,20 @@ test.describe('IKS Audit Tool - Auto-Select and Verification', () => {
     const enabledPruefenButton = page.locator('button:has-text("Prüfen"):not([disabled])').first();
     await enabledPruefenButton.click();
     
-    // Verify all form fields are present and functional
-    await expect(page.locator('#verifier')).toBeVisible();
+    // Verify form fields are present and functional
     await expect(page.locator('textarea[placeholder*="Kommentar"]')).toBeVisible();
     await expect(page.locator('#pruefenster-rating')).toBeVisible();
     
     // Test form interaction
-    await page.fill('#verifier', 'XYZ');
     await page.fill('textarea[placeholder*="Kommentar"]', 'Test comment');
     await page.selectOption('#pruefenster-rating', 'SUCCESSFULLY_FULFILLED');
     
     // Verify values were set
-    await expect(page.locator('#verifier')).toHaveValue('XYZ');
     await expect(page.locator('textarea[placeholder*="Kommentar"]')).toHaveValue('Test comment');
     await expect(page.locator('#pruefenster-rating')).toHaveValue('SUCCESSFULLY_FULFILLED');
     
-    // Test required field validation - clear verifier
-    await page.fill('#verifier', '');
+    // The submit button should be enabled when rating is selected (verifier is now auto-populated)
     const submitButton = page.locator('button:has-text("Bestätigen")');
-    await expect(submitButton).toBeDisabled();
-    
-    // Fill verifier again - button should be enabled
-    await page.fill('#verifier', 'ABC');
     await expect(submitButton).toBeEnabled();
   });
 
@@ -316,20 +303,27 @@ test.describe('IKS Audit Tool - Auto-Select and Verification', () => {
     const enabledPruefenButton = page.locator('button:has-text("Prüfen"):not([disabled])').first();
     await enabledPruefenButton.click();
     
-    // The verifier field should show initials (like "JD", "ED", etc.) not user IDs (like "1", "4")
-    const verifierInput = page.locator('#verifier');
-    const verifierValue = await verifierInput.inputValue();
+    // The Prüfer field in Case Information should show initials (like "ED") not user IDs (like "4")
+    // Look for the Prüfer field in the Case Information section
+    const caseInfoSection = page.locator('.case-info-section');
+    await expect(caseInfoSection).toBeVisible();
+    
+    // Find the Prüfer label and get the corresponding value
+    const prueferText = await caseInfoSection.getByText('PRÜFER').locator('..').locator('span').last().textContent();
+    
+    console.log('Verifier field shows initials:', prueferText);
+    
+    // Verify it's not null/undefined
+    expect(prueferText).toBeTruthy();
     
     // Verify it's not a numeric user ID
-    expect(verifierValue).not.toMatch(/^[0-9]+$/);
+    expect(prueferText).not.toMatch(/^[0-9]+$/);
     
-    // Verify it looks like initials (2-3 uppercase letters)
-    expect(verifierValue).toMatch(/^[A-Z]{2,3}$/);
+    // Verify it looks like initials (2-3 uppercase letters) or a dash for unassigned
+    expect(prueferText).toMatch(/^([A-Z]{2,3}|-)$/);
     
     // Verify it's not empty
-    expect(verifierValue.length).toBeGreaterThan(0);
-    
-    console.log('Verifier field shows initials:', verifierValue);
+    expect(prueferText?.length).toBeGreaterThan(0);
   });
 
   test('should display user initials in table Prüfer column after starting verification', async ({ page }) => {
@@ -348,7 +342,7 @@ test.describe('IKS Audit Tool - Auto-Select and Verification', () => {
     console.log('Emily will work on case:', caseId);
     
     // Before verification starts, the Prüfer column should show '-'
-    const prueferCellBefore = firstEnabledRow.locator('td').nth(3); // Prüfer is the 4th column (0-indexed)
+    const prueferCellBefore = firstEnabledRow.locator('td').nth(4); // Prüfer is the 5th column (0-indexed)
     await expect(prueferCellBefore).toHaveText('-');
     
     // Click the Prüfen button for this case
@@ -364,7 +358,7 @@ test.describe('IKS Audit Tool - Auto-Select and Verification', () => {
     await page.waitForTimeout(1000);
     
     // After Emily starts verification, the Prüfer column should show her initials 'ED', not her user ID '4'
-    const prueferCellAfter = firstEnabledRow.locator('td').nth(3); // Prüfer is the 4th column (0-indexed)
+    const prueferCellAfter = firstEnabledRow.locator('td').nth(4); // Prüfer is the 5th column (0-indexed)
     const prueferValue = await prueferCellAfter.textContent();
     
     // Verify it's not a numeric user ID

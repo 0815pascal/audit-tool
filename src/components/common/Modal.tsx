@@ -2,7 +2,7 @@ import React from 'react';
 
 interface ModalProps {
   isOpen: boolean;
-  title: string;
+  title: React.ReactNode;
   onClose: () => void;
   children: React.ReactNode;
 }
@@ -35,20 +35,48 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, title, onClose, children }
         style={{
           backgroundColor: 'white',
           borderRadius: '4px',
-          padding: '1rem',
           width: '600px',
           maxHeight: '90vh',
-          overflowY: 'auto',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.3)'
+          boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+          display: 'flex',
+          flexDirection: 'column'
         }}
       >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+        {/* Fixed Header */}
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center', 
+          padding: '1rem',
+          borderBottom: '1px solid #e9ecef',
+          backgroundColor: 'white',
+          borderRadius: '4px 4px 0 0',
+          position: 'sticky',
+          top: 0,
+          zIndex: 1001
+        }}>
           <h3 id="modal-title" style={{ margin: 0 }}>{title}</h3>
-          <button onClick={onClose} style={{ fontSize: '1.5rem', lineHeight: 1, border: 'none', background: 'transparent', cursor: 'pointer', color: '#333' }}>
+          <button onClick={onClose} style={{ 
+            fontSize: '1.5rem', 
+            lineHeight: 1, 
+            border: 'none', 
+            background: 'transparent', 
+            cursor: 'pointer', 
+            color: '#333',
+            padding: '4px 8px'
+          }}>
             &times;
           </button>
         </div>
-        {children}
+        
+        {/* Scrollable Content */}
+        <div style={{
+          padding: '1rem',
+          overflowY: 'auto',
+          flex: 1
+        }}>
+          {children}
+        </div>
       </div>
     </div>
   );

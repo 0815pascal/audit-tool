@@ -116,6 +116,9 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
     }
   );
 
+  // State for collapsible Case Information section
+  const [isCaseInfoExpanded, setIsCaseInfoExpanded] = useState(true);
+
   // Load initial values from audit (including any in-progress data)
   useEffect(() => {
     if (audit) {
@@ -341,8 +344,6 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
     showToast('Formular zurückgesetzt', TOAST_TYPE.INFO);
   };
 
-
-
   // Handle when modal is being closed
   const handleCloseModal = () => {
     // Save current form state to Redux
@@ -354,54 +355,186 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={handleCloseModal}
-      title="Prüfenster"
+      title={
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <span>Case {audit.id}</span>
+          <div 
+            className={`status-badge ${currentStatus}`}
+            style={{
+              backgroundColor: 
+                currentStatus === VERIFICATION_STATUS_ENUM.VERIFIED ? 'var(--success-color)' : 
+                currentStatus === VERIFICATION_STATUS_ENUM.IN_PROGRESS ? '#f0ad4e' : /* warning color */
+                '#d9534f', /* danger color */
+              color: 'white',
+              padding: '4px 8px',
+              borderRadius: '4px',
+              fontWeight: 'bold',
+              textTransform: 'uppercase',
+              fontSize: '0.8rem'
+            }}
+          >
+            {currentStatus === VERIFICATION_STATUS_ENUM.VERIFIED ? 'Verifiziert' : 
+             currentStatus === VERIFICATION_STATUS_ENUM.IN_PROGRESS ? 'In Bearbeitung' : 
+             'Nicht Verifiziert'}
+          </div>
+        </div>
+      }
     >
       <div className="pruefenster-content">
-        {/* Status indicator */}
-        <div className="mb-4">
-          <div className="status-indicator">
-            <h4>Status</h4>
-            <div 
-              className={`status-badge ${currentStatus}`}
+        {/* Case Information Section */}
+        <div className="case-info-section" style={{ 
+          backgroundColor: '#f8f9fa', 
+          padding: '12px', 
+          borderRadius: '8px', 
+          marginBottom: '16px',
+          border: '1px solid #e9ecef',
+          textAlign: 'left'
+        }}>
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: isCaseInfoExpanded ? '8px' : '0'
+          }}>
+            <h4 style={{ 
+              margin: 0, 
+              color: '#495057',
+              fontSize: '16px',
+              fontWeight: '600',
+              textAlign: 'left',
+              fontFamily: '"Source Sans Pro", "Helvetica Neue", Arial, sans-serif'
+            }}>
+              Case Information
+            </h4>
+            <button
+              onClick={() => setIsCaseInfoExpanded(!isCaseInfoExpanded)}
               style={{
-                backgroundColor: 
-                  currentStatus === VERIFICATION_STATUS_ENUM.VERIFIED ? 'var(--success-color)' : 
-                  currentStatus === VERIFICATION_STATUS_ENUM.IN_PROGRESS ? '#f0ad4e' : /* warning color */
-                  '#d9534f', /* danger color */
-                color: 'white',
-                padding: '4px 8px',
-                borderRadius: '4px',
-                display: 'inline-block',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: '16px',
                 fontWeight: 'bold',
-                textTransform: 'uppercase',
-                fontSize: '0.8rem'
+                color: '#6c757d',
+                padding: '4px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: '4px',
+                transform: isCaseInfoExpanded ? 'translateY(-2px)' : 'none'
               }}
+              title={isCaseInfoExpanded ? 'Collapse case information' : 'Expand case information'}
             >
-              {currentStatus === VERIFICATION_STATUS_ENUM.VERIFIED ? 'Verifiziert' : 
-               currentStatus === VERIFICATION_STATUS_ENUM.IN_PROGRESS ? 'In Bearbeitung' : 
-               'Nicht Verifiziert'}
-            </div>
+              {isCaseInfoExpanded ? '⌄' : '›'}
+            </button>
           </div>
+          {isCaseInfoExpanded && (
+            <>
+              <div style={{ 
+                borderBottom: '2px solid #dee2e6',
+                marginBottom: '8px'
+              }}></div>
+              <div style={{ 
+                display: 'grid', 
+                gridTemplateColumns: '1fr 1fr', 
+                gap: '8px 16px', 
+                fontSize: '14px',
+                lineHeight: '1.3',
+                textAlign: 'left',
+                fontFamily: '"Source Sans Pro", "Helvetica Neue", Arial, sans-serif'
+              }}>
+                <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'left' }}>
+                  <span style={{ fontWeight: '600', color: '#6c757d', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'left' }}>
+                    Policy Number
+                  </span>
+                  <span style={{ marginTop: '2px', color: '#212529', fontWeight: '500', textAlign: 'left' }}>
+                    {audit.policyNumber}
+                  </span>
+                </div>
+                
+                <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'right' }}>
+                  <span style={{ fontWeight: '600', color: '#6c757d', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'right' }}>
+                    Client
+                  </span>
+                  <span style={{ marginTop: '2px', color: '#212529', fontWeight: '500', textAlign: 'right' }}>
+                    {audit.clientName}
+                  </span>
+                </div>
+                
+                <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'left' }}>
+                  <span style={{ fontWeight: '600', color: '#6c757d', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'left' }}>
+                    Coverage Amount
+                  </span>
+                  <span style={{ marginTop: '2px', color: '#28a745', fontWeight: '600', fontSize: '14px', textAlign: 'left' }}>
+                    {new Intl.NumberFormat('de-CH', { 
+                      style: 'currency', 
+                      currency: 'CHF' 
+                    }).format(audit.coverageAmount)}
+                  </span>
+                </div>
+                
+                <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'right' }}>
+                  <span style={{ fontWeight: '600', color: '#6c757d', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'right' }}>
+                    Fallbearbeiter
+                  </span>
+                  <span style={{ marginTop: '2px', color: '#212529', fontWeight: '500', textAlign: 'right' }}>
+                    {(() => {
+                      const user = users.find(u => u.id === audit.userId);
+                      return user ? user.name : audit.userId;
+                    })()}
+                  </span>
+                </div>
+                
+                <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'left' }}>
+                  <span style={{ fontWeight: '600', color: '#6c757d', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'left' }}>
+                    Quarter
+                  </span>
+                  <span style={{ marginTop: '2px', color: '#212529', fontWeight: '500', textAlign: 'left' }}>
+                    {audit.quarter}
+                  </span>
+                </div>
+                
+                <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'right' }}>
+                  <span style={{ fontWeight: '600', color: '#6c757d', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'right' }}>
+                    Dossier
+                  </span>
+                  <span style={{ marginTop: '2px', color: '#212529', fontWeight: '500', textAlign: 'right' }}>
+                    {audit.dossierName}
+                  </span>
+                </div>
+                
+                <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'left' }}>
+                  <span style={{ fontWeight: '600', color: '#6c757d', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'left' }}>
+                    Prüfer
+                  </span>
+                  <span style={{ marginTop: '2px', color: '#212529', fontWeight: '500', textAlign: 'left' }}>
+                    {verifier || '-'}
+                  </span>
+                </div>
+                
+                <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'right' }}>
+                  <span style={{ fontWeight: '600', color: '#6c757d', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'right' }}>
+                    {/* Empty cell to maintain grid balance */}
+                  </span>
+                </div>
+              </div>
+            </>
+          )}
         </div>
 
         <div className="mb-4">
-          <h4>Verification Details</h4>
-          <div className="form-group">
-            <label htmlFor="verifier">Prüfer (Initialen)</label>
-            <input
-              type={INPUT_TYPE_ENUM.TEXT}
-              id="verifier"
-              className="form-control"
-              value={verifier}
-              onChange={(e) => setVerifier(e.target.value)}
-              maxLength={3}
-              placeholder="z.B. ABC"
-            />
-          </div>
+          <h4 style={{ 
+            textAlign: 'left',
+            fontFamily: '"Source Sans Pro", "Helvetica Neue", Arial, sans-serif'
+          }}>Prüfergebnis</h4>
+          <Select
+            id="pruefenster-rating"
+            options={ratingOptions}
+            value={rating}
+            onChange={handleRatingChange}
+          />
         </div>
 
         <div className="mb-4">
-          <h4>Freitext</h4>
           <TextArea
             id="pruefenster-comment"
             label="Kommentar"
@@ -413,17 +546,10 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
         </div>
 
         <div className="mb-4">
-          <h4>Prüfergebnis</h4>
-          <Select
-            id="pruefenster-rating"
-            options={ratingOptions}
-            value={rating}
-            onChange={handleRatingChange}
-          />
-        </div>
-
-        <div className="mb-4">
-          <h4>Spezielle Erkenntnisse</h4>
+          <h4 style={{ 
+            textAlign: 'left',
+            fontFamily: '"Source Sans Pro", "Helvetica Neue", Arial, sans-serif'
+          }}>Spezielle Erkenntnisse</h4>
           <div>
             {specialFindingsOptions.map(opt => (
               <Checkbox
@@ -438,7 +564,10 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
         </div>
 
         <div className="mb-4">
-          <h4>Detaillierte Prüfergebnisse</h4>
+          <h4 style={{ 
+            textAlign: 'left',
+            fontFamily: '"Source Sans Pro", "Helvetica Neue", Arial, sans-serif'
+          }}>Detaillierte Prüfergebnisse</h4>
           <div>
             {detailedFindingsOptions.map(opt => (
               <Checkbox
