@@ -12,7 +12,9 @@ import {
   DEFAULT_VALUE_ENUM,
   QUARTER_ENUM,
   QUARTER_START_MONTH_ENUM,
-  ERROR_TYPE_ENUM
+  DATE_FORMAT_ENUM,
+  ERROR_TYPE_ENUM,
+  LOCALE_ENUM
 } from './enums';
 
 // Import from types (not circular since types now import from enums.ts)
@@ -238,4 +240,33 @@ export const TOAST_TYPES: Record<ToastType, string> = {
   [TOAST_TYPE.ERROR]: "Error",
   [TOAST_TYPE.INFO]: "Information",
   [TOAST_TYPE.WARNING]: "Warning"
+};
+
+// Coverage amount limits by user role
+export const COVERAGE_LIMITS = {
+  [USER_ROLE_ENUM.STAFF]: 30000,
+  [USER_ROLE_ENUM.SPECIALIST]: 150000,
+  [USER_ROLE_ENUM.TEAM_LEADER]: 150000, // Same as specialist
+  DEFAULT: 10000
+};
+
+// Quarter calculation constants
+export const QUARTER_CALCULATIONS = {
+  MONTHS_PER_QUARTER: 3,
+  QUARTER_OFFSET: 1,
+  MIN_QUARTER: 1,
+  MAX_QUARTER: 4,
+  RANDOM_DAY_LIMIT: 28
+};
+
+// Locale and formatting constants
+export const LOCALE_SETTINGS = {
+  SWISS_GERMAN: LOCALE_ENUM.SWISS_GERMAN,
+  CURRENCY_CODE: LOCALE_ENUM.CURRENCY_CODE
+};
+
+// Date formatting constants
+export const DATE_FORMATTING = {
+  ISO_DATE_SEPARATOR: DATE_FORMAT_ENUM.ISO_DATE_SEPARATOR,
+  ISO_DATE_INDEX: DATE_FORMAT_ENUM.ISO_DATE_INDEX
 };

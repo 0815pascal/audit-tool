@@ -45,7 +45,9 @@ import { TabView } from '../components/TabNavigationTypes';
 import { useUsers } from './useUsers';
 import {
   TAB_VIEWS,
-  ACTION_STATUS
+  ACTION_STATUS,
+  COVERAGE_LIMITS,
+  QUARTER_CALCULATIONS
 } from '../constants';
 import { CLAIMS_STATUS_ENUM, CASE_TYPE_ENUM, DEFAULT_VALUE_ENUM, USER_ROLE_ENUM, VERIFICATION_STATUS_ENUM } from '../enums';
 import { mapVerificationStatusToCaseAuditStatus } from '../utils/statusUtils';
@@ -265,11 +267,11 @@ export const useCaseAuditHandlers = () => {
       }
       
       // Check coverage limits based on role
-      if (currentUserRole.role === USER_ROLE_ENUM.STAFF && coverageAmount > 30000) {
+      if (currentUserRole.role === USER_ROLE_ENUM.STAFF && coverageAmount > COVERAGE_LIMITS.STAFF) {
         return false;
       }
       
-      if (currentUserRole.role === USER_ROLE_ENUM.SPECIALIST && coverageAmount > 150000) {
+      if (currentUserRole.role === USER_ROLE_ENUM.SPECIALIST && coverageAmount > COVERAGE_LIMITS.SPECIALIST) {
         return false;
       }
       
@@ -285,7 +287,7 @@ export const useCaseAuditHandlers = () => {
     const date = new Date(notificationDate);
     const month = date.getMonth(); // 0-indexed (0 = January, 11 = December)
     const year = date.getFullYear();
-    const quarterNum = Math.floor(month / 3) + 1; // Convert to 1-indexed quarter (1-4)
+    const quarterNum = Math.floor(month / QUARTER_CALCULATIONS.MONTHS_PER_QUARTER) + QUARTER_CALCULATIONS.QUARTER_OFFSET; // Convert to 1-indexed quarter (1-4)
     
     return `Q${quarterNum}-${year}` as QuarterPeriod;
   };

@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { USER_ROLE_ENUM, VERIFICATION_STATUS_ENUM, CASE_TYPE_ENUM } from '../enums'
 import { generateRealisticCaseNumber } from '../utils/caseIdGenerator'
+import { COVERAGE_LIMITS } from '../constants'
 
 // Mock user data for testing
 const mockUsers = [
@@ -23,10 +24,10 @@ const getActiveUsersForAudit = (users: typeof mockUsers) => {
 const getCoverageAmountLimit = (role: string) => {
   switch (role) {
     case USER_ROLE_ENUM.STAFF:
-      return 30000
+      return COVERAGE_LIMITS[USER_ROLE_ENUM.STAFF]
     case USER_ROLE_ENUM.SPECIALIST:
     case USER_ROLE_ENUM.TEAM_LEADER:
-      return 150000
+      return COVERAGE_LIMITS[USER_ROLE_ENUM.SPECIALIST]
     default:
       return 0
   }
@@ -97,9 +98,9 @@ describe('IKS Audit Business Logic', () => {
 
   describe('getCoverageAmountLimit', () => {
     it('should return correct limits for different roles', () => {
-      expect(getCoverageAmountLimit(USER_ROLE_ENUM.STAFF)).toBe(30000)
-      expect(getCoverageAmountLimit(USER_ROLE_ENUM.SPECIALIST)).toBe(150000)
-      expect(getCoverageAmountLimit(USER_ROLE_ENUM.TEAM_LEADER)).toBe(150000)
+      expect(getCoverageAmountLimit(USER_ROLE_ENUM.STAFF)).toBe(COVERAGE_LIMITS[USER_ROLE_ENUM.STAFF])
+      expect(getCoverageAmountLimit(USER_ROLE_ENUM.SPECIALIST)).toBe(COVERAGE_LIMITS[USER_ROLE_ENUM.SPECIALIST])
+      expect(getCoverageAmountLimit(USER_ROLE_ENUM.TEAM_LEADER)).toBe(COVERAGE_LIMITS[USER_ROLE_ENUM.TEAM_LEADER])
       expect(getCoverageAmountLimit(USER_ROLE_ENUM.READER)).toBe(0)
     })
 
@@ -161,12 +162,12 @@ describe('IKS Audit Business Logic', () => {
       
       // Staff should have lower coverage amounts
       if (staffAudit) {
-        expect(staffAudit.coverageAmount).toBeLessThanOrEqual(30000)
+        expect(staffAudit.coverageAmount).toBeLessThanOrEqual(COVERAGE_LIMITS[USER_ROLE_ENUM.STAFF])
       }
       
       // Specialists should have higher coverage amounts
       if (specialistAudit) {
-        expect(specialistAudit.coverageAmount).toBeLessThanOrEqual(150000)
+        expect(specialistAudit.coverageAmount).toBeLessThanOrEqual(COVERAGE_LIMITS[USER_ROLE_ENUM.SPECIALIST])
       }
     })
 

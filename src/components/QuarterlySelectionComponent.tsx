@@ -23,6 +23,7 @@ import {
   setCurrentUser,
   selectAuditData
 } from '../store/caseAuditSlice';
+import { QUARTER_CALCULATIONS } from '../constants';
 
 // Import the users directly from the mock data for initials conversion
 import { users } from '../mocks/handlers';
@@ -244,9 +245,9 @@ const QuarterlySelectionComponent: React.FC = () => {
           
           // Generate a realistic date within the quarter
           // Q1: Jan-Mar, Q2: Apr-Jun, Q3: Jul-Sep, Q4: Oct-Dec
-          const startMonth = (quarterNum - 1) * 3; // 0-indexed month
-          const randomDay = Math.floor(Math.random() * 28) + 1; // 1-28 to avoid month-end issues
-          const randomMonth = startMonth + Math.floor(Math.random() * 3); // Random month within quarter
+          const startMonth = (quarterNum - 1) * QUARTER_CALCULATIONS.MONTHS_PER_QUARTER; // 0-indexed month
+          const randomDay = Math.floor(Math.random() * QUARTER_CALCULATIONS.RANDOM_DAY_LIMIT) + 1; // 1-28 to avoid month-end issues
+          const randomMonth = startMonth + Math.floor(Math.random() * QUARTER_CALCULATIONS.MONTHS_PER_QUARTER); // Random month within quarter
           
           const notificationDate = new Date(year, randomMonth, randomDay);
           return notificationDate.toISOString().split('T')[0]; // Return YYYY-MM-DD format

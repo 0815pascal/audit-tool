@@ -24,11 +24,11 @@ import {
   CLAIMS_STATUS, 
   CASE_STATUS, 
   CASE_TYPES, 
-  FINDING_TYPES 
+  FINDING_TYPES,
+  QUARTER_CALCULATIONS
 } from '../constants';
-import { USER_ROLE_ENUM } from '../enums';
+import { USER_ROLE_ENUM, DEFAULT_VALUE_ENUM } from '../enums';
 import { createCaseAuditId } from '../caseAuditTypes';
-import { DEFAULT_VALUE_ENUM } from '../enums';
 import { generateRealisticCaseNumber } from '../utils/caseIdGenerator';
 
 // Mock data directly in the handlers file
@@ -47,7 +47,7 @@ export const users: User[] = [
 interface MockCase extends Record<string, unknown> {
   id: string;
   userId: string;
-  notificationDate: string;
+  notificationDate: ISODateString;
   clientName: string;
   policyNumber: number;
   caseNumber: number;
@@ -346,7 +346,7 @@ const getQuarterFromDate = (dateString: string): { quarterNum: number; year: num
   const date = new Date(dateString);
   const month = date.getMonth(); // 0-indexed (0 = January, 11 = December)
   const year = date.getFullYear();
-  const quarterNum = Math.floor(month / 3) + 1; // Convert to 1-indexed quarter (1-4)
+  const quarterNum = Math.floor(month / QUARTER_CALCULATIONS.MONTHS_PER_QUARTER) + QUARTER_CALCULATIONS.QUARTER_OFFSET; // Convert to 1-indexed quarter (1-4)
   
   return { quarterNum, year };
 };
@@ -381,7 +381,7 @@ const caseToAudit = (caseData: Record<string, unknown>, quarter: string): AuditO
   // Ensure quarter is in the right format
   if (!isQuarterPeriod(formattedQuarter)) {
     const currentDate = new Date();
-    const currentQuarter = Math.floor(currentDate.getMonth() / 3) + 1 as QuarterNumber;
+    const currentQuarter = Math.floor(currentDate.getMonth() / QUARTER_CALCULATIONS.MONTHS_PER_QUARTER) + QUARTER_CALCULATIONS.QUARTER_OFFSET as QuarterNumber;
     formattedQuarter = `Q${currentQuarter}-${currentDate.getFullYear()}`;
   }
   
@@ -496,8 +496,8 @@ export const handlers = [
           
           return quarterNum === parsedQuarter.quarterNum && 
                 year === parsedQuarter.year;
-        } catch (e) {
-          console.warn(`[MSW] Error filtering case ${caseItem.id}:`, e);
+        } catch (_e) {
+          console.warn(`[MSW] Error filtering case ${caseItem.id}:`, _e);
           return false;
         }
       });
@@ -704,7 +704,7 @@ export const handlers = [
       if (!existingAudit) {
         // If not in our store, create a new one with this ID
         const now = new Date();
-        const currentQuarter = Math.floor((now.getMonth()) / 3) + 1 as QuarterNumber;
+        const currentQuarter = Math.floor((now.getMonth()) / QUARTER_CALCULATIONS.MONTHS_PER_QUARTER) + QUARTER_CALCULATIONS.QUARTER_OFFSET as QuarterNumber;
         const quarterStr = `Q${currentQuarter}-${now.getFullYear()}` as QuarterPeriod;
         
         existingAudit = {
@@ -898,8 +898,8 @@ export const handlers = [
               console.log(`[MSW] Found current quarter case: ${caseItem.id} with notificationDate ${notificationDate} (Q${quarterNum}-${year})`);
             }
             return isMatch;
-          } catch (e) {
-            console.warn(`[MSW] Error filtering case ${caseItem.id}:`, e);
+          } catch (_e) {
+            console.warn(`[MSW] Error filtering case ${caseItem.id}:`, _e);
             return false;
           }
         })
@@ -923,7 +923,8 @@ export const handlers = [
               console.log(`[MSW] Found previous quarter case: ${caseItem.id} with notificationDate ${notificationDate} (Q${quarterNum}-${year})`);
             }
             return isMatch;
-          } catch (e) {
+          } catch (_e) {
+            console.warn(`[MSW] Error filtering case ${caseItem.id}:`, _e);
             return false;
           }
         })

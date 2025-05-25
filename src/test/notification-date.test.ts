@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { QUARTER_CALCULATIONS } from '../constants';
 
 /**
  * Tests for the notificationDate functionality introduced to the backend API.
@@ -11,7 +12,7 @@ describe('NotificationDate API Functionality', () => {
     const date = new Date(dateString);
     const month = date.getMonth(); // 0-indexed (0 = January, 11 = December)
     const year = date.getFullYear();
-    const quarterNum = Math.floor(month / 3) + 1; // Convert to 1-indexed quarter (1-4)
+    const quarterNum = Math.floor(month / QUARTER_CALCULATIONS.MONTHS_PER_QUARTER) + QUARTER_CALCULATIONS.QUARTER_OFFSET; // Convert to 1-indexed quarter (1-4)
     
     return { quarterNum, year };
   };

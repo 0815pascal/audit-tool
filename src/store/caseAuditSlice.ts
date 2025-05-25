@@ -19,6 +19,7 @@ import {
   ApiSuccessResponse
 } from '../types';
 import { VERIFICATION_STATUS_ENUM, CASE_TYPE_ENUM, CLAIMS_STATUS_ENUM, USER_ROLE_ENUM } from '../enums';
+import { QUARTER_CALCULATIONS } from '../constants';
 import { 
   createCaseAuditId,
   CaseAuditStep,
@@ -51,7 +52,7 @@ export const getCurrentQuarter = (): Quarter => {
   // Only recalculate if the cache has expired or doesn't exist
   if (!cachedQuarter || (currentTime - lastUpdateTime) > CACHE_TTL) {
     const month = now.getMonth();
-    const quarterValue = Math.floor(month / 3) + 1;
+    const quarterValue = Math.floor(month / QUARTER_CALCULATIONS.MONTHS_PER_QUARTER) + QUARTER_CALCULATIONS.QUARTER_OFFSET;
     // Type assertion to ensure it's a valid QuarterNumber (1-4)
     const quarter = (quarterValue > 0 && quarterValue <= 4 ? quarterValue : 1) as QuarterNumber;
     

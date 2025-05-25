@@ -215,6 +215,18 @@ export enum DEFAULT_VALUE_ENUM {
   CASE_NUMBER_RANGE = 1000000
 }
 
+// Locale and formatting constants
+export enum LOCALE_ENUM {
+  SWISS_GERMAN = 'de-CH',
+  CURRENCY_CODE = 'CHF'
+}
+
+// Date format constants
+export enum DATE_FORMAT_ENUM {
+  ISO_DATE_SEPARATOR = 'T',
+  ISO_DATE_INDEX = 0
+}
+
 // Quarter enum
 export enum QUARTER_ENUM {
   Q1 = 1,

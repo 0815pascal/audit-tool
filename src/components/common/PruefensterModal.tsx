@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Modal } from './Modal';
 import { 
   SelectOption, 
@@ -214,7 +214,7 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
   };
 
   // Check if form has any data to determine if status should be IN_PROGRESS
-  const hasFormData = () => {
+  const hasFormData = useCallback(() => {
     // Check if comment has content
     if (comment.trim()) return true;
     
@@ -228,7 +228,7 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
     if (Object.values(selectedDetailedFindings).some(value => value)) return true;
     
     return false;
-  };
+  }, [comment, rating, selectedFindings, selectedDetailedFindings]);
 
   // Update status based on form data
   useEffect(() => {
@@ -243,7 +243,7 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
         setCurrentStatus(audit.isVerified ? VERIFICATION_STATUS_ENUM.VERIFIED : VERIFICATION_STATUS_ENUM.NOT_VERIFIED);
       }
     }
-  }, [comment, rating, selectedFindings, selectedDetailedFindings, audit.status, audit.isVerified]);
+  }, [comment, rating, selectedFindings, selectedDetailedFindings, audit.status, audit.isVerified, hasFormData]);
 
   // Update the saveFormState function
   const saveFormState = () => {
