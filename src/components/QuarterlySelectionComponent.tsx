@@ -25,9 +25,6 @@ import {
 } from '../store/caseAuditSlice';
 import { QUARTER_CALCULATIONS } from '../constants';
 
-// Import the users directly from the mock data for initials conversion
-import { users } from '../mocks/handlers';
-
 // Define an interface for what we actually get from the API/store
 // This interface is compatible with both CaseAuditStatus and VERIFICATION_STATUS_ENUM
 interface AuditItem {
@@ -178,7 +175,7 @@ const QuarterlySelectionComponent: React.FC = () => {
     if (!userId) return '-';
     
     try {
-      const user = users.find(u => u.id === userId);
+      const user = usersList.find(u => u.id === userId);
       if (user && 'initials' in user && user.initials) {
         return user.initials;
       }

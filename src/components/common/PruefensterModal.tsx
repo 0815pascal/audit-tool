@@ -23,8 +23,8 @@ import { updateAuditInProgress, saveAuditVerificationThunk } from '../../store/c
 import { VERIFICATION_STATUS_ENUM, RATING_VALUE_ENUM, DETAILED_FINDING_ENUM, SPECIAL_FINDING_ENUM, TOAST_TYPE, BUTTON_COLOR, BUTTON_SIZE } from '../../enums';
 import { convertToVerificationStatus } from '../../utils/statusUtils';
 
-// Import the users directly from the mock data
-import { users } from '../../mocks/handlers';
+// Use the useUsers hook to get user data from Redux store
+import { useUsers } from '../../hooks/useUsers';
 
 interface PruefensterModalProps {
   isOpen: boolean;
@@ -42,6 +42,9 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
   const { showToast } = useToast();
   const dispatch = useAppDispatch();
   const currentUserId = useAppSelector(state => state.caseAudit.currentUserId);
+  
+  // Get users from Redux store via useUsers hook
+  const { allUsers } = useUsers();
   
   const [currentStatus, setCurrentStatus] = useState<VERIFICATION_STATUS_ENUM>(
     audit.status ? 
@@ -128,7 +131,7 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
       // Helper function to get user initials by user ID
       const getUserInitials = (userId: string): string => {
         try {
-          const user = users.find(u => u.id === userId);
+          const user = allUsers.find(u => u.id === userId);
           if (user && 'initials' in user && user.initials) {
             console.log(`Found initials for user ${userId}:`, user.initials);
             return user.initials;
@@ -198,7 +201,7 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
         return updatedFindings;
       });
     }
-  }, [audit, currentUserId]);
+  }, [audit, currentUserId, allUsers]);
 
   const handleCheckboxChange = (value: FindingType, checked: boolean) => {
     setSelectedFindings(prev => ({ ...prev, [value]: checked }));
@@ -254,7 +257,7 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
     
     if (verifier) {
       // Find user by initials
-      const userByInitials = users.find(u => 
+      const userByInitials = allUsers.find(u => 
         'initials' in u && u.initials === verifier.toUpperCase()
       );
       
@@ -315,7 +318,7 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
     
     if (verifier) {
       // Find user by initials
-      const userByInitials = users.find(u => 
+      const userByInitials = allUsers.find(u => 
         'initials' in u && u.initials === verifier.toUpperCase()
       );
       
@@ -358,7 +361,7 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
     // Reset verifier to current user's initials
     const getUserInitials = (userId: string): string => {
       try {
-        const user = users.find(u => u.id === userId);
+        const user = allUsers.find(u => u.id === userId);
         if (user && 'initials' in user && user.initials) {
           return user.initials;
         }
@@ -467,7 +470,7 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
             </span>
             <span style={{ marginTop: '2px', color: '#212529', fontWeight: '500', textAlign: 'right' }}>
               {(() => {
-                const user = users.find(u => u.id === audit.userId);
+                const user = allUsers.find(u => u.id === audit.userId);
                 return user ? user.name : audit.userId;
               })()}
             </span>

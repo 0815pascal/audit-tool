@@ -1,489 +1,38 @@
 import { http, HttpResponse } from 'msw';
 import { 
-  User, 
-  createUserId, 
   ClaimsStatus, 
   CaseStatus, 
-  UserId, 
-  CaseId, 
   QuarterPeriod,
   isQuarterPeriod,
   QuarterNumber,
-  FindingType,
   createCaseId,
-  CaseType,
-  RatingValue,
-  DetailedFindingsRecord,
-  SpecialFindingsRecord,
-  createEmptyDetailedFindings,
-  createEmptySpecialFindings,
-  ISODateString,
-  UserRole
+  createUserId
 } from '../types';
 import { 
   CLAIMS_STATUS, 
   CASE_STATUS, 
-  CASE_TYPES, 
-  FINDING_TYPES,
   QUARTER_CALCULATIONS
 } from '../constants';
 import { USER_ROLE_ENUM, DEFAULT_VALUE_ENUM } from '../enums';
 import { createCaseAuditId } from '../caseAuditTypes';
 import { generateRealisticCaseNumber } from '../utils/caseIdGenerator';
-
-// Mock data directly in the handlers file
-export const users: User[] = [
-  { id: createUserId('1'), name: 'John Smith', department: '5', role: USER_ROLE_ENUM.SPECIALIST, isActive: true, initials: 'JS' },
-  { id: createUserId('2'), name: 'Jane Doe', department: '5', role: USER_ROLE_ENUM.STAFF, isActive: true, initials: 'JD' },
-  { id: createUserId('3'), name: 'Robert Johnson', department: '5', role: USER_ROLE_ENUM.STAFF, isActive: true, initials: 'RJ' },
-  { id: createUserId('4'), name: 'Emily Davis', department: '5', role: USER_ROLE_ENUM.TEAM_LEADER, isActive: true, initials: 'ED' },
-  { id: createUserId('5'), name: 'Michael Brown', department: '5', role: USER_ROLE_ENUM.STAFF, isActive: true, initials: 'MB' },
-  { id: createUserId('6'), name: 'Sarah Wilson', department: '5', role: USER_ROLE_ENUM.SPECIALIST, isActive: true, initials: 'SW' },
-  { id: createUserId('7'), name: 'David Thompson', department: '5', role: USER_ROLE_ENUM.STAFF, isActive: true, initials: 'DT' },
-  { id: createUserId('8'), name: 'Lisa Garcia', department: '5', role: USER_ROLE_ENUM.STAFF, isActive: true, initials: 'LG' },
-];
-
-// Define interface for our mock cases
-interface MockCase extends Record<string, unknown> {
-  id: string;
-  userId: string;
-  notificationDate: ISODateString;
-  clientName: string;
-  policyNumber: number;
-  caseNumber: number;
-  dossierRisk: number;
-  dossierName: string;
-  totalAmount: number;
-  isVerified: boolean;
-  claimsStatus: ClaimsStatus;
-  coverageAmount: number;
-  verifier: string;
-  comment: string;
-  rating: RatingValue;
-  specialFindings: SpecialFindingsRecord;
-  detailedFindings: DetailedFindingsRecord;
-  quarter: string;
-  year: number;
-  isAkoReviewed: boolean;
-  isSpecialist: boolean;
-  caseType: CaseType;
-  notifiedCurrency: string;
-}
-
-const mockCases: MockCase[] = [
-  {
-    id: '1',
-    userId: '1',
-    notificationDate: '2025-04-20', // Q2 2025
-    clientName: 'Thomas Anderson',
-    policyNumber: 12345,
-    caseNumber: 30045678,
-    dossierRisk: 123456,
-    dossierName: 'Matrix Incorporated',
-    totalAmount: 525,
-    isVerified: false,
-    claimsStatus: CLAIMS_STATUS.FULL_COVER,
-    coverageAmount: 525,
-    verifier: '',
-    comment: '',
-    rating: '',
-    specialFindings: createEmptySpecialFindings(),
-    detailedFindings: createEmptyDetailedFindings(),
-    quarter: '2',
-    year: 2025,
-    isAkoReviewed: false,
-    isSpecialist: true,
-    caseType: CASE_TYPES.USER_QUARTERLY,
-    notifiedCurrency: 'CHF'
-  },
-  {
-    id: '2',
-    userId: '2',
-    notificationDate: '2025-04-25', // Q2 2025
-    clientName: 'Alice Johnson',
-    policyNumber: 67890,
-    caseNumber: 30046789,
-    dossierRisk: 234567,
-    dossierName: 'Wonderland Holdings',
-    totalAmount: 360,
-    isVerified: false,
-    claimsStatus: CLAIMS_STATUS.FULL_COVER,
-    coverageAmount: 360,
-    verifier: '',
-    comment: '',
-    rating: '',
-    specialFindings: createEmptySpecialFindings(),
-    detailedFindings: createEmptyDetailedFindings(),
-    quarter: '2',
-    year: 2025,
-    isAkoReviewed: false,
-    isSpecialist: false,
-    caseType: CASE_TYPES.USER_QUARTERLY,
-    notifiedCurrency: 'EUR'
-  },
-  {
-    id: '3',
-    userId: '3',
-    notificationDate: '2025-05-15', // Q2 2025
-    clientName: 'Mark Wilson',
-    policyNumber: 34567,
-    caseNumber: 30047891,
-    dossierRisk: 345678,
-    dossierName: 'Wilson Family Trust',
-    totalAmount: 440,
-    isVerified: false,
-    claimsStatus: CLAIMS_STATUS.PARTIAL_COVER,
-    coverageAmount: 440,
-    verifier: '',
-    comment: '',
-    rating: '',
-    specialFindings: createEmptySpecialFindings(),
-    detailedFindings: createEmptyDetailedFindings(),
-    quarter: '2',
-    year: 2025,
-    isAkoReviewed: false,
-    isSpecialist: false,
-    caseType: CASE_TYPES.USER_QUARTERLY,
-    notifiedCurrency: 'USD'
-  },
-  {
-    id: '4',
-    userId: '4',
-    notificationDate: '2025-06-10', // Q2 2025
-    clientName: 'Sarah Miller',
-    policyNumber: 89012,
-    caseNumber: 30048012,
-    dossierRisk: 456789,
-    dossierName: 'Miller Automotive Group',
-    totalAmount: 875,
-    isVerified: false,
-    claimsStatus: CLAIMS_STATUS.FULL_COVER,
-    coverageAmount: 875,
-    verifier: '',
-    comment: '',
-    rating: '',
-    specialFindings: createEmptySpecialFindings(),
-    detailedFindings: createEmptyDetailedFindings(),
-    quarter: '2',
-    year: 2025,
-    isAkoReviewed: false,
-    isSpecialist: true,
-    caseType: CASE_TYPES.USER_QUARTERLY,
-    notifiedCurrency: 'CHF'
-  },
-  {
-    id: '5',
-    userId: '5',
-    notificationDate: '2025-01-15', // Q1 2025 (previous quarter)
-    clientName: 'David Brown',
-    policyNumber: 45678,
-    caseNumber: 30049234,
-    dossierRisk: 567890,
-    dossierName: 'Brown Medical Associates',
-    totalAmount: 970,
-    isVerified: false,
-    claimsStatus: CLAIMS_STATUS.FULL_COVER,
-    coverageAmount: 970,
-    verifier: '',
-    comment: '',
-    rating: '',
-    specialFindings: createEmptySpecialFindings(),
-    detailedFindings: createEmptyDetailedFindings(),
-    quarter: '1',
-    year: 2025,
-    isAkoReviewed: false,
-    isSpecialist: false,
-    caseType: CASE_TYPES.USER_QUARTERLY,
-    notifiedCurrency: 'EUR'
-  },
-  {
-    id: '6',
-    userId: '6',
-    notificationDate: '2025-02-10', // Q1 2025 (previous quarter)
-    clientName: 'Jennifer Wilson',
-    policyNumber: 78901,
-    caseNumber: 30050345,
-    dossierRisk: 678901,
-    dossierName: 'Wilson Tech Solutions',
-    totalAmount: 1250,
-    isVerified: false,
-    claimsStatus: CLAIMS_STATUS.PARTIAL_COVER,
-    coverageAmount: 1250,
-    verifier: '',
-    comment: '',
-    rating: '',
-    specialFindings: createEmptySpecialFindings(),
-    detailedFindings: createEmptyDetailedFindings(),
-    quarter: '1',
-    year: 2025,
-    isAkoReviewed: false,
-    isSpecialist: true,
-    caseType: CASE_TYPES.USER_QUARTERLY,
-    notifiedCurrency: 'USD'
-  },
-  {
-    id: '7',
-    userId: '7',
-    notificationDate: '2025-03-20', // Q1 2025 (previous quarter)
-    clientName: 'Michael Thompson',
-    policyNumber: 23456,
-    caseNumber: 30051456,
-    dossierRisk: 789012,
-    dossierName: 'Thompson Industries',
-    totalAmount: 800,
-    isVerified: false,
-    claimsStatus: CLAIMS_STATUS.FULL_COVER,
-    coverageAmount: 800,
-    verifier: '',
-    comment: '',
-    rating: '',
-    specialFindings: createEmptySpecialFindings(),
-    detailedFindings: createEmptyDetailedFindings(),
-    quarter: '1',
-    year: 2025,
-    isAkoReviewed: false,
-    isSpecialist: false,
-    caseType: CASE_TYPES.USER_QUARTERLY,
-    notifiedCurrency: 'CHF'
-  },
-  {
-    id: '8',
-    userId: '8',
-    notificationDate: '2024-10-05', // Q4 2024 (older quarter for variety)
-    clientName: 'Lisa Garcia',
-    policyNumber: 34567,
-    caseNumber: 30052567,
-    dossierRisk: 890123,
-    dossierName: 'Garcia Consulting',
-    totalAmount: 650,
-    isVerified: false,
-    claimsStatus: CLAIMS_STATUS.FULL_COVER,
-    coverageAmount: 650,
-    verifier: '',
-    comment: '',
-    rating: '',
-    specialFindings: createEmptySpecialFindings(),
-    detailedFindings: createEmptyDetailedFindings(),
-    quarter: '4',
-    year: 2024,
-    isAkoReviewed: false,
-    isSpecialist: true,
-    caseType: CASE_TYPES.USER_QUARTERLY,
-    notifiedCurrency: 'EUR'
-  }
-];
-
-// Safely parse string to integer with fallback
-const safeParseInt = (value: string | number | undefined, fallback = 0): number => {
-  const parsed = parseInt(String(value));
-  return isNaN(parsed) ? fallback : parsed;
-};
-
-// Safely extract numeric part from string ID
-const getNumericId = (id: string | number | undefined): number => {
-  if (!id) return Math.floor(Math.random() * 1000) + 1;
-  const matches = id.toString().match(/\d+/);
-  return matches ? parseInt(matches[0]) : Math.floor(Math.random() * 1000) + 1;
-};
-
-// Parse quarter string (Q1-2023) to get quarter number and year
-const parseQuarter = (quarterStr: string): { quarterNum: number; year: number } | null => {
-  if (!quarterStr) return null;
-  
-  try {
-  // Handle both formats: "Q1-2023" and "Q1 2023"
-  const match = quarterStr.match(/Q(\d+)[\s-](\d{4})/);
-    if (!match) {
-      // Try alternate format without Q prefix: "1-2023"
-      const altMatch = quarterStr.match(/(\d+)[\s-](\d{4})/);
-      if (!altMatch) return null;
-      
-      return {
-        quarterNum: parseInt(altMatch[1]),
-        year: parseInt(altMatch[2])
-      };
-    }
-  
-  return {
-    quarterNum: parseInt(match[1]),
-    year: parseInt(match[2])
-  };
-  } catch (error) {
-    console.warn("Error parsing quarter string:", quarterStr, error);
-    // Provide fallback values for current quarter
-    const now = new Date();
-    return {
-      quarterNum: Math.floor(now.getMonth() / 3) + 1,
-      year: now.getFullYear()
-    };
-  }
-};
-
-// Define interfaces for our mock data
-interface CaseObj {
-  caseNumber: CaseId;
-  claimOwner: {
-    userId: UserId | number;
-    role: UserRole;
-  };
-  claimsStatus: ClaimsStatus;
-  coverageAmount: number;
-  caseStatus: CaseStatus;
-  notificationDate: string;
-  notifiedCurrency: string;
-}
-
-interface AuditObj {
-  auditId: number;
-  quarter: QuarterPeriod;
-  caseObj: CaseObj;
-  auditor: {
-    userId: UserId | number;
-    role: UserRole;
-  };
-  isAkoReviewed: boolean;
-}
-
-// Define the FindingObj interface for consistent return types
-interface FindingObj {
-  findingId: number;
-  type: FindingType | string;
-  description: string;
-}
-
-// Utility function to deduce quarter from notification date
-const getQuarterFromDate = (dateString: string): { quarterNum: number; year: number } => {
-  const date = new Date(dateString);
-  const month = date.getMonth(); // 0-indexed (0 = January, 11 = December)
-  const year = date.getFullYear();
-  const quarterNum = Math.floor(month / QUARTER_CALCULATIONS.MONTHS_PER_QUARTER) + QUARTER_CALCULATIONS.QUARTER_OFFSET; // Convert to 1-indexed quarter (1-4)
-  
-  return { quarterNum, year };
-};
-
-// Utility to convert our case data to the API case format
-const caseToCaseObj = (caseData: Record<string, unknown>): CaseObj | null => {
-  if (!caseData) return null;
-  
-  // Use the notificationDate from mock data, or create a realistic fallback
-  const notificationDate = (caseData.notificationDate as string) || new Date().toISOString().split('T')[0];
-  
-  return {
-    caseNumber: createCaseId(safeParseInt(caseData.caseNumber as string | number, 0)),
-    claimOwner: {
-      userId: typeof caseData.userId === 'string' 
-        ? createUserId(caseData.userId) 
-        : safeParseInt(caseData.userId as string, 1),
-      role: USER_ROLE_ENUM.TEAM_LEADER
-    },
-    claimsStatus: caseData.claimsStatus as ClaimsStatus || CLAIMS_STATUS.FULL_COVER,
-    coverageAmount: caseData.coverageAmount as number || (caseData.totalAmount as number) || 0,
-    caseStatus: CASE_STATUS.COMPENSATED,
-    notificationDate: notificationDate,
-    notifiedCurrency: (caseData.notifiedCurrency as string) || 'CHF'
-  };
-};
-
-// Convert our case to API audit format
-const caseToAudit = (caseData: Record<string, unknown>, quarter: string): AuditObj | null => {
-  if (!caseData) return null;
-  
-  let formattedQuarter = quarter || "Q1-2023";
-  // Ensure quarter is in the right format
-  if (!isQuarterPeriod(formattedQuarter)) {
-    const currentDate = new Date();
-    const currentQuarter = Math.floor(currentDate.getMonth() / QUARTER_CALCULATIONS.MONTHS_PER_QUARTER) + QUARTER_CALCULATIONS.QUARTER_OFFSET as QuarterNumber;
-    formattedQuarter = `Q${currentQuarter}-${currentDate.getFullYear()}`;
-  }
-  
-  // Use the notificationDate from case data or create a realistic fallback
-  const notificationDate = (caseData.notificationDate as string) || new Date().toISOString().split('T')[0];
-  
-  return {
-    auditId: getNumericId(caseData.id as string),
-    quarter: formattedQuarter as QuarterPeriod,
-    caseObj: caseToCaseObj(caseData) || {
-      caseNumber: createCaseId(Math.floor(DEFAULT_VALUE_ENUM.DEFAULT_CASE_NUMBER + Math.random() * DEFAULT_VALUE_ENUM.CASE_NUMBER_RANGE)),
-      claimOwner: {
-        userId: 1,
-        role: USER_ROLE_ENUM.TEAM_LEADER
-      },
-      claimsStatus: CLAIMS_STATUS.FULL_COVER,
-      coverageAmount: 0,
-      caseStatus: CASE_STATUS.COMPENSATED,
-      notificationDate: notificationDate,
-      notifiedCurrency: 'CHF'
-    },
-    auditor: {
-      userId: 1,
-      role: USER_ROLE_ENUM.SPECIALIST
-    },
-    isAkoReviewed: false
-  };
-};
-
-// Generate findings for an audit
-const generateFindings = (auditId: string | number): FindingObj[] => {
-  const numericId = getNumericId(auditId);
-  const count = Math.floor(Math.random() * 3); // 0-2 findings per audit
-  const findings: FindingObj[] = [];
-  
-  for (let i = 0; i < count; i++) {
-    const findingTypes = Object.keys(FINDING_TYPES) as (keyof typeof FINDING_TYPES)[];
-    const randomType = findingTypes[Math.floor(Math.random() * findingTypes.length)];
-    
-    findings.push({
-      findingId: numericId * 10 + i + 1,
-      type: randomType,
-      description: `Sample finding ${i + 1} for audit ${numericId}: ${FINDING_TYPES[randomType]}`
-    });
-  }
-  
-  return findings;
-};
-
-// In-memory storage for created audits
-const auditStore = new Map<number, AuditObj>();
-
-// Calculate previous quarter info
-const getPreviousQuarterInfo = (quarterNum: number, year: number) => {
-  let prevQuarterNum = quarterNum - 1;
-  let prevYear = year;
-
-  if (prevQuarterNum < 1) {
-    prevQuarterNum = 4;
-    prevYear--;
-  }
-  
-  return {
-    quarter: prevQuarterNum as QuarterNumber,
-    year: prevYear
-  };
-};
-
-// Update the interface definition
-interface AuditRequestData {
-  quarter?: string;
-  caseObj?: {
-    caseNumber?: string | number;
-    claimOwner?: {
-      userId?: string | number;
-      role?: UserRole;
-    };
-    claimsStatus?: ClaimsStatus;
-    coverageAmount?: number;
-    caseStatus?: CaseStatus;
-    notifiedCurrency?: string;
-    [key: string]: unknown;
-  };
-  auditor?: {
-    userId?: string | number;
-    role?: UserRole;
-    [key: string]: unknown;
-  };
-  type?: string;
-  description?: string;
-}
+import {
+  ApiCaseResponse,
+  ApiAuditResponse,
+  ApiAuditRequestPayload
+} from './mockTypes';
+import {
+  auditStore,
+  safeParseInt,
+  getNumericId,
+  parseQuarter,
+  getQuarterFromDate,
+  caseToCaseObj,
+  caseToAudit,
+  generateFindings,
+  getPreviousQuarterInfo
+} from './auxiliaryFunctions';
+import { users, mockCases } from './mockData';
 
 export const handlers = [
   // Get audits by quarter
@@ -593,7 +142,7 @@ export const handlers = [
   // Create Audit
   http.post('/api/audits', async ({ request }) => {
     try {
-      let requestData: AuditRequestData = {};
+      let requestData: ApiAuditRequestPayload = {};
       
       try {
         requestData = await request.json() as typeof requestData;
@@ -614,7 +163,7 @@ export const handlers = [
       }
       
       // Create a new audit object
-      const newAudit: AuditObj = {
+      const newAudit: ApiAuditResponse = {
         auditId,
         quarter: quarter as QuarterPeriod,
         caseObj: {
@@ -685,7 +234,7 @@ export const handlers = [
       const auditIdValue = Array.isArray(auditId) ? auditId[0] : auditId;
       const numericAuditorId = safeParseInt(auditIdValue);
       
-      let requestData: AuditRequestData = {
+      let requestData: ApiAuditRequestPayload = {
         type: "DOCUMENTATION_ISSUE",
         description: "No description provided"
       };
@@ -805,7 +354,7 @@ export const handlers = [
       console.error("[MSW] Error in /api/audits/:auditId PUT handler:", error);
       
       // Return a fallback updated audit
-      const fallbackAudit: AuditObj = {
+      const fallbackAudit: ApiAuditResponse = {
         auditId: safeParseInt(Array.isArray(params.auditId) ? params.auditId[0] : params.auditId, 1),
         quarter: `Q${Math.floor((new Date().getMonth()) / 3) + 1}-${new Date().getFullYear()}` as QuarterPeriod,
         caseObj: {
@@ -968,7 +517,7 @@ export const handlers = [
         const currencies = ['CHF', 'EUR', 'USD'];
         const randomCurrency = currencies[Math.floor(Math.random() * currencies.length)];
         
-        const mockCase: CaseObj = {
+        const mockCase: ApiCaseResponse = {
           caseNumber: createCaseId(40000000 + i),
           claimOwner: {
             userId: users[i % users.length].id,
@@ -994,7 +543,7 @@ export const handlers = [
         const currencies = ['CHF', 'EUR', 'USD'];
         const randomCurrency = currencies[Math.floor(Math.random() * currencies.length)];
         
-        const mockCase: CaseObj = {
+        const mockCase: ApiCaseResponse = {
           caseNumber: createCaseId(30000000 + i),
           claimOwner: {
             userId: users[i % users.length].id,
@@ -1284,8 +833,6 @@ export const handlers = [
       { status: 404 }
     );
   }),
-
-  // Add new verification endpoints
   
   // Get audit verification data
   http.get('/api/audit-verification/:auditId', async ({ params }) => {
