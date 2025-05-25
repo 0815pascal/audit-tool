@@ -46,6 +46,7 @@ interface AuditItem {
   quarter?: string;
   year?: number;
   caseType?: string;
+  notifiedCurrency?: string;
 }
 
 const QuarterlySelectionComponent: React.FC = () => {
@@ -251,10 +252,14 @@ const QuarterlySelectionComponent: React.FC = () => {
           
           const notificationDate = new Date(year, randomMonth, randomDay);
           return notificationDate.toISOString().split('T')[0]; // Return YYYY-MM-DD format
-        })()
+        })(),
+        // Use the notified currency from the audit data, fallback to CHF
+        notifiedCurrency: audit.notifiedCurrency || 'CHF'
       };
       
       console.log('Final auditObject.rating:', auditObject.rating);
+      console.log('Final auditObject.notifiedCurrency:', auditObject.notifiedCurrency);
+      console.log('Original audit.notifiedCurrency:', audit.notifiedCurrency);
       console.log('=== END DEBUG ===');
       
       setSelectedAudit(auditObject);

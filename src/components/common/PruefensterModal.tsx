@@ -456,7 +456,7 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
             <span style={{ marginTop: '2px', fontWeight: '500', fontSize: '14px', textAlign: 'left' }}>
               {new Intl.NumberFormat('de-CH', { 
                 style: 'currency', 
-                currency: 'CHF' 
+                currency: audit.notifiedCurrency || 'CHF' 
               }).format(audit.coverageAmount)}
             </span>
           </div>

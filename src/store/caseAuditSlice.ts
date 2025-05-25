@@ -588,7 +588,7 @@ const caseAuditSlice = createSlice({
           CLAIMS_STATUS_ENUM.FULL_COVER;
           
         // MSW adds quarter and year properties - use type assertion
-        const auditWithQuarter = audit as AuditForSelection & { quarter?: string; year?: number };
+        const auditWithQuarter = audit as AuditForSelection & { quarter?: string; year?: number; notifiedCurrency?: string };
         
         const newAudit: StoredCaseAuditData = {
           isVerified: false,
@@ -607,7 +607,8 @@ const caseAuditSlice = createSlice({
           caseType: CASE_TYPE_ENUM.USER_QUARTERLY,
           coverageAmount: audit.coverageAmount,
           claimsStatus: claimsStatus,
-          dossierName: `Audit ${audit.auditId}`
+          dossierName: `Audit ${audit.auditId}`,
+          notifiedCurrency: auditWithQuarter.notifiedCurrency || 'CHF' // Include currency from audit
         };
         
         state.verifiedAudits[audit.auditId] = newAudit;
@@ -616,7 +617,7 @@ const caseAuditSlice = createSlice({
       // Add the random previous quarter audits
       previousQuarterRandomAudits.forEach(audit => {
         // MSW adds quarter and year properties - use type assertion
-        const auditWithQuarter = audit as AuditForSelection & { quarter?: string; year?: number };
+        const auditWithQuarter = audit as AuditForSelection & { quarter?: string; year?: number; notifiedCurrency?: string };
         
         const newRandomAudit: StoredCaseAuditData = {
           isVerified: false,
@@ -635,7 +636,8 @@ const caseAuditSlice = createSlice({
           caseType: CASE_TYPE_ENUM.PREVIOUS_QUARTER_RANDOM,
           coverageAmount: audit.coverageAmount,
           claimsStatus: audit.claimsStatus as CLAIMS_STATUS_ENUM || CLAIMS_STATUS_ENUM.FULL_COVER,
-          dossierName: `Random Audit ${audit.auditId}`
+          dossierName: `Random Audit ${audit.auditId}`,
+          notifiedCurrency: auditWithQuarter.notifiedCurrency || 'CHF' // Include currency from audit
         };
         
         state.verifiedAudits[audit.auditId] = newRandomAudit;
@@ -909,7 +911,8 @@ export const applyCaseAuditData = (
     rating: auditData.rating || audit.rating,
     specialFindings,
     detailedFindings,
-    status: auditData.status || audit.status
+    status: auditData.status || audit.status,
+    notifiedCurrency: auditData.notifiedCurrency || audit.notifiedCurrency || 'CHF' // Include currency from stored data
   };
 };
 

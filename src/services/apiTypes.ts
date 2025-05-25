@@ -44,6 +44,7 @@ export interface ClaimOwner {
  * 2. Information about who owns the case (claimOwner)
  * 3. Status and financial information (claimsStatus, coverageAmount, caseStatus)
  * 4. Notification date for quarter calculation (notificationDate)
+ * 5. Currency information for proper formatting (notifiedCurrency)
  * 
  * The CaseObj is included in AuditRecord and eventually becomes part of a Dossier
  * in the internal application data model.
@@ -55,6 +56,7 @@ export interface CaseObj {
   coverageAmount: number;
   caseStatus: CaseStatus;
   notificationDate: string; // Date when the case was notified, used for quarter calculation
+  notifiedCurrency: string; // Currency code for the case (e.g., CHF, EUR, USD)
 }
 
 export interface Auditor {

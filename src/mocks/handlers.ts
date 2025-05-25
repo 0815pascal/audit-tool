@@ -67,6 +67,7 @@ interface MockCase extends Record<string, unknown> {
   isAkoReviewed: boolean;
   isSpecialist: boolean;
   caseType: CaseType;
+  notifiedCurrency: string;
 }
 
 const mockCases: MockCase[] = [
@@ -92,7 +93,8 @@ const mockCases: MockCase[] = [
     year: 2025,
     isAkoReviewed: false,
     isSpecialist: true,
-    caseType: CASE_TYPES.USER_QUARTERLY
+    caseType: CASE_TYPES.USER_QUARTERLY,
+    notifiedCurrency: 'CHF'
   },
   {
     id: '2',
@@ -116,7 +118,8 @@ const mockCases: MockCase[] = [
     year: 2025,
     isAkoReviewed: false,
     isSpecialist: false,
-    caseType: CASE_TYPES.USER_QUARTERLY
+    caseType: CASE_TYPES.USER_QUARTERLY,
+    notifiedCurrency: 'EUR'
   },
   {
     id: '3',
@@ -140,7 +143,8 @@ const mockCases: MockCase[] = [
     year: 2025,
     isAkoReviewed: false,
     isSpecialist: false,
-    caseType: CASE_TYPES.USER_QUARTERLY
+    caseType: CASE_TYPES.USER_QUARTERLY,
+    notifiedCurrency: 'USD'
   },
   {
     id: '4',
@@ -164,7 +168,8 @@ const mockCases: MockCase[] = [
     year: 2025,
     isAkoReviewed: false,
     isSpecialist: true,
-    caseType: CASE_TYPES.USER_QUARTERLY
+    caseType: CASE_TYPES.USER_QUARTERLY,
+    notifiedCurrency: 'CHF'
   },
   {
     id: '5',
@@ -188,7 +193,8 @@ const mockCases: MockCase[] = [
     year: 2025,
     isAkoReviewed: false,
     isSpecialist: false,
-    caseType: CASE_TYPES.USER_QUARTERLY
+    caseType: CASE_TYPES.USER_QUARTERLY,
+    notifiedCurrency: 'EUR'
   },
   {
     id: '6',
@@ -212,7 +218,8 @@ const mockCases: MockCase[] = [
     year: 2025,
     isAkoReviewed: false,
     isSpecialist: true,
-    caseType: CASE_TYPES.USER_QUARTERLY
+    caseType: CASE_TYPES.USER_QUARTERLY,
+    notifiedCurrency: 'USD'
   },
   {
     id: '7',
@@ -236,7 +243,8 @@ const mockCases: MockCase[] = [
     year: 2025,
     isAkoReviewed: false,
     isSpecialist: false,
-    caseType: CASE_TYPES.USER_QUARTERLY
+    caseType: CASE_TYPES.USER_QUARTERLY,
+    notifiedCurrency: 'CHF'
   },
   {
     id: '8',
@@ -260,7 +268,8 @@ const mockCases: MockCase[] = [
     year: 2024,
     isAkoReviewed: false,
     isSpecialist: true,
-    caseType: CASE_TYPES.USER_QUARTERLY
+    caseType: CASE_TYPES.USER_QUARTERLY,
+    notifiedCurrency: 'EUR'
   }
 ];
 
@@ -321,6 +330,7 @@ interface CaseObj {
   coverageAmount: number;
   caseStatus: CaseStatus;
   notificationDate: string;
+  notifiedCurrency: string;
 }
 
 interface AuditObj {
@@ -369,7 +379,8 @@ const caseToCaseObj = (caseData: Record<string, unknown>): CaseObj | null => {
     claimsStatus: caseData.claimsStatus as ClaimsStatus || CLAIMS_STATUS.FULL_COVER,
     coverageAmount: caseData.coverageAmount as number || (caseData.totalAmount as number) || 0,
     caseStatus: CASE_STATUS.COMPENSATED,
-    notificationDate: notificationDate
+    notificationDate: notificationDate,
+    notifiedCurrency: (caseData.notifiedCurrency as string) || 'CHF'
   };
 };
 
@@ -400,7 +411,8 @@ const caseToAudit = (caseData: Record<string, unknown>, quarter: string): AuditO
       claimsStatus: CLAIMS_STATUS.FULL_COVER,
       coverageAmount: 0,
       caseStatus: CASE_STATUS.COMPENSATED,
-      notificationDate: notificationDate
+      notificationDate: notificationDate,
+      notifiedCurrency: 'CHF'
     },
     auditor: {
       userId: 1,
@@ -461,6 +473,7 @@ interface AuditRequestData {
     claimsStatus?: ClaimsStatus;
     coverageAmount?: number;
     caseStatus?: CaseStatus;
+    notifiedCurrency?: string;
     [key: string]: unknown;
   };
   auditor?: {
@@ -617,7 +630,8 @@ export const handlers = [
           claimsStatus: (requestData.caseObj?.claimsStatus as ClaimsStatus) || CLAIMS_STATUS.FULL_COVER,
           coverageAmount: requestData.caseObj?.coverageAmount || 10000.00,
           caseStatus: (requestData.caseObj?.caseStatus as CaseStatus) || CASE_STATUS.COMPENSATED,
-          notificationDate: new Date().toISOString().split('T')[0]
+          notificationDate: new Date().toISOString().split('T')[0],
+          notifiedCurrency: 'CHF'
         },
         auditor: {
           userId: requestData.auditor?.userId !== undefined 
@@ -650,7 +664,8 @@ export const handlers = [
           claimsStatus: CLAIMS_STATUS.FULL_COVER,
           coverageAmount: 10000.00,
           caseStatus: CASE_STATUS.COMPENSATED,
-          notificationDate: new Date().toISOString().split('T')[0]
+          notificationDate: new Date().toISOString().split('T')[0],
+          notifiedCurrency: 'CHF'
         },
         auditor: {
           userId: 2,
@@ -719,7 +734,8 @@ export const handlers = [
             claimsStatus: CLAIMS_STATUS.FULL_COVER as ClaimsStatus,
             coverageAmount: 10000.00,
             caseStatus: CASE_STATUS.COMPENSATED as CaseStatus,
-            notificationDate: new Date().toISOString().split('T')[0]
+            notificationDate: new Date().toISOString().split('T')[0],
+            notifiedCurrency: 'CHF'
           },
           auditor: {
             userId: 2,
@@ -761,6 +777,9 @@ export const handlers = [
               }),
               ...(requestData.caseObj.caseStatus && {
                 caseStatus: requestData.caseObj.caseStatus as CaseStatus
+              }),
+              ...(requestData.caseObj.notifiedCurrency && {
+                notifiedCurrency: requestData.caseObj.notifiedCurrency
               })
             } : {})
         }}),
@@ -798,7 +817,8 @@ export const handlers = [
           claimsStatus: CLAIMS_STATUS.FULL_COVER as ClaimsStatus,
           coverageAmount: 10000.00,
           caseStatus: CASE_STATUS.COMPENSATED as CaseStatus,
-          notificationDate: new Date().toISOString().split('T')[0]
+          notificationDate: new Date().toISOString().split('T')[0],
+          notifiedCurrency: 'CHF'
         },
         auditor: {
           userId: 2,
@@ -944,6 +964,10 @@ export const handlers = [
         // Generate a notification date for the current quarter
         const currentQuarterDate = new Date(parsedQuarter.year, (parsedQuarter.quarterNum - 1) * 3 + Math.floor(Math.random() * 3), Math.floor(Math.random() * 28) + 1);
         
+        // Random currency selection
+        const currencies = ['CHF', 'EUR', 'USD'];
+        const randomCurrency = currencies[Math.floor(Math.random() * currencies.length)];
+        
         const mockCase: CaseObj = {
           caseNumber: createCaseId(40000000 + i),
           claimOwner: {
@@ -953,7 +977,8 @@ export const handlers = [
           claimsStatus: i % 2 === 0 ? CLAIMS_STATUS.FULL_COVER : CLAIMS_STATUS.PARTIAL_COVER,
           coverageAmount: Math.floor(Math.random() * 100000) + 1000,
           caseStatus: CASE_STATUS.COMPENSATED,
-          notificationDate: currentQuarterDate.toISOString().split('T')[0]
+          notificationDate: currentQuarterDate.toISOString().split('T')[0],
+          notifiedCurrency: randomCurrency
         };
         console.log(`[MSW] Generated additional current quarter case with notificationDate: ${mockCase.notificationDate}`);
         currentQuarterCases.push(mockCase);
@@ -965,6 +990,10 @@ export const handlers = [
         const { quarter: prevQuarterNum, year: prevYear } = getPreviousQuarterInfo(parsedQuarter.quarterNum, parsedQuarter.year);
         const previousQuarterDate = new Date(prevYear, (prevQuarterNum - 1) * 3 + Math.floor(Math.random() * 3), Math.floor(Math.random() * 28) + 1);
         
+        // Random currency selection
+        const currencies = ['CHF', 'EUR', 'USD'];
+        const randomCurrency = currencies[Math.floor(Math.random() * currencies.length)];
+        
         const mockCase: CaseObj = {
           caseNumber: createCaseId(30000000 + i),
           claimOwner: {
@@ -974,7 +1003,8 @@ export const handlers = [
           claimsStatus: i % 2 === 0 ? CLAIMS_STATUS.FULL_COVER : CLAIMS_STATUS.PARTIAL_COVER,
           coverageAmount: Math.floor(Math.random() * 100000) + 1000,
           caseStatus: CASE_STATUS.COMPENSATED,
-          notificationDate: previousQuarterDate.toISOString().split('T')[0]
+          notificationDate: previousQuarterDate.toISOString().split('T')[0],
+          notifiedCurrency: randomCurrency
         };
         console.log(`[MSW] Generated additional previous quarter case with notificationDate: ${mockCase.notificationDate}`);
         previousQuarterCases.push(mockCase);
@@ -989,7 +1019,7 @@ export const handlers = [
       // Log the notification dates of all returned cases for verification
       allCases.forEach((caseObj, index) => {
         const { quarterNum, year } = getQuarterFromDate(caseObj.notificationDate);
-        console.log(`[MSW] Case ${index + 1}: notificationDate ${caseObj.notificationDate} → Q${quarterNum}-${year}`);
+        console.log(`[MSW] Case ${index + 1}: notificationDate ${caseObj.notificationDate} → Q${quarterNum}-${year}, currency: ${caseObj.notifiedCurrency}`);
       });
       
       return HttpResponse.json(allCases, { status: 200 });

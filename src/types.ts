@@ -298,6 +298,7 @@ export interface AuditForSelection extends BaseEntity<CaseAuditId> {
   isAkoReviewed?: boolean;
   quarter?: string; // Quarter calculated from notification date
   year?: number; // Year calculated from notification date
+  notifiedCurrency?: string; // Currency code for the case (e.g., CHF, EUR, USD)
 }
 
 // Type for user audit selection with userId

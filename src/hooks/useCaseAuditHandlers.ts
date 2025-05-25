@@ -313,7 +313,7 @@ export const useCaseAuditHandlers = () => {
           getQuarterFromNotificationDate(caseObj.notificationDate) : 
           quarterPeriod; // fallback to requested quarter if no notification date
         
-        console.log(`[DEBUG] Case ${index + 1}: notificationDate=${caseObj.notificationDate}, actualQuarter=${actualQuarter}`);
+        console.log(`[DEBUG] Case ${index + 1}: notificationDate=${caseObj.notificationDate}, actualQuarter=${actualQuarter}, notifiedCurrency=${caseObj.notifiedCurrency}`);
         
         const auditObj = {
           id: createCaseAuditId(String(caseObj.caseNumber)),
@@ -325,7 +325,8 @@ export const useCaseAuditHandlers = () => {
           isVerified: false,
           claimsStatus: caseObj.claimsStatus,
           quarter: actualQuarter, // Use the calculated quarter from notification date
-          isAkoReviewed: false
+          isAkoReviewed: false,
+          notifiedCurrency: caseObj.notifiedCurrency || 'CHF' // Include the currency from API response
         };
         
         console.log(`[DEBUG] Created audit object:`, auditObj);

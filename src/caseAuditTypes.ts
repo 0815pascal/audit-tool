@@ -78,6 +78,7 @@ export interface StoredCaseAuditData extends CaseAuditData {
   dossierName: string;
   isAkoReviewed?: boolean;
   lastUpdated?: string;
+  notifiedCurrency?: string; // Currency code for the case (e.g., CHF, EUR, USD)
 }
 
 // Action payload for case audit operations
@@ -134,6 +135,7 @@ export interface CaseAudit extends CaseAuditCore, CaseAuditData {
   verifier: UserId;
   status?: CaseAuditStatus;
   notificationDate?: string; // Date when the case was notified, used for quarter calculation
+  notifiedCurrency?: string; // Currency code for the case (e.g., CHF, EUR, USD)
 }
 
 // Redux state for case audits
