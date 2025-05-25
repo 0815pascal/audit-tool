@@ -484,18 +484,27 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
           
           <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'right' }}>
             <span style={{ fontWeight: '600', color: '#6c757d', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'right' }}>
-              Dossier
+              Notification Date
             </span>
             <span style={{ marginTop: '2px', color: '#212529', fontWeight: '500', textAlign: 'right' }}>
-              {audit.dossierName}
+              {audit.notificationDate ? new Date(audit.notificationDate).toLocaleDateString('de-CH') : '-'}
             </span>
           </div>
           
           <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'left' }}>
             <span style={{ fontWeight: '600', color: '#6c757d', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'left' }}>
-              Prüfer
+              Dossier
             </span>
             <span style={{ marginTop: '2px', color: '#212529', fontWeight: '500', textAlign: 'left' }}>
+              {audit.dossierName}
+            </span>
+          </div>
+          
+          <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'right' }}>
+            <span style={{ fontWeight: '600', color: '#6c757d', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              Prüfer
+            </span>
+            <span style={{ marginTop: '2px', color: '#212529', fontWeight: '500'}}>
               {verifier || '-'}
             </span>
           </div>
@@ -523,7 +532,6 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
         <div className="mb-4">
           <TextArea
             id="pruefenster-comment"
-            label="Kommentar"
             value={comment}
             onChange={setComment}
             placeholder="Geben Sie hier Ihren Kommentar ein..."

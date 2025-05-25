@@ -133,6 +133,7 @@ export interface CaseAuditCore extends BaseEntity<CaseAuditId> {
 export interface CaseAudit extends CaseAuditCore, CaseAuditData {
   verifier: UserId;
   status?: CaseAuditStatus;
+  notificationDate?: string; // Date when the case was notified, used for quarter calculation
 }
 
 // Redux state for case audits

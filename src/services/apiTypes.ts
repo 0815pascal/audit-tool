@@ -43,6 +43,7 @@ export interface ClaimOwner {
  * 1. Case identification (caseNumber)
  * 2. Information about who owns the case (claimOwner)
  * 3. Status and financial information (claimsStatus, coverageAmount, caseStatus)
+ * 4. Notification date for quarter calculation (notificationDate)
  * 
  * The CaseObj is included in AuditRecord and eventually becomes part of a Dossier
  * in the internal application data model.
@@ -53,6 +54,7 @@ export interface CaseObj {
   claimsStatus: ClaimsStatus;
   coverageAmount: number;
   caseStatus: CaseStatus;
+  notificationDate: string; // Date when the case was notified, used for quarter calculation
 }
 
 export interface Auditor {

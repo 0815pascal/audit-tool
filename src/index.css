@@ -50,7 +50,7 @@ input, select, textarea {
   border: 1px solid var(--border-color);
   border-radius: 4px;
   font-family: inherit;
-  font-size: 1rem;
+  font-size: .875rem;
   width: 100%;
 }
 

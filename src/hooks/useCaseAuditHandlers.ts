@@ -49,6 +49,7 @@ import {
 } from '../constants';
 import { CLAIMS_STATUS_ENUM, CASE_TYPE_ENUM, DEFAULT_VALUE_ENUM, USER_ROLE_ENUM, VERIFICATION_STATUS_ENUM } from '../enums';
 import { mapVerificationStatusToCaseAuditStatus } from '../utils/statusUtils';
+import { selectCasesForAudit } from '../services/auditService';
 
 /**
  * Hook for handling case audit operations
@@ -279,6 +280,16 @@ export const useCaseAuditHandlers = () => {
     }
   };
   
+  // Helper function to calculate quarter from notification date
+  const getQuarterFromNotificationDate = (notificationDate: string): QuarterPeriod => {
+    const date = new Date(notificationDate);
+    const month = date.getMonth(); // 0-indexed (0 = January, 11 = December)
+    const year = date.getFullYear();
+    const quarterNum = Math.floor(month / 3) + 1; // Convert to 1-indexed quarter (1-4)
+    
+    return `Q${quarterNum}-${year}` as QuarterPeriod;
+  };
+
   // Handle selecting quarterly audits
   const handleSelectQuarterlyAudits = async (quarterKey: QuarterPeriod | string): Promise<void> => {
     try {
@@ -287,34 +298,47 @@ export const useCaseAuditHandlers = () => {
       // Use the quarter key as is
       const quarterPeriod = quarterKey as QuarterPeriod;
       
-      // Call the API to select quarterly audits - MSW will handle the generation
-      const response = await fetch('/api/verification/select-quarterly', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          quarterKey: quarterPeriod,
-          userIds: usersList.map(user => user.id)
-        }),
+      // Call the API to get cases for audit selection using the correct endpoint
+      const cases = await selectCasesForAudit(quarterPeriod);
+      
+      console.log(`[API] Retrieved ${cases.length} cases for quarter ${quarterPeriod}`);
+      
+      // Convert the CaseObj response to the format expected by Redux
+      // Each case becomes an audit that needs to be verified
+      const userQuarterlyAudits = cases.map((caseObj, index) => {
+        // Calculate the actual quarter from the notification date
+        const actualQuarter = caseObj.notificationDate ? 
+          getQuarterFromNotificationDate(caseObj.notificationDate) : 
+          quarterPeriod; // fallback to requested quarter if no notification date
+        
+        console.log(`[DEBUG] Case ${index + 1}: notificationDate=${caseObj.notificationDate}, actualQuarter=${actualQuarter}`);
+        
+        const auditObj = {
+          id: createCaseAuditId(String(caseObj.caseNumber)),
+          auditId: createCaseAuditId(String(caseObj.caseNumber)),
+          userId: ensureUserId(String(caseObj.claimOwner.userId)),
+          status: VERIFICATION_STATUS_ENUM.NOT_VERIFIED,
+          verifier: '', // No verifier assigned yet
+          coverageAmount: caseObj.coverageAmount,
+          isVerified: false,
+          claimsStatus: caseObj.claimsStatus,
+          quarter: actualQuarter, // Use the calculated quarter from notification date
+          isAkoReviewed: false
+        };
+        
+        console.log(`[DEBUG] Created audit object:`, auditObj);
+        return auditObj;
       });
       
-      if (!response.ok) {
-        throw new Error(`Failed to select quarterly dossiers: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      if (!data.success) {
-        throw new Error(data.error || 'Failed to select quarterly dossiers');
-      }
-      
-      const responseData = data.data;
+      // Split the cases: first 8 are current quarter, last 2 are from previous quarter
+      const currentQuarterAudits = userQuarterlyAudits.slice(0, 8);
+      const previousQuarterRandomAudits = userQuarterlyAudits.slice(8, 10);
       
       // Store the quarterly selection in Redux
       dispatch(selectQuarterlyAudits({
         quarterKey: quarterPeriod,
-        userQuarterlyAudits: responseData.userQuarterlyAudits,
-        previousQuarterRandomAudits: responseData.previousQuarterRandomAudits
+        userQuarterlyAudits: currentQuarterAudits,
+        previousQuarterRandomAudits
       }));
       
       setLoadingStatus(ACTION_STATUS.idle);

@@ -204,9 +204,9 @@ export const getFindingsByAudit = async (auditId: AuditId): Promise<Finding[]> =
   }
 };
 
-// Select cases for audit in a given quarter
+// Select cases for audit in a given quarter (8 current + 2 previous quarter)
 export const selectCasesForAudit = async (quarter: QuarterPeriod): Promise<CaseObj[]> => {
-  const cacheKey = createCacheKey('cases', quarter);
+  const cacheKey = createCacheKey('select-cases', quarter);
   
   // Check cache first
   if (isCacheValid(caseCache, cacheKey)) {
@@ -215,7 +215,7 @@ export const selectCasesForAudit = async (quarter: QuarterPeriod): Promise<CaseO
   
   try {
     console.log(`[API] Selecting cases for audit in quarter ${quarter}`);
-    const response = await api.get<CaseObj[]>(`/cases/select?quarter=${quarter}`);
+    const response = await api.get<CaseObj[]>(`/audits/select-cases/${quarter}`);
     
     if (response.status >= 400) {
       console.warn(`[API] Error ${response.status} selecting cases for audit`);

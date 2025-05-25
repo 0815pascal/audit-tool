@@ -47,7 +47,7 @@ export const users: User[] = [
 interface MockCase extends Record<string, unknown> {
   id: string;
   userId: string;
-  date: ISODateString;
+  notificationDate: string;
   clientName: string;
   policyNumber: number;
   caseNumber: number;
@@ -73,7 +73,7 @@ const mockCases: MockCase[] = [
   {
     id: '1',
     userId: '1',
-    date: '2025-04-10' as ISODateString,
+    notificationDate: '2025-04-20', // Q2 2025
     clientName: 'Thomas Anderson',
     policyNumber: 12345,
     caseNumber: 30045678,
@@ -88,7 +88,7 @@ const mockCases: MockCase[] = [
     rating: '',
     specialFindings: createEmptySpecialFindings(),
     detailedFindings: createEmptyDetailedFindings(),
-    quarter: '1',
+    quarter: '2',
     year: 2025,
     isAkoReviewed: false,
     isSpecialist: true,
@@ -97,7 +97,7 @@ const mockCases: MockCase[] = [
   {
     id: '2',
     userId: '2',
-    date: '2025-04-16' as ISODateString,
+    notificationDate: '2025-04-25', // Q2 2025
     clientName: 'Alice Johnson',
     policyNumber: 67890,
     caseNumber: 30046789,
@@ -112,7 +112,7 @@ const mockCases: MockCase[] = [
     rating: '',
     specialFindings: createEmptySpecialFindings(),
     detailedFindings: createEmptyDetailedFindings(),
-    quarter: '1',
+    quarter: '2',
     year: 2025,
     isAkoReviewed: false,
     isSpecialist: false,
@@ -121,7 +121,7 @@ const mockCases: MockCase[] = [
   {
     id: '3',
     userId: '3',
-    date: '2025-04-25' as ISODateString,
+    notificationDate: '2025-05-15', // Q2 2025
     clientName: 'Mark Wilson',
     policyNumber: 34567,
     caseNumber: 30047891,
@@ -136,7 +136,7 @@ const mockCases: MockCase[] = [
     rating: '',
     specialFindings: createEmptySpecialFindings(),
     detailedFindings: createEmptyDetailedFindings(),
-    quarter: '1',
+    quarter: '2',
     year: 2025,
     isAkoReviewed: false,
     isSpecialist: false,
@@ -145,7 +145,7 @@ const mockCases: MockCase[] = [
   {
     id: '4',
     userId: '4',
-    date: '2025-05-08' as ISODateString,
+    notificationDate: '2025-06-10', // Q2 2025
     clientName: 'Sarah Miller',
     policyNumber: 89012,
     caseNumber: 30048012,
@@ -169,7 +169,7 @@ const mockCases: MockCase[] = [
   {
     id: '5',
     userId: '5',
-    date: '2025-05-19' as ISODateString,
+    notificationDate: '2025-01-15', // Q1 2025 (previous quarter)
     clientName: 'David Brown',
     policyNumber: 45678,
     caseNumber: 30049234,
@@ -184,10 +184,82 @@ const mockCases: MockCase[] = [
     rating: '',
     specialFindings: createEmptySpecialFindings(),
     detailedFindings: createEmptyDetailedFindings(),
-    quarter: '2',
+    quarter: '1',
     year: 2025,
     isAkoReviewed: false,
     isSpecialist: false,
+    caseType: CASE_TYPES.USER_QUARTERLY
+  },
+  {
+    id: '6',
+    userId: '6',
+    notificationDate: '2025-02-10', // Q1 2025 (previous quarter)
+    clientName: 'Jennifer Wilson',
+    policyNumber: 78901,
+    caseNumber: 30050345,
+    dossierRisk: 678901,
+    dossierName: 'Wilson Tech Solutions',
+    totalAmount: 1250,
+    isVerified: false,
+    claimsStatus: CLAIMS_STATUS.PARTIAL_COVER,
+    coverageAmount: 1250,
+    verifier: '',
+    comment: '',
+    rating: '',
+    specialFindings: createEmptySpecialFindings(),
+    detailedFindings: createEmptyDetailedFindings(),
+    quarter: '1',
+    year: 2025,
+    isAkoReviewed: false,
+    isSpecialist: true,
+    caseType: CASE_TYPES.USER_QUARTERLY
+  },
+  {
+    id: '7',
+    userId: '7',
+    notificationDate: '2025-03-20', // Q1 2025 (previous quarter)
+    clientName: 'Michael Thompson',
+    policyNumber: 23456,
+    caseNumber: 30051456,
+    dossierRisk: 789012,
+    dossierName: 'Thompson Industries',
+    totalAmount: 800,
+    isVerified: false,
+    claimsStatus: CLAIMS_STATUS.FULL_COVER,
+    coverageAmount: 800,
+    verifier: '',
+    comment: '',
+    rating: '',
+    specialFindings: createEmptySpecialFindings(),
+    detailedFindings: createEmptyDetailedFindings(),
+    quarter: '1',
+    year: 2025,
+    isAkoReviewed: false,
+    isSpecialist: false,
+    caseType: CASE_TYPES.USER_QUARTERLY
+  },
+  {
+    id: '8',
+    userId: '8',
+    notificationDate: '2024-10-05', // Q4 2024 (older quarter for variety)
+    clientName: 'Lisa Garcia',
+    policyNumber: 34567,
+    caseNumber: 30052567,
+    dossierRisk: 890123,
+    dossierName: 'Garcia Consulting',
+    totalAmount: 650,
+    isVerified: false,
+    claimsStatus: CLAIMS_STATUS.FULL_COVER,
+    coverageAmount: 650,
+    verifier: '',
+    comment: '',
+    rating: '',
+    specialFindings: createEmptySpecialFindings(),
+    detailedFindings: createEmptyDetailedFindings(),
+    quarter: '4',
+    year: 2024,
+    isAkoReviewed: false,
+    isSpecialist: true,
     caseType: CASE_TYPES.USER_QUARTERLY
   }
 ];
@@ -248,6 +320,7 @@ interface CaseObj {
   claimsStatus: ClaimsStatus;
   coverageAmount: number;
   caseStatus: CaseStatus;
+  notificationDate: string;
 }
 
 interface AuditObj {
@@ -268,9 +341,22 @@ interface FindingObj {
   description: string;
 }
 
+// Utility function to deduce quarter from notification date
+const getQuarterFromDate = (dateString: string): { quarterNum: number; year: number } => {
+  const date = new Date(dateString);
+  const month = date.getMonth(); // 0-indexed (0 = January, 11 = December)
+  const year = date.getFullYear();
+  const quarterNum = Math.floor(month / 3) + 1; // Convert to 1-indexed quarter (1-4)
+  
+  return { quarterNum, year };
+};
+
 // Utility to convert our case data to the API case format
 const caseToCaseObj = (caseData: Record<string, unknown>): CaseObj | null => {
   if (!caseData) return null;
+  
+  // Use the notificationDate from mock data, or create a realistic fallback
+  const notificationDate = (caseData.notificationDate as string) || new Date().toISOString().split('T')[0];
   
   return {
     caseNumber: createCaseId(safeParseInt(caseData.caseNumber as string | number, 0)),
@@ -282,7 +368,8 @@ const caseToCaseObj = (caseData: Record<string, unknown>): CaseObj | null => {
     },
     claimsStatus: caseData.claimsStatus as ClaimsStatus || CLAIMS_STATUS.FULL_COVER,
     coverageAmount: caseData.coverageAmount as number || (caseData.totalAmount as number) || 0,
-    caseStatus: CASE_STATUS.COMPENSATED
+    caseStatus: CASE_STATUS.COMPENSATED,
+    notificationDate: notificationDate
   };
 };
 
@@ -298,6 +385,9 @@ const caseToAudit = (caseData: Record<string, unknown>, quarter: string): AuditO
     formattedQuarter = `Q${currentQuarter}-${currentDate.getFullYear()}`;
   }
   
+  // Use the notificationDate from case data or create a realistic fallback
+  const notificationDate = (caseData.notificationDate as string) || new Date().toISOString().split('T')[0];
+  
   return {
     auditId: getNumericId(caseData.id as string),
     quarter: formattedQuarter as QuarterPeriod,
@@ -309,7 +399,8 @@ const caseToAudit = (caseData: Record<string, unknown>, quarter: string): AuditO
       },
       claimsStatus: CLAIMS_STATUS.FULL_COVER,
       coverageAmount: 0,
-      caseStatus: CASE_STATUS.COMPENSATED
+      caseStatus: CASE_STATUS.COMPENSATED,
+      notificationDate: notificationDate
     },
     auditor: {
       userId: 1,
@@ -401,12 +492,10 @@ export const handlers = [
       // Filter cases for the requested quarter
       const filteredCases = mockCases.filter(caseItem => {
         try {
-          const caseDate = new Date(caseItem.date);
-          const caseQuarter = Math.floor(caseDate.getMonth() / 3) + 1;
-          const caseYear = caseDate.getFullYear();
+          const { quarterNum, year } = getQuarterFromDate(caseItem.notificationDate);
           
-          return caseQuarter === parsedQuarter.quarterNum && 
-                caseYear === parsedQuarter.year;
+          return quarterNum === parsedQuarter.quarterNum && 
+                year === parsedQuarter.year;
         } catch (e) {
           console.warn(`[MSW] Error filtering case ${caseItem.id}:`, e);
           return false;
@@ -527,7 +616,8 @@ export const handlers = [
           },
           claimsStatus: (requestData.caseObj?.claimsStatus as ClaimsStatus) || CLAIMS_STATUS.FULL_COVER,
           coverageAmount: requestData.caseObj?.coverageAmount || 10000.00,
-          caseStatus: (requestData.caseObj?.caseStatus as CaseStatus) || CASE_STATUS.COMPENSATED
+          caseStatus: (requestData.caseObj?.caseStatus as CaseStatus) || CASE_STATUS.COMPENSATED,
+          notificationDate: new Date().toISOString().split('T')[0]
         },
         auditor: {
           userId: requestData.auditor?.userId !== undefined 
@@ -559,7 +649,8 @@ export const handlers = [
           },
           claimsStatus: CLAIMS_STATUS.FULL_COVER,
           coverageAmount: 10000.00,
-          caseStatus: CASE_STATUS.COMPENSATED
+          caseStatus: CASE_STATUS.COMPENSATED,
+          notificationDate: new Date().toISOString().split('T')[0]
         },
         auditor: {
           userId: 2,
@@ -627,7 +718,8 @@ export const handlers = [
             },
             claimsStatus: CLAIMS_STATUS.FULL_COVER as ClaimsStatus,
             coverageAmount: 10000.00,
-            caseStatus: CASE_STATUS.COMPENSATED as CaseStatus
+            caseStatus: CASE_STATUS.COMPENSATED as CaseStatus,
+            notificationDate: new Date().toISOString().split('T')[0]
           },
           auditor: {
             userId: 2,
@@ -639,10 +731,10 @@ export const handlers = [
       
       // Update audit with new data
       const updatedAudit = {
-        ...existingAudit,
+        ...existingAudit!,
         ...(requestData.quarter && { quarter: requestData.quarter as QuarterPeriod }),
         ...(requestData.caseObj && { caseObj: {
-          ...existingAudit.caseObj,
+          ...existingAudit!.caseObj,
           // Safely handle caseObj properties
           ...(typeof requestData.caseObj === 'object' ? 
             // Only include properties that can be safely typed
@@ -652,7 +744,7 @@ export const handlers = [
               }),
               ...(requestData.caseObj.claimOwner && {
                 claimOwner: {
-                  ...existingAudit.caseObj.claimOwner,
+                  ...existingAudit!.caseObj.claimOwner,
                   ...(requestData.caseObj.claimOwner.userId !== undefined && {
                     userId: safeParseInt(String(requestData.caseObj.claimOwner.userId))
                   }),
@@ -665,7 +757,7 @@ export const handlers = [
                 claimsStatus: requestData.caseObj.claimsStatus as ClaimsStatus
               }),
               ...(requestData.caseObj.coverageAmount !== undefined && {
-                coverageAmount: safeParseInt(requestData.caseObj.coverageAmount as string | number, existingAudit.caseObj.coverageAmount)
+                coverageAmount: safeParseInt(requestData.caseObj.coverageAmount as string | number, existingAudit!.caseObj.coverageAmount)
               }),
               ...(requestData.caseObj.caseStatus && {
                 caseStatus: requestData.caseObj.caseStatus as CaseStatus
@@ -673,7 +765,7 @@ export const handlers = [
             } : {})
         }}),
         ...(requestData.auditor && { auditor: {
-          ...existingAudit.auditor,
+          ...existingAudit!.auditor,
           // Safely handle auditor properties
           ...(requestData.auditor.userId !== undefined && {
             userId: safeParseInt(String(requestData.auditor.userId))
@@ -705,7 +797,8 @@ export const handlers = [
           },
           claimsStatus: CLAIMS_STATUS.FULL_COVER as ClaimsStatus,
           coverageAmount: 10000.00,
-          caseStatus: CASE_STATUS.COMPENSATED as CaseStatus
+          caseStatus: CASE_STATUS.COMPENSATED as CaseStatus,
+          notificationDate: new Date().toISOString().split('T')[0]
         },
         auditor: {
           userId: 2,
@@ -784,13 +877,121 @@ export const handlers = [
       const { quarter } = params;
       console.log(`[MSW] Selecting cases for quarter ${quarter}`);
       
-      // Always return some cases for audit selection regardless of quarter
-      const cases = mockCases
-        .slice(0, 5)
+      const quarterValue = Array.isArray(quarter) ? quarter[0] : quarter ?? '';
+      const parsedQuarter = parseQuarter(quarterValue);
+      
+      if (!parsedQuarter) {
+        console.warn(`[MSW] Could not parse quarter string: ${quarter}`);
+        return HttpResponse.json([], { status: 200 });
+      }
+      
+      // Get 8 cases for the current quarter - using notificationDate to deduce quarter
+      const currentQuarterCases = mockCases
+        .filter(caseItem => {
+          try {
+            // Use the notificationDate property to deduce quarter
+            const notificationDate = caseItem.notificationDate;
+            const { quarterNum, year } = getQuarterFromDate(notificationDate);
+            
+            const isMatch = quarterNum === parsedQuarter.quarterNum && year === parsedQuarter.year;
+            if (isMatch) {
+              console.log(`[MSW] Found current quarter case: ${caseItem.id} with notificationDate ${notificationDate} (Q${quarterNum}-${year})`);
+            }
+            return isMatch;
+          } catch (e) {
+            console.warn(`[MSW] Error filtering case ${caseItem.id}:`, e);
+            return false;
+          }
+        })
+        .slice(0, 8) // Take 8 cases for current quarter
         .map(caseItem => caseToCaseObj(caseItem))
         .filter(caseObj => caseObj !== null);
       
-      return HttpResponse.json(cases, { status: 200 });
+      // Get 2 random cases from previous quarter - using notificationDate to deduce quarter
+      const { quarter: prevQuarterNum, year: prevYear } = getPreviousQuarterInfo(parsedQuarter.quarterNum, parsedQuarter.year);
+      console.log(`[MSW] Looking for previous quarter cases: Q${prevQuarterNum}-${prevYear}`);
+      
+      const previousQuarterCases = mockCases
+        .filter(caseItem => {
+          try {
+            // Use the notificationDate property to deduce quarter
+            const notificationDate = caseItem.notificationDate;
+            const { quarterNum, year } = getQuarterFromDate(notificationDate);
+            
+            const isMatch = quarterNum === prevQuarterNum && year === prevYear;
+            if (isMatch) {
+              console.log(`[MSW] Found previous quarter case: ${caseItem.id} with notificationDate ${notificationDate} (Q${quarterNum}-${year})`);
+            }
+            return isMatch;
+          } catch (e) {
+            return false;
+          }
+        })
+        .slice(0, 2) // Take 2 random cases from previous quarter
+        .map(caseItem => caseToCaseObj(caseItem))
+        .filter(caseObj => caseObj !== null);
+      
+      // If we don't have enough cases, generate some mock ones
+      const totalCurrentCases = currentQuarterCases.length;
+      const totalPreviousCases = previousQuarterCases.length;
+      
+      console.log(`[MSW] Found ${totalCurrentCases} current quarter cases, need 8`);
+      console.log(`[MSW] Found ${totalPreviousCases} previous quarter cases, need 2`);
+      
+      // Generate additional current quarter cases if needed
+      for (let i = totalCurrentCases; i < 8; i++) {
+        // Generate a notification date for the current quarter
+        const currentQuarterDate = new Date(parsedQuarter.year, (parsedQuarter.quarterNum - 1) * 3 + Math.floor(Math.random() * 3), Math.floor(Math.random() * 28) + 1);
+        
+        const mockCase: CaseObj = {
+          caseNumber: createCaseId(40000000 + i),
+          claimOwner: {
+            userId: users[i % users.length].id,
+            role: users[i % users.length].role
+          },
+          claimsStatus: i % 2 === 0 ? CLAIMS_STATUS.FULL_COVER : CLAIMS_STATUS.PARTIAL_COVER,
+          coverageAmount: Math.floor(Math.random() * 100000) + 1000,
+          caseStatus: CASE_STATUS.COMPENSATED,
+          notificationDate: currentQuarterDate.toISOString().split('T')[0]
+        };
+        console.log(`[MSW] Generated additional current quarter case with notificationDate: ${mockCase.notificationDate}`);
+        currentQuarterCases.push(mockCase);
+      }
+      
+      // Generate additional previous quarter cases if needed
+      for (let i = totalPreviousCases; i < 2; i++) {
+        // Generate a notification date for the previous quarter
+        const { quarter: prevQuarterNum, year: prevYear } = getPreviousQuarterInfo(parsedQuarter.quarterNum, parsedQuarter.year);
+        const previousQuarterDate = new Date(prevYear, (prevQuarterNum - 1) * 3 + Math.floor(Math.random() * 3), Math.floor(Math.random() * 28) + 1);
+        
+        const mockCase: CaseObj = {
+          caseNumber: createCaseId(30000000 + i),
+          claimOwner: {
+            userId: users[i % users.length].id,
+            role: users[i % users.length].role
+          },
+          claimsStatus: i % 2 === 0 ? CLAIMS_STATUS.FULL_COVER : CLAIMS_STATUS.PARTIAL_COVER,
+          coverageAmount: Math.floor(Math.random() * 100000) + 1000,
+          caseStatus: CASE_STATUS.COMPENSATED,
+          notificationDate: previousQuarterDate.toISOString().split('T')[0]
+        };
+        console.log(`[MSW] Generated additional previous quarter case with notificationDate: ${mockCase.notificationDate}`);
+        previousQuarterCases.push(mockCase);
+      }
+      
+      // Combine all cases (8 current + 2 previous = 10 total)
+      const allCases = [...currentQuarterCases, ...previousQuarterCases];
+      
+      console.log(`[MSW] Returning ${allCases.length} cases (${currentQuarterCases.length} current quarter + ${previousQuarterCases.length} previous quarter)`);
+      console.log(`[MSW] Cases now include notificationDate for quarter deduction`);
+      
+      // Log the notification dates of all returned cases for verification
+      allCases.forEach((caseObj, index) => {
+        const { quarterNum, year } = getQuarterFromDate(caseObj.notificationDate);
+        console.log(`[MSW] Case ${index + 1}: notificationDate ${caseObj.notificationDate} → Q${quarterNum}-${year}`);
+      });
+      
+      return HttpResponse.json(allCases, { status: 200 });
     } catch (error) {
       console.error("[MSW] Error in /api/audits/select-cases/:quarter handler:", error);
       return HttpResponse.json([], { status: 200 });

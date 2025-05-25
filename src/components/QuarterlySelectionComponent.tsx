@@ -224,8 +224,8 @@ const QuarterlySelectionComponent: React.FC = () => {
         isVerified: audit.isVerified,
         isAkoReviewed,
         isSpecialist: false,
-        quarter: selectedQuarter as QuarterPeriod, // Cast to QuarterPeriod
-        year: parseInt(selectedQuarter.split('-')[1]),
+        quarter: (audit.quarter as QuarterPeriod) || (selectedQuarter as QuarterPeriod), // Use audit's quarter or fallback
+        year: audit.year || parseInt(selectedQuarter.split('-')[1]),
         claimsStatus: (audit.claimsStatus as ClaimsStatus) || ('FULL_COVER' as ClaimsStatus),
         verifier: audit.verifier ? ensureUserId(audit.verifier) : ensureUserId(currentUserId),
         status: audit.status ? (audit.status as CaseAuditStatus) : (audit.isVerified ? CaseAuditStatus.VERIFIED : CaseAuditStatus.NOT_VERIFIED),
@@ -234,7 +234,23 @@ const QuarterlySelectionComponent: React.FC = () => {
         rating: (latestAuditData?.rating || audit.rating || '') as RatingValue,
         specialFindings: latestAuditData?.specialFindings || audit.specialFindings || createEmptyFindings(),
         detailedFindings: latestAuditData?.detailedFindings || audit.detailedFindings || createEmptyFindings(),
-        caseType: CASE_TYPE_ENUM.USER_QUARTERLY as CaseType
+        caseType: CASE_TYPE_ENUM.USER_QUARTERLY as CaseType,
+        // Calculate notification date from quarter information
+        notificationDate: (() => {
+          const quarterToUse = (audit.quarter as string) || selectedQuarter;
+          const [quarterStr, yearStr] = quarterToUse.split('-');
+          const quarterNum = parseInt(quarterStr.replace('Q', ''));
+          const year = parseInt(yearStr);
+          
+          // Generate a realistic date within the quarter
+          // Q1: Jan-Mar, Q2: Apr-Jun, Q3: Jul-Sep, Q4: Oct-Dec
+          const startMonth = (quarterNum - 1) * 3; // 0-indexed month
+          const randomDay = Math.floor(Math.random() * 28) + 1; // 1-28 to avoid month-end issues
+          const randomMonth = startMonth + Math.floor(Math.random() * 3); // Random month within quarter
+          
+          const notificationDate = new Date(year, randomMonth, randomDay);
+          return notificationDate.toISOString().split('T')[0]; // Return YYYY-MM-DD format
+        })()
       };
       
       console.log('Final auditObject.rating:', auditObject.rating);

@@ -296,6 +296,8 @@ export interface AuditForSelection extends BaseEntity<CaseAuditId> {
   detailedFindings?: FindingsRecord;
   isVerified?: boolean;
   isAkoReviewed?: boolean;
+  quarter?: string; // Quarter calculated from notification date
+  year?: number; // Year calculated from notification date
 }
 
 // Type for user audit selection with userId

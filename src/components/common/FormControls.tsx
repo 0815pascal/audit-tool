@@ -107,7 +107,7 @@ export const Checkbox: React.FC<CheckboxProps> = ({
 // Text area with label
 interface TextAreaProps {
   id: string;
-  label: string;
+  label?: string;
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
@@ -123,7 +123,7 @@ export const TextArea: React.FC<TextAreaProps> = ({
   rows = 3
 }) => (
   <div>
-    <label style={{ display: 'flex', marginLeft: '.5rem' }} htmlFor={id}>{label}</label>
+   {label && <label style={{ display: 'flex', marginLeft: '.5rem' }} htmlFor={id}>{label}</label>}
     <textarea
       id={id}
       value={value}
