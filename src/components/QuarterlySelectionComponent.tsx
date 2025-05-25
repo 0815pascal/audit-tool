@@ -136,7 +136,6 @@ const QuarterlySelectionComponent: React.FC = () => {
       }
       
       await handleSelectQuarterlyDossiers(selectedQuarter);
-      setSuccessMessage(`Successfully selected audits for ${selectedQuarter}`);
     } catch (error) {
       console.error('Error selecting audits:', error);
       setErrorMessage('Failed to select audits. Please try again.');
@@ -229,6 +228,7 @@ const QuarterlySelectionComponent: React.FC = () => {
         year: parseInt(selectedQuarter.split('-')[1]),
         claimsStatus: (audit.claimsStatus as ClaimsStatus) || ('FULL_COVER' as ClaimsStatus),
         verifier: audit.verifier ? ensureUserId(audit.verifier) : ensureUserId(currentUserId),
+        status: audit.status ? (audit.status as CaseAuditStatus) : (audit.isVerified ? CaseAuditStatus.VERIFIED : CaseAuditStatus.NOT_VERIFIED),
         // Use latest data from Redux if available, otherwise fall back to audit data
         comment: latestAuditData?.comment || audit.comment || '',
         rating: (latestAuditData?.rating || audit.rating || '') as RatingValue,
@@ -297,13 +297,13 @@ const QuarterlySelectionComponent: React.FC = () => {
       
       <div className="selection-controls">
         <div className="control-group">
-          <label htmlFor="year-select">Year:</label>
           <select 
             id="year-select"
-            value={filteredYear}
+            value={filteredYear || ''}
             onChange={e => handleYearChange(parseInt(e.target.value))}
             disabled={loading}
           >
+            <option value="" disabled>Year</option>
             {availableYears.map(year => (
               <option key={year} value={year}>{year}</option>
             ))}
@@ -311,13 +311,13 @@ const QuarterlySelectionComponent: React.FC = () => {
         </div>
         
         <div className="control-group">
-          <label htmlFor="quarter-select">Quarter:</label>
           <select
             id="quarter-select"
-            value={selectedQuarter}
+            value={selectedQuarter || ''}
             onChange={e => handleQuarterChange(e.target.value)}
             disabled={loading}
           >
+            <option value="" disabled>Quarter</option>
             {quarterOptions.map(option => (
               <option key={option.value} value={option.value}>{option.label}</option>
             ))}
@@ -325,13 +325,13 @@ const QuarterlySelectionComponent: React.FC = () => {
         </div>
         
         <div className="control-group">
-          <label htmlFor="user-select">Current User:</label>
           <select
             id="user-select"
             value={currentUserId}
             onChange={e => handleUserChange(e.target.value)}
             disabled={loading}
           >
+            <option value="" disabled>Current User:</option>
             {usersList.map((user: User) => (
               <option key={user.id} value={user.id}>
                 {user.name} ({user.role})
@@ -339,9 +339,7 @@ const QuarterlySelectionComponent: React.FC = () => {
             ))}
           </select>
         </div>
-      </div>
-      
-      <div className="button-group">
+        <div className="button-group">
         <button 
           onClick={handleAutoSelect}
           disabled={loading || !isTeamLeader}
@@ -358,6 +356,9 @@ const QuarterlySelectionComponent: React.FC = () => {
           Export Results
         </button>
       </div>
+      </div>
+      
+      
       
       {errorMessage && (
         <div className="error-message">
@@ -386,31 +387,9 @@ const QuarterlySelectionComponent: React.FC = () => {
         </div>
       )}
       
-      <div className="quarterly-status">
-        <h3>Status for {selectedQuarter}</h3>
-        <div className="status-summary">
-          <div className="status-item">
-            <span className="status-label">User Audits:</span>
-            <span className="status-value">{quarterlyDossiers.userQuarterlyAudits.length}</span>
-          </div>
-          <div className="status-item">
-            <span className="status-label">Random Previous Quarter Audits:</span>
-            <span className="status-value">{quarterlyDossiers.previousQuarterRandomAudits.length}</span>
-          </div>
-          <div className="status-item">
-            <span className="status-label">Total Audits:</span>
-            <span className="status-value">
-              {quarterlyDossiers.userQuarterlyAudits.length + 
-               quarterlyDossiers.previousQuarterRandomAudits.length}
-            </span>
-          </div>
-        </div>
-      </div>
-      
       {/* Audit Tables */}
       <div className="audit-tables">
         <div className="audit-table">
-          <h3>Quartals-Check {selectedQuarter}</h3>
           {quarterlyDossiers.userQuarterlyAudits.length === 0 && quarterlyDossiers.previousQuarterRandomAudits.length === 0 ? (
             <p className="no-data">Keine Audits für dieses Quartal ausgewählt.</p>
           ) : (

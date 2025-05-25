@@ -178,13 +178,13 @@ export const Select = <T extends string>({
   };
   
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', marginRight: '1rem' }}>
+    <div style={{ display: 'flex', flexDirection: 'column'}}>
       {label && <label htmlFor={id} style={{ marginBottom: '0.25rem' }}>{label}</label>}
       <select
         id={id}
         value={value}
         onChange={handleChange}
-        style={{ padding: '6px', borderRadius: '4px', border: `1px solid ${UI_COLOR_ENUM.BORDER}` }}
+        style={{ padding: '6px', borderRadius: '4px', fontSize: '14px', border: `1px solid ${UI_COLOR_ENUM.BORDER}` }}
       >
         <option value="">-- Select --</option>
         {options.map(opt => (

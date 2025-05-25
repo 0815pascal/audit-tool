@@ -24,16 +24,9 @@ test.describe('IKS Audit Tool - Auto-Select and Verification', () => {
     const currentUserSelect = page.locator('#user-select');
     await expect(currentUserSelect).toBeVisible();
     
-    // Check that the quarterly status section is visible
-    const statusSection = page.locator('.quarterly-status');
-    await expect(statusSection).toBeVisible();
-    
-    // Check that initial audit counts are 0
-    const userAuditsCount = page.locator('.status-item:has-text("User Audits:") .status-value');
-    const randomAuditsCount = page.locator('.status-item:has-text("Random Previous Quarter Audits:") .status-value');
-    
-    await expect(userAuditsCount).toHaveText('0');
-    await expect(randomAuditsCount).toHaveText('0');
+    // Check that audit tables are visible
+    const auditTables = page.locator('.audit-tables');
+    await expect(auditTables).toBeVisible();
   });
 
   test('should auto-select audits when button is clicked', async ({ page }) => {
@@ -48,20 +41,9 @@ test.describe('IKS Audit Tool - Auto-Select and Verification', () => {
     // Wait for the selection to complete
     await page.waitForTimeout(2000);
     
-    // Check that audits were generated
-    const userAuditsCount = page.locator('.status-item:has-text("User Audits:") .status-value');
-    const randomAuditsCount = page.locator('.status-item:has-text("Random Previous Quarter Audits:") .status-value');
-    
-    // Should have generated user audits (one per active staff member)
-    await expect(userAuditsCount).not.toHaveText('0');
-    
-    // Should have generated 2 random previous quarter audits
-    await expect(randomAuditsCount).toHaveText('2');
-    
-    // Check that success message is displayed
-    const successMessage = page.locator('.success-message');
-    await expect(successMessage).toBeVisible();
-    await expect(successMessage).toContainText('Successfully selected audits');
+    // Check that audits are now visible in the table
+    const auditTable = page.locator('.audit-table table');
+    await expect(auditTable).toBeVisible();
   });
 
   test('should display audit table with Prüfen buttons after auto-selection', async ({ page }) => {
@@ -255,9 +237,9 @@ test.describe('IKS Audit Tool - Auto-Select and Verification', () => {
     await autoSelectButton.click();
     await page.waitForTimeout(1000);
     
-    // Should still have audits after re-selection
-    const userAuditsCount = page.locator('.status-item:has-text("User Audits:") .status-value');
-    await expect(userAuditsCount).not.toHaveText('0');
+    // Should still have audits after re-selection - check table has rows
+    const auditTable = page.locator('.audit-table table tbody tr');
+    await expect(auditTable.first()).toBeVisible();
   });
 
   test('should validate required fields in modal', async ({ page }) => {
@@ -304,12 +286,12 @@ test.describe('IKS Audit Tool - Auto-Select and Verification', () => {
     await enabledPruefenButton.click();
     
     // The Prüfer field in Case Information should show initials (like "ED") not user IDs (like "4")
-    // Look for the Prüfer field in the Case Information section
-    const caseInfoSection = page.locator('.case-info-section');
-    await expect(caseInfoSection).toBeVisible();
+    // Look for the Prüfer field in the case information grid
+    const pruefensterContent = page.locator('.pruefenster-content');
+    await expect(pruefensterContent).toBeVisible();
     
     // Find the Prüfer label and get the corresponding value
-    const prueferText = await caseInfoSection.getByText('PRÜFER').locator('..').locator('span').last().textContent();
+    const prueferText = await pruefensterContent.getByText('PRÜFER').locator('..').locator('span').last().textContent();
     
     console.log('Verifier field shows initials:', prueferText);
     

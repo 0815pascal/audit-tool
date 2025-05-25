@@ -18,12 +18,12 @@
   flex-wrap: wrap;
   gap: 15px;
   margin-bottom: 20px;
+  align-items: center;
 }
 
 .control-group {
   display: flex;
   flex-direction: column;
-  min-width: 150px;
 }
 
 .control-group label {
@@ -39,10 +39,14 @@
   font-size: 14px;
 }
 
+#year-select {
+  width: 100px;
+}
+
 .button-group {
   display: flex;
   gap: 10px;
-  margin-bottom: 20px;
+  align-items: flex-end;
 }
 
 button {
@@ -60,12 +64,12 @@ button:disabled {
 }
 
 .primary-button {
-  background-color: #007bff;
+  background-color: var(--primary-color);
   color: white;
 }
 
 .primary-button:hover:not(:disabled) {
-  background-color: #0069d9;
+  background-color: var(--hover-color);
 }
 
 .secondary-button {

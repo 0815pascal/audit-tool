@@ -61,8 +61,8 @@ test.describe('IKS Audit Tool - Verification Data Persistence', () => {
     await expect(page.locator('textarea[id="pruefenster-comment"]')).toHaveValue('Test comment for cancel scenario');
     
     // Check that verifier is populated in the Case Information section
-    const caseInfoSection = page.locator('.case-info-section');
-    const prueferText = await caseInfoSection.getByText('PRÜFER').locator('..').locator('span').last().textContent();
+    const pruefensterContent = page.locator('.pruefenster-content');
+    const prueferText = await pruefensterContent.getByText('PRÜFER').locator('..').locator('span').last().textContent();
     expect(prueferText).toMatch(/^[A-Z]{2,3}$/); // Should be initials like "ED"
     
     // Close modal
@@ -116,8 +116,8 @@ test.describe('IKS Audit Tool - Verification Data Persistence', () => {
     await expect(page.locator('textarea[id="pruefenster-comment"]')).toHaveValue('Test comment for verification');
     
     // Check that verifier is populated in the Case Information section
-    const caseInfoSection = page.locator('.case-info-section');
-    const prueferText = await caseInfoSection.getByText('PRÜFER').locator('..').locator('span').last().textContent();
+    const pruefensterContent = page.locator('.pruefenster-content');
+    const prueferText = await pruefensterContent.getByText('PRÜFER').locator('..').locator('span').last().textContent();
     expect(prueferText).toMatch(/^[A-Z]{2,3}$/); // Should be initials like "ED"
     
     // Close modal
