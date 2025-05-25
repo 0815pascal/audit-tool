@@ -37,7 +37,7 @@ import {
   verifyAuditAPI, 
   rejectAuditAPI,
   VerificationResponse 
-} from '../services/auditVerificationService';
+} from '../services/auditService';
 
 // Memoize the getCurrentQuarter function to avoid creating new objects on each call
 let cachedQuarter: Quarter | null = null;

@@ -2,7 +2,7 @@
 export * from './ApiService';
 export * from './apiUtils';
 
-// Re-export types from apiTypes
+// Re-export types from apiUtils
 export type {
   AuditRecord,
   CaseObj,
@@ -12,7 +12,7 @@ export type {
   Auditor,
   ClaimOwner,
   FindingId
-} from './apiTypes';
+} from './apiUtils';
 
 // Re-export all API functions for centralized access
 export {
@@ -25,11 +25,22 @@ export {
   selectCasesForAudit,
   exportAuditReport,
   getRandomAuditForUser,
-  selectQuarterlyDossiers
+  selectQuarterlyDossiers,
+  saveAuditVerification,
+  verifyAuditAPI,
+  rejectAuditAPI,
+  getAuditVerification
+} from './auditService';
+
+// Re-export verification types
+export type {
+  VerificationData,
+  VerificationResponse,
+  UpdateVerificationRequest
 } from './auditService';
 
 // Re-export helper functions
-export { createCacheKey, createFindingId } from './apiTypes';
+export { createCacheKey, createFindingId } from './apiUtils';
 
 // Create and export API singleton instance
 import { ApiService } from './ApiService';

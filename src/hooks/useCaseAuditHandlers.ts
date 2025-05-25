@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import {
   selectUserQuarterlyStatus,
@@ -8,6 +8,10 @@ import {
   getCurrentQuarter,
   initializeState,
   updateAuditStatus,
+  updateAuditInProgress,
+  verifyStep,
+  markStepIncorrect,
+  updateStepComment,
   selectQuarterlyAuditsForPeriod,
   selectUserRole,
   selectQuarterlyAudits,
@@ -29,16 +33,27 @@ import {
   ClaimsStatus,
   RatingValue,
   FindingsRecord,
+  FindingType,
+  DetailedFindingsRecord,
+  SpecialFindingsRecord,
+  QuarterlyStatus,
   createEmptyFindings,
+  createEmptyDetailedFindings,
+  createEmptySpecialFindings,
   createISODateString,
   createPolicyId,
-  createCaseId
+  createCaseId,
+  formatQuarterPeriod,
+  isDetailedFinding,
+  isSpecialFinding
 } from '../types';
 import {
   CaseAudit,
   CaseAuditData,
   CaseAuditId,
   CaseAuditStatus,
+  CaseAuditStep,
+  StoredCaseAuditData,
   createCaseAuditId
 } from '../types';
 import { TAB_VIEW_ENUM } from '../enums';
@@ -469,4 +484,271 @@ export const useTabNavigation = () => {
     activeTab,
     handleTabChange
   };
-}; 
+};
+
+// ===== MERGED FROM useCaseAuditState.ts =====
+
+interface UseCaseAuditStateOptions {
+  auditId?: string;
+  userId?: string;
+}
+
+interface UseFindingsOptions {
+  initialFindings?: FindingsRecord;
+}
+
+// Define the return type for findings functionality
+export interface UseFindingsReturn {
+  findings: FindingsRecord;
+  toggleFinding: (finding: FindingType, value?: boolean) => void;
+  setMultipleFindings: (updates: Partial<FindingsRecord>) => void;
+  resetFindings: () => void;
+  getDetailedFindings: () => DetailedFindingsRecord;
+  getSpecialFindings: () => SpecialFindingsRecord;
+  hasSelectedFindings: () => boolean;
+  countDetailedFindings: () => number;
+  countSpecialFindings: () => number;
+}
+
+/**
+ * Hook for safely accessing and updating case audit state
+ */
+export function useCaseAuditState(options: UseCaseAuditStateOptions = {}) {
+  const dispatch = useAppDispatch();
+  const { auditId, userId } = options;
+
+  // Get stored audit data for a case
+  const auditData = useAppSelector(state => {
+    if (!auditId) return undefined;
+    return state.caseAudit.verifiedAudits[auditId];
+  });
+
+  // Get quarterly status for a user
+  const quarterlyStatus = useAppSelector(state => {
+    if (!userId) return undefined;
+    
+    const { quarter, year } = getCurrentQuarter();
+    const quarterKey = formatQuarterPeriod(quarter, year);
+    
+    return state.caseAudit.userQuarterlyStatus[userId]?.[quarterKey];
+  });
+
+  // Current audit status
+  const auditStatus = auditData?.status || CaseAuditStatus.NOT_VERIFIED;
+
+  // Check if audit is verified
+  const isVerified = auditData?.isVerified || false;
+
+  // Save audit data (in-progress)
+  const saveAuditData = useCallback((data: CaseAuditData, verifier: string) => {
+    if (!auditId || !userId) {
+      console.error('Cannot save audit data: auditId or userId missing');
+      return;
+    }
+    
+    dispatch(updateAuditInProgress({
+      auditId: createCaseAuditId(auditId),
+      userId: createUserId(userId),
+      verifier: createUserId(verifier),
+      ...data
+    }));
+  }, [dispatch, auditId, userId]);
+
+  // Verify audit
+  const doVerifyAudit = useCallback((data: CaseAuditData, verifier: string) => {
+    if (!auditId || !userId) {
+      console.error('Cannot verify audit: auditId or userId missing');
+      return;
+    }
+    
+    dispatch(verifyAudit({
+      auditId: createCaseAuditId(auditId),
+      userId: createUserId(userId),
+      isVerified: true,
+      verifier: createUserId(verifier),
+      ...data
+    }));
+  }, [dispatch, auditId, userId]);
+
+  // Reject audit
+  const doRejectAudit = useCallback((data: CaseAuditData, verifier: string) => {
+    if (!auditId || !userId) {
+      console.error('Cannot reject audit: auditId or userId missing');
+      return;
+    }
+    
+    dispatch(rejectAudit({
+      auditId: createCaseAuditId(auditId),
+      userId: createUserId(userId),
+      verifier: createUserId(verifier),
+      ...data
+    }));
+  }, [dispatch, auditId, userId]);
+
+  // Update audit status
+  const updateStatus = useCallback((status: CaseAuditStatus) => {
+    if (!auditId || !userId) {
+      console.error('Cannot update status: auditId or userId missing');
+      return;
+    }
+    
+    dispatch(updateAuditStatus({
+      auditId: createCaseAuditId(auditId),
+      userId: createUserId(userId),
+      status
+    }));
+  }, [dispatch, auditId, userId]);
+
+  // Verify step
+  const doVerifyStep = useCallback((stepId: string, isVerified: boolean) => {
+    if (!auditId || !userId) {
+      console.error('Cannot verify step: auditId or userId missing');
+      return;
+    }
+    
+    dispatch(verifyStep({
+      auditId: createCaseAuditId(auditId),
+      userId: createUserId(userId),
+      stepId,
+      isVerified
+    }));
+  }, [dispatch, auditId, userId]);
+
+  // Mark step as incorrect
+  const doMarkStepIncorrect = useCallback((stepId: string, isIncorrect: boolean) => {
+    if (!auditId || !userId) {
+      console.error('Cannot mark step incorrect: auditId or userId missing');
+      return;
+    }
+    
+    dispatch(markStepIncorrect({
+      auditId: createCaseAuditId(auditId),
+      userId: createUserId(userId),
+      stepId,
+      isIncorrect
+    }));
+  }, [dispatch, auditId, userId]);
+
+  // Add step comment
+  const doUpdateStepComment = useCallback((stepId: string, comment: string) => {
+    if (!auditId || !userId) {
+      console.error('Cannot add step comment: auditId or userId missing');
+      return;
+    }
+    
+    dispatch(updateStepComment({
+      auditId: createCaseAuditId(auditId),
+      userId: createUserId(userId),
+      stepId,
+      comment
+    }));
+  }, [dispatch, auditId, userId]);
+
+  // Get audit step
+  const getAuditStep = useCallback((stepId: string): CaseAuditStep | undefined => {
+    if (!auditData) return undefined;
+    return auditData.steps[stepId];
+  }, [auditData]);
+
+  return {
+    // State
+    auditData,
+    quarterlyStatus,
+    auditStatus,
+    isVerified,
+    
+    // Actions
+    saveAuditData,
+    verifyAudit: doVerifyAudit,
+    rejectAudit: doRejectAudit,
+    updateStatus,
+    verifyStep: doVerifyStep,
+    markStepIncorrect: doMarkStepIncorrect,
+    updateStepComment: doUpdateStepComment,
+    
+    // Helpers
+    getAuditStep
+  };
+}
+
+/**
+ * Hook for managing findings in a type-safe way
+ */
+export function useFindings(options: UseFindingsOptions = {}): UseFindingsReturn {
+  const { initialFindings = createEmptyFindings() } = options;
+  const [findings, setFindings] = useState<FindingsRecord>(initialFindings);
+
+  // Toggle a specific finding
+  const toggleFinding = useCallback((finding: FindingType, value?: boolean) => {
+    setFindings(prev => ({
+      ...prev,
+      [finding]: value !== undefined ? value : !prev[finding]
+    }));
+  }, []);
+
+  // Set multiple findings at once
+  const setMultipleFindings = useCallback((updates: Partial<FindingsRecord>) => {
+    setFindings(prev => ({
+      ...prev,
+      ...updates
+    }));
+  }, []);
+
+  // Reset all findings to false
+  const resetFindings = useCallback(() => {
+    setFindings(createEmptyFindings());
+  }, []);
+
+  // Get only detailed findings
+  const getDetailedFindings = useCallback((): DetailedFindingsRecord => {
+    const detailedFindings = createEmptyDetailedFindings();
+    Object.entries(findings).forEach(([key, value]) => {
+      if (isDetailedFinding(key as FindingType)) {
+        (detailedFindings as any)[key] = value;
+      }
+    });
+    return detailedFindings;
+  }, [findings]);
+
+  // Get only special findings
+  const getSpecialFindings = useCallback((): SpecialFindingsRecord => {
+    const specialFindings = createEmptySpecialFindings();
+    Object.entries(findings).forEach(([key, value]) => {
+      if (isSpecialFinding(key as FindingType)) {
+        (specialFindings as any)[key] = value;
+      }
+    });
+    return specialFindings;
+  }, [findings]);
+
+  // Check if any findings are selected
+  const hasSelectedFindings = useCallback((): boolean => {
+    return Object.values(findings).some(value => value === true);
+  }, [findings]);
+
+  // Count detailed findings
+  const countDetailedFindings = useCallback((): number => {
+    return Object.entries(findings).filter(([key, value]) => 
+      isDetailedFinding(key as FindingType) && value === true
+    ).length;
+  }, [findings]);
+
+  // Count special findings
+  const countSpecialFindings = useCallback((): number => {
+    return Object.entries(findings).filter(([key, value]) => 
+      isSpecialFinding(key as FindingType) && value === true
+    ).length;
+  }, [findings]);
+
+  return {
+    findings,
+    toggleFinding,
+    setMultipleFindings,
+    resetFindings,
+    getDetailedFindings,
+    getSpecialFindings,
+    hasSelectedFindings,
+    countDetailedFindings,
+    countSpecialFindings
+  };
+} 
