@@ -14,8 +14,8 @@ import {
   QUARTER_CALCULATIONS
 } from '../constants';
 import { USER_ROLE_ENUM, DEFAULT_VALUE_ENUM } from '../enums';
-import { createCaseAuditId } from '../caseAuditTypes';
-import { generateRealisticCaseNumber } from '../utils/caseIdGenerator';
+import { createCaseAuditId } from '../types';
+import { generateRealisticCaseNumber } from '../utils/statusUtils';
 import {
   ApiCaseResponse,
   ApiAuditResponse,

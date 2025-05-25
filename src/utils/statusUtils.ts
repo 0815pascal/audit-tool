@@ -1,12 +1,23 @@
 /**
- * Utility functions for working with verification status enums
+ * Utility functions for working with verification status enums and case ID generation
  * 
  * This file provides simple conversion utilities between CaseAuditStatus and VERIFICATION_STATUS_ENUM.
  * Since both enums now use the same underlying string values, mapping is simplified.
  */
 
 import { VERIFICATION_STATUS_ENUM } from '../enums';
-import { CaseAuditStatus } from '../caseAuditTypes';
+import { CaseAuditStatus } from '../types';
+
+/**
+ * Generates a realistic 8-digit case number starting with 4 (like 40001912)
+ * @returns A string representing an 8-digit case number
+ */
+export const generateRealisticCaseNumber = (): string => {
+  // Generate a realistic 8-digit case number starting with 4 (like 40001912)
+  const baseNumber = 40000000; // Start from 40000000
+  const randomSuffix = Math.floor(Math.random() * 99999); // Add up to 99999
+  return (baseNumber + randomSuffix).toString();
+};
 
 /**
  * Maps VERIFICATION_STATUS_ENUM to CaseAuditStatus

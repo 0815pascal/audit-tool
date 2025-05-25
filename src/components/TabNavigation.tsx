@@ -1,6 +1,9 @@
 import React from 'react';
-import { TabView } from './TabNavigationTypes';
+import { TAB_VIEW_ENUM } from '../enums';
 import { TAB_VIEWS_DISPLAY } from '../constants';
+
+// Tab view type alias
+type TabView = TAB_VIEW_ENUM;
 
 interface TabNavigationProps {
   activeTab: TabView;
@@ -19,19 +22,19 @@ const TabNavigation: React.FC<TabNavigationProps> = ({ activeTab, onTabChange })
         }}
       >
         <TabButton 
-          label={TAB_VIEWS_DISPLAY[TabView.AUDIT_LOG]} 
-          isActive={activeTab === TabView.AUDIT_LOG} 
-          onClick={() => onTabChange(TabView.AUDIT_LOG)} 
+          label={TAB_VIEWS_DISPLAY[TAB_VIEW_ENUM.AUDIT_LOG]} 
+          isActive={activeTab === TAB_VIEW_ENUM.AUDIT_LOG} 
+          onClick={() => onTabChange(TAB_VIEW_ENUM.AUDIT_LOG)} 
         />
         <TabButton 
-          label={TAB_VIEWS_DISPLAY[TabView.IKS]} 
-          isActive={activeTab === TabView.IKS} 
-          onClick={() => onTabChange(TabView.IKS)} 
+          label={TAB_VIEWS_DISPLAY[TAB_VIEW_ENUM.IKS]} 
+          isActive={activeTab === TAB_VIEW_ENUM.IKS} 
+          onClick={() => onTabChange(TAB_VIEW_ENUM.IKS)} 
         />
         <TabButton 
-          label={TAB_VIEWS_DISPLAY[TabView.USERS]} 
-          isActive={activeTab === TabView.USERS} 
-          onClick={() => onTabChange(TabView.USERS)} 
+          label={TAB_VIEWS_DISPLAY[TAB_VIEW_ENUM.USERS]} 
+          isActive={activeTab === TAB_VIEW_ENUM.USERS} 
+          onClick={() => onTabChange(TAB_VIEW_ENUM.USERS)} 
         />
       </div>
     </div>

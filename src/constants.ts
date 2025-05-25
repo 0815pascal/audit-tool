@@ -18,7 +18,7 @@ import {
 } from './enums';
 
 // Import from types (not circular since types now import from enums.ts)
-import { TabView } from './components/TabNavigationTypes';
+import { TAB_VIEW_ENUM } from './enums';
 import {
   ClaimsStatus,
   CaseStatus,
@@ -95,16 +95,16 @@ export const USER_ROLES_DISPLAY: Record<UserRole, string> = {
 
 // Tab views
 export const TAB_VIEWS = {
-  AUDIT_LOG: TabView.AUDIT_LOG,
-  IKS: TabView.IKS,
-  USERS: TabView.USERS
+  AUDIT_LOG: TAB_VIEW_ENUM.AUDIT_LOG,
+  IKS: TAB_VIEW_ENUM.IKS,
+  USERS: TAB_VIEW_ENUM.USERS
 };
 
 // Tab view display names
-export const TAB_VIEWS_DISPLAY: Record<TabView, string> = {
-  [TabView.AUDIT_LOG]: "Audit Log",
-  [TabView.IKS]: "IKS",
-  [TabView.USERS]: "Users"
+export const TAB_VIEWS_DISPLAY: Record<TAB_VIEW_ENUM, string> = {
+  [TAB_VIEW_ENUM.AUDIT_LOG]: "Audit Log",
+  [TAB_VIEW_ENUM.IKS]: "IKS",
+  [TAB_VIEW_ENUM.USERS]: "Users"
 };
 
 // Default user IDs - These should be converted to UserId using createUserId before use

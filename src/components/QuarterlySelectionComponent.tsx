@@ -11,7 +11,7 @@ import {
   createCaseAuditId,
   CaseAuditStatus,
   CaseAuditData
-} from '../caseAuditTypes';
+} from '../types';
 import { USER_ROLE_ENUM, CASE_TYPE_ENUM, VERIFICATION_STATUS_ENUM, DEFAULT_VALUE_ENUM } from '../enums';
 import { useCaseAuditHandlers } from '../hooks/useCaseAuditHandlers';
 import { formatQuarterYear } from '../store/caseAuditSlice';

@@ -40,8 +40,11 @@ import {
   CaseAuditId,
   CaseAuditStatus,
   createCaseAuditId
-} from '../caseAuditTypes';
-import { TabView } from '../components/TabNavigationTypes';
+} from '../types';
+import { TAB_VIEW_ENUM } from '../enums';
+
+// Tab view type alias
+type TabView = TAB_VIEW_ENUM;
 import { useUsers } from './useUsers';
 import {
   TAB_VIEWS,
@@ -447,5 +450,23 @@ export const useCaseAuditHandlers = () => {
     canVerifyAudit,
     handleSelectQuarterlyAudits,
     exportQuarterlyResults
+  };
+};
+
+/**
+ * Lightweight hook for tab navigation
+ * Extracted from useCaseAuditHandlers to prevent unnecessary API calls
+ */
+export const useTabNavigation = () => {
+  const [activeTab, setActiveTab] = useState<TabView>(TAB_VIEWS.IKS);
+
+  // Handle tab change
+  const handleTabChange = (tab: TabView): void => {
+    setActiveTab(tab);
+  };
+
+  return {
+    activeTab,
+    handleTabChange
   };
 }; 

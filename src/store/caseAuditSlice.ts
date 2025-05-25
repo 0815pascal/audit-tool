@@ -29,7 +29,7 @@ import {
   CaseAuditActionPayload,
   VerifyAuditActionPayload,
   CaseAuditState
-} from '../caseAuditTypes';
+} from '../types';
 import { mapVerificationStatusToCaseAuditStatus } from '../utils/statusUtils';
 import { ensureUserId } from '../types';
 import { 

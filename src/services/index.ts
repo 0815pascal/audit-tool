@@ -1,6 +1,5 @@
 // Export all services and utility functions for easier imports
 export * from './ApiService';
-export * from './TypedCache';
 export * from './apiUtils';
 
 // Re-export types from apiTypes

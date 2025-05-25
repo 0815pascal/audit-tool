@@ -1,7 +1,7 @@
 import { 
   CaseAuditId, 
   CaseAuditData
-} from '../caseAuditTypes';
+} from '../types';
 import { 
   UserId, 
   FindingType, 
