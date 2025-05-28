@@ -1,38 +1,30 @@
-import { http, HttpResponse } from 'msw';
-import { 
-  ClaimsStatus, 
-  CaseStatus, 
-  QuarterPeriod,
+import {http, HttpResponse} from 'msw';
+import {
+  CaseStatus,
+  ClaimsStatus,
+  createCaseAuditId,
+  createCaseId,
+  createUserId,
   isQuarterPeriod,
   QuarterNumber,
-  createCaseId,
-  createUserId
+  QuarterPeriod
 } from '../types';
-import { 
-  CLAIMS_STATUS, 
-  CASE_STATUS, 
-  QUARTER_CALCULATIONS
-} from '../constants';
-import { USER_ROLE_ENUM, DEFAULT_VALUE_ENUM } from '../enums';
-import { createCaseAuditId } from '../types';
-import { generateRealisticCaseNumber } from '../utils/statusUtils';
-import {
-  ApiCaseResponse,
-  ApiAuditResponse,
-  ApiAuditRequestPayload
-} from './mockTypes';
+import {CASE_STATUS, CLAIMS_STATUS, QUARTER_CALCULATIONS} from '../constants';
+import {DEFAULT_VALUE_ENUM, USER_ROLE_ENUM} from '../enums';
+import {generateRealisticCaseNumber} from '../utils/statusUtils';
+import {ApiAuditRequestPayload, ApiAuditResponse, ApiCaseResponse} from './mockTypes';
 import {
   auditStore,
-  safeParseInt,
-  getNumericId,
-  parseQuarter,
-  getQuarterFromDate,
-  caseToCaseObj,
   caseToAudit,
+  caseToCaseObj,
   generateFindings,
-  getPreviousQuarterInfo
+  getNumericId,
+  getPreviousQuarterInfo,
+  getQuarterFromDate,
+  parseQuarter,
+  safeParseInt
 } from './auxiliaryFunctions';
-import { users, mockCases } from './mockData';
+import {mockCases, users} from './mockData';
 
 export const handlers = [
   // Get audits by quarter
@@ -159,7 +151,7 @@ export const handlers = [
       if (!quarter || !isQuarterPeriod(quarter)) {
         const now = new Date();
         const currentQuarter = Math.floor((now.getMonth()) / 3) + 1 as QuarterNumber;
-        quarter = `Q${currentQuarter}-${now.getFullYear()}` as QuarterPeriod;
+        quarter = `Q${currentQuarter}-${now.getFullYear()}`;
       }
       
       // Create a new audit object
@@ -177,16 +169,16 @@ export const handlers = [
               : USER_ROLE_ENUM.TEAM_LEADER
           },
           claimsStatus: (requestData.caseObj?.claimsStatus as ClaimsStatus) || CLAIMS_STATUS.FULL_COVER,
-          coverageAmount: requestData.caseObj?.coverageAmount || 10000.00,
+          coverageAmount: requestData.caseObj?.coverageAmount ?? 10000.00,
           caseStatus: (requestData.caseObj?.caseStatus as CaseStatus) || CASE_STATUS.COMPENSATED,
           notificationDate: new Date().toISOString().split('T')[0],
           notifiedCurrency: 'CHF'
         },
         auditor: {
           userId: requestData.auditor?.userId !== undefined 
-            ? safeParseInt(requestData.auditor.userId as string | number) 
+            ? safeParseInt(requestData.auditor.userId)
             : 2,
-          role: requestData.auditor?.role || USER_ROLE_ENUM.SPECIALIST
+          role: requestData.auditor?.role ?? USER_ROLE_ENUM.SPECIALIST
         },
         isAkoReviewed: false
       };
@@ -243,11 +235,11 @@ export const handlers = [
         const jsonData = await request.json();
         if (jsonData && typeof jsonData === 'object') {
           requestData = {
-            type: jsonData.type || requestData.type,
-            description: jsonData.description || requestData.description,
-            quarter: jsonData.quarter || requestData.quarter,
-            caseObj: jsonData.caseObj || requestData.caseObj,
-            auditor: jsonData.auditor || requestData.auditor
+            type: jsonData.type ?? requestData.type,
+            description: jsonData.description ?? requestData.description,
+            quarter: jsonData.quarter ?? requestData.quarter,
+            caseObj: jsonData.caseObj ?? requestData.caseObj,
+            auditor: jsonData.auditor ?? requestData.auditor
           };
         }
       } catch (error) {
@@ -259,7 +251,7 @@ export const handlers = [
       if (requestData.quarter && !isQuarterPeriod(requestData.quarter)) {
         const now = new Date();
         const currentQuarter = Math.floor((now.getMonth()) / 3) + 1 as QuarterNumber;
-        requestData.quarter = `Q${currentQuarter}-${now.getFullYear()}` as QuarterPeriod;
+        requestData.quarter = `Q${currentQuarter}-${now.getFullYear()}`;
       }
       
       // Get existing audit or create a placeholder
@@ -269,7 +261,7 @@ export const handlers = [
         // If not in our store, create a new one with this ID
         const now = new Date();
         const currentQuarter = Math.floor((now.getMonth()) / QUARTER_CALCULATIONS.MONTHS_PER_QUARTER) + QUARTER_CALCULATIONS.QUARTER_OFFSET as QuarterNumber;
-        const quarterStr = `Q${currentQuarter}-${now.getFullYear()}` as QuarterPeriod;
+        const quarterStr = `Q${currentQuarter}-${now.getFullYear()}`;
         
         existingAudit = {
           auditId: numericAuditorId,
@@ -280,9 +272,9 @@ export const handlers = [
               userId: 1,
               role: USER_ROLE_ENUM.TEAM_LEADER
             },
-            claimsStatus: CLAIMS_STATUS.FULL_COVER as ClaimsStatus,
+            claimsStatus: CLAIMS_STATUS.FULL_COVER,
             coverageAmount: 10000.00,
-            caseStatus: CASE_STATUS.COMPENSATED as CaseStatus,
+            caseStatus: CASE_STATUS.COMPENSATED,
             notificationDate: new Date().toISOString().split('T')[0],
             notifiedCurrency: 'CHF'
           },
@@ -296,20 +288,20 @@ export const handlers = [
       
       // Update audit with new data
       const updatedAudit = {
-        ...existingAudit!,
+        ...existingAudit,
         ...(requestData.quarter && { quarter: requestData.quarter as QuarterPeriod }),
         ...(requestData.caseObj && { caseObj: {
-          ...existingAudit!.caseObj,
+          ...existingAudit.caseObj,
           // Safely handle caseObj properties
           ...(typeof requestData.caseObj === 'object' ? 
             // Only include properties that can be safely typed
             {
               ...(requestData.caseObj.caseNumber !== undefined && { 
-                caseNumber: createCaseId(safeParseInt(requestData.caseObj.caseNumber as string | number))
+                caseNumber: createCaseId(safeParseInt(requestData.caseObj.caseNumber))
               }),
               ...(requestData.caseObj.claimOwner && {
                 claimOwner: {
-                  ...existingAudit!.caseObj.claimOwner,
+                  ...existingAudit.caseObj.claimOwner,
                   ...(requestData.caseObj.claimOwner.userId !== undefined && {
                     userId: safeParseInt(String(requestData.caseObj.claimOwner.userId))
                   }),
@@ -319,13 +311,13 @@ export const handlers = [
                 }
               }),
               ...(requestData.caseObj.claimsStatus && {
-                claimsStatus: requestData.caseObj.claimsStatus as ClaimsStatus
+                claimsStatus: requestData.caseObj.claimsStatus
               }),
               ...(requestData.caseObj.coverageAmount !== undefined && {
-                coverageAmount: safeParseInt(requestData.caseObj.coverageAmount as string | number, existingAudit!.caseObj.coverageAmount)
+                coverageAmount: safeParseInt(requestData.caseObj.coverageAmount as string | number, existingAudit.caseObj.coverageAmount)
               }),
               ...(requestData.caseObj.caseStatus && {
-                caseStatus: requestData.caseObj.caseStatus as CaseStatus
+                caseStatus: requestData.caseObj.caseStatus
               }),
               ...(requestData.caseObj.notifiedCurrency && {
                 notifiedCurrency: requestData.caseObj.notifiedCurrency
@@ -333,7 +325,7 @@ export const handlers = [
             } : {})
         }}),
         ...(requestData.auditor && { auditor: {
-          ...existingAudit!.auditor,
+          ...existingAudit.auditor,
           // Safely handle auditor properties
           ...(requestData.auditor.userId !== undefined && {
             userId: safeParseInt(String(requestData.auditor.userId))
@@ -363,9 +355,9 @@ export const handlers = [
             userId: 1,
             role: USER_ROLE_ENUM.TEAM_LEADER
           },
-          claimsStatus: CLAIMS_STATUS.FULL_COVER as ClaimsStatus,
+          claimsStatus: CLAIMS_STATUS.FULL_COVER,
           coverageAmount: 10000.00,
-          caseStatus: CASE_STATUS.COMPENSATED as CaseStatus,
+          caseStatus: CASE_STATUS.COMPENSATED,
           notificationDate: new Date().toISOString().split('T')[0],
           notifiedCurrency: 'CHF'
         },
@@ -411,8 +403,8 @@ export const handlers = [
         const jsonData = await request.json();
         if (jsonData && typeof jsonData === 'object') {
           requestData = {
-            type: jsonData.type || requestData.type,
-            description: jsonData.description || requestData.description
+            type: jsonData.type ?? requestData.type,
+            description: jsonData.description ?? requestData.description
           };
         }
       } catch (error) {
@@ -624,8 +616,8 @@ export const handlers = [
           role: Math.random() > 0.7 ? USER_ROLE_ENUM.SPECIALIST : USER_ROLE_ENUM.STAFF
         },
         coverageAmount: Math.floor(Math.random() * 100000) + 500,
-        claimsStatus: Math.random() > 0.7 ? CLAIMS_STATUS.PARTIAL_COVER : CLAIMS_STATUS.FULL_COVER as ClaimsStatus,
-        caseStatus: CASE_STATUS.COMPENSATED as CaseStatus
+        claimsStatus: Math.random() > 0.7 ? CLAIMS_STATUS.PARTIAL_COVER : CLAIMS_STATUS.FULL_COVER,
+        caseStatus: CASE_STATUS.COMPENSATED
       };
       
       return {
@@ -665,9 +657,9 @@ export const handlers = [
       if (!quarter || !isQuarterPeriod(quarter)) {
         const currentYear = year ? parseInt(year) : new Date().getFullYear();
         const currentQuarter = Math.floor((new Date().getMonth()) / 3) + 1 as QuarterNumber;
-        quarterPeriod = `Q${currentQuarter}-${currentYear}` as QuarterPeriod;
+        quarterPeriod = `Q${currentQuarter}-${currentYear}`;
       } else {
-        quarterPeriod = quarter as QuarterPeriod;
+        quarterPeriod = quarter;
       }
       
       // Try to find a suitable audit for this user
@@ -757,8 +749,7 @@ export const handlers = [
       const userQuarterlyAudits = users
         .filter(user => user.isActive)
         .map(user => {
-          const caseNumber = generateRealisticCaseNumber();
-          const id = caseNumber; // Remove QUARTERLY prefix
+          const id = generateRealisticCaseNumber(); // Remove QUARTERLY prefix
           return {
             id,
             auditId: id,
@@ -767,7 +758,7 @@ export const handlers = [
             coverageAmount: Math.floor(
               Math.random() * (user.role === USER_ROLE_ENUM.STAFF ? 30000 : 150000)
             ),
-            claimsStatus: CLAIMS_STATUS.FULL_COVER as ClaimsStatus,
+            claimsStatus: CLAIMS_STATUS.FULL_COVER,
             isAkoReviewed: false,
             quarter: quarterKey, // Add current quarter
             year: year, // Add current year
@@ -777,8 +768,7 @@ export const handlers = [
       
       // Generate mock previous quarter audits for quality control
       const previousQuarterRandomAudits = Array.from({ length: 2 }).map((_, index) => {
-        const caseNumber = generateRealisticCaseNumber();
-        const id = caseNumber; // Remove PREV-QUARTER prefix
+        const id = generateRealisticCaseNumber(); // Remove PREV-QUARTER prefix
         // Assign to a random active user
         const activeUsers = users.filter(user => user.isActive && user.role !== USER_ROLE_ENUM.READER);
         const randomUser = activeUsers[index % activeUsers.length];
@@ -789,7 +779,7 @@ export const handlers = [
           auditId: id,
           userId: randomUser.id, // Assign to actual user
           coverageAmount: Math.floor(Math.random() * 100000),
-          claimsStatus: CLAIMS_STATUS.FULL_COVER as ClaimsStatus,
+          claimsStatus: CLAIMS_STATUS.FULL_COVER,
           isAkoReviewed: false,
           quarter: `Q${prevQuarterNum}-${prevYear}`, // Add previous quarter
           year: prevYear, // Add previous quarter year
@@ -897,10 +887,10 @@ export const handlers = [
       // For now, just return a success response with the data
       const verificationResponse = {
         auditId: numericAuditId,
-        status: requestData.status || 'not_verified',
-        verifierId: requestData.verifierId || 1,
-        rating: requestData.rating || '',
-        comment: requestData.comment || '',
+        status: requestData.status ?? 'not_verified',
+        verifierId: requestData.verifierId ?? 1,
+        rating: requestData.rating ?? '',
+        comment: requestData.comment ?? '',
         verificationDate: requestData.status === 'verified' ? new Date().toISOString() : undefined,
         findings: requestData.findings || []
       };

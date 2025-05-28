@@ -77,24 +77,3 @@ export function convertToVerificationStatus(
   console.warn(`Unknown status value: ${status}. Using NOT_VERIFIED as fallback.`);
   return VERIFICATION_STATUS_ENUM.NOT_VERIFIED;
 }
-
-/**
- * Safely converts a status value of either type to CaseAuditStatus
- */
-export function convertToCaseAuditStatus(
-  status: VERIFICATION_STATUS_ENUM | CaseAuditStatus | string
-): CaseAuditStatus {
-  // If it's already a CaseAuditStatus
-  if (Object.values(CaseAuditStatus).includes(status as CaseAuditStatus)) {
-    return status as CaseAuditStatus;
-  }
-  
-  // If it's a VERIFICATION_STATUS_ENUM
-  if (Object.values(VERIFICATION_STATUS_ENUM).includes(status as VERIFICATION_STATUS_ENUM)) {
-    return mapVerificationStatusToCaseAuditStatus(status as VERIFICATION_STATUS_ENUM);
-  }
-  
-  // Default fallback
-  console.warn(`Unknown status value: ${status}. Using NOT_VERIFIED as fallback.`);
-  return CaseAuditStatus.NOT_VERIFIED;
-} 

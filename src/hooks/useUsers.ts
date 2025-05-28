@@ -98,11 +98,11 @@ export const useUsers = () => {
   const createUser = useCallback(
     (user: NewUser) => {
       // Generate initials if not provided
-      const initials = user.initials || generateInitials(user.name);
+      const initials = user.initials ?? generateInitials(user.name);
       
       // Create a new User with a generated ID if none provided
       const newUser: User = {
-        id: user.id || generateUniqueUserId(),
+        id: user.id ?? generateUniqueUserId(),
         ...user,
         initials
       };

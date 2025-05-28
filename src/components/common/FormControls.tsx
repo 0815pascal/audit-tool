@@ -59,19 +59,6 @@ export const Button: React.FC<ButtonProps> = ({
   );
 };
 
-// Label-value display for info sections
-interface LabelValueProps {
-  label: string;
-  value: React.ReactNode;
-}
-
-export const LabelValue: React.FC<LabelValueProps> = ({ label, value }) => (
-  <div style={{ display: 'flex', justifyContent: 'space-between', margin: '4px 0' }}>
-    <strong>{label}</strong>
-    <span style={{ textAlign: 'right' }}>{value}</span>
-  </div>
-);
-
 // Checkbox with label
 interface CheckboxProps {
   id: string;

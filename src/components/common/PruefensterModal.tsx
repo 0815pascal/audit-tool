@@ -1,30 +1,37 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Modal } from './Modal';
-import { 
-  SelectOption, 
-  RatingOption, 
-  RatingValue, 
-  FindingType, 
-  FindingsRecord,
-  createEmptyFindings,
-  ensureUserId
-} from '../../types';
+import React, {useCallback, useEffect, useState} from 'react';
+import {Modal} from './Modal';
 import {
   CaseAudit,
   CaseAuditData,
   CaseAuditId,
   CaseAuditStatus,
-  ensureCaseAuditId
-} from '../../caseAuditTypes';
-import { Checkbox, TextArea, Button, Select } from './FormControls';
-import { useToast } from '../../context/ToastContext';
-import { useAppDispatch, useAppSelector } from '../../store/hooks';
-import { updateAuditInProgress, saveAuditVerificationThunk } from '../../store/caseAuditSlice';
-import { VERIFICATION_STATUS_ENUM, RATING_VALUE_ENUM, DETAILED_FINDING_ENUM, SPECIAL_FINDING_ENUM, TOAST_TYPE, BUTTON_COLOR, BUTTON_SIZE } from '../../enums';
-import { convertToVerificationStatus } from '../../utils/statusUtils';
+  createEmptyFindings,
+  ensureCaseAuditId,
+  ensureUserId,
+  FindingsRecord,
+  FindingType,
+  RatingOption,
+  RatingValue,
+  SelectOption
+} from '../../types';
+
+import {Button, Checkbox, Select, TextArea} from './FormControls';
+import {useToast} from '../../context/ToastContext';
+import {useAppDispatch, useAppSelector} from '../../store/hooks';
+import {saveAuditVerificationThunk, updateAuditInProgress} from '../../store/caseAuditSlice';
+import {
+  BUTTON_COLOR,
+  BUTTON_SIZE,
+  DETAILED_FINDING_ENUM,
+  RATING_VALUE_ENUM,
+  SPECIAL_FINDING_ENUM,
+  TOAST_TYPE,
+  VERIFICATION_STATUS_ENUM
+} from '../../enums';
+import {convertToVerificationStatus} from '../../utils/statusUtils';
 
 // Use the useUsers hook to get user data from Redux store
-import { useUsers } from '../../hooks/useUsers';
+import {useUsers} from '../../hooks/useUsers';
 
 interface PruefensterModalProps {
   isOpen: boolean;
@@ -228,9 +235,9 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
     if (Object.values(selectedFindings).some(value => value)) return true;
     
     // Check if any detailed findings are selected
-    if (Object.values(selectedDetailedFindings).some(value => value)) return true;
+    return Object.values(selectedDetailedFindings).some(value => value);
     
-    return false;
+
   }, [comment, rating, selectedFindings, selectedDetailedFindings]);
 
   // Update status based on form data
@@ -370,8 +377,7 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
       }
       
       // If we can't find the user, generate initials from the userId
-      const initials = userId?.substring(0, 2).toUpperCase() || 'XX';
-      return initials;
+      return userId?.substring(0, 2).toUpperCase() || 'XX';
     };
     
     const currentUserInitials = getUserInitials(currentUserId || '');
@@ -459,7 +465,7 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
             <span style={{ marginTop: '2px', fontWeight: '500', fontSize: '14px', textAlign: 'left' }}>
               {new Intl.NumberFormat('de-CH', { 
                 style: 'currency', 
-                currency: audit.notifiedCurrency || 'CHF' 
+                currency: audit.notifiedCurrency ?? 'CHF'
               }).format(audit.coverageAmount)}
             </span>
           </div>

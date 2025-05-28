@@ -267,7 +267,7 @@ test.describe('IKS Audit Tool - Auto-Select and Verification', () => {
     await expect(page.locator('textarea[placeholder*="Kommentar"]')).toHaveValue('Test comment');
     await expect(page.locator('#pruefenster-rating')).toHaveValue('SUCCESSFULLY_FULFILLED');
     
-    // The submit button should be enabled when rating is selected (verifier is now auto-populated)
+    // The submit button should be enabled when rating is selected (verifier is now autopopulated)
     const submitButton = page.locator('button:has-text("Bestätigen")');
     await expect(submitButton).toBeEnabled();
   });

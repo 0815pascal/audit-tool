@@ -31,7 +31,7 @@ export const safeParseInt = (value: string | number | undefined, fallback = 0): 
 // Safely extract numeric part from string ID
 export const getNumericId = (id: string | number | undefined): number => {
   if (!id) return Math.floor(Math.random() * 1000) + 1;
-  const matches = id.toString().match(/\d+/);
+  const matches = RegExp(/\d+/).exec(id.toString());
   return matches ? parseInt(matches[0]) : Math.floor(Math.random() * 1000) + 1;
 };
 
@@ -41,10 +41,10 @@ export const parseQuarter = (quarterStr: string): { quarterNum: number; year: nu
   
   try {
   // Handle both formats: "Q1-2023" and "Q1 2023"
-  const match = quarterStr.match(/Q(\d+)[\s-](\d{4})/);
+  const match = RegExp(/Q(\d+)[\s-](\d{4})/).exec(quarterStr);
     if (!match) {
       // Try alternate format without Q prefix: "1-2023"
-      const altMatch = quarterStr.match(/(\d+)[\s-](\d{4})/);
+      const altMatch = RegExp(/(\d+)[\s-](\d{4})/).exec(quarterStr);
       if (!altMatch) return null;
       
       return {
@@ -146,7 +146,7 @@ export const generateFindings = (auditId: string | number): ApiFindingResponse[]
   const findings: ApiFindingResponse[] = [];
   
   for (let i = 0; i < count; i++) {
-    const findingTypes = Object.keys(FINDING_TYPES) as (keyof typeof FINDING_TYPES)[];
+    const findingTypes = Object.keys(FINDING_TYPES);
     const randomType = findingTypes[Math.floor(Math.random() * findingTypes.length)];
     
     findings.push({

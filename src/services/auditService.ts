@@ -1,4 +1,4 @@
-import { createCaseId, QuarterPeriod, AuditId, UserId, CaseAuditId, CaseAuditData, FindingType, FindingsRecord } from '../types';
+import { createCaseId, QuarterPeriod, UserId, CaseAuditId, CaseAuditData, FindingType, FindingsRecord, UserAuditForSelection, AuditForSelection, ISODateString } from '../types';
 import axios from 'axios';
 import {
   ApiCache,
@@ -9,11 +9,6 @@ import {
   CacheKey,
   createCacheKey
 } from './apiUtils';
-import {
-  UserAuditForSelection,
-  AuditForSelection,
-  ISODateString
-} from '../types';
 import { HTTP_METHOD } from '../enums';
 
 // Create an axios instance with base URL and improved error handling
@@ -120,74 +115,59 @@ export const getAuditsByAuditor = async (auditorId: UserId): Promise<AuditRecord
 
 // Start a new audit for a case in the given quarter
 export const createAudit = async (
-  payload: AuditPayload
+    payload: AuditPayload
 ): Promise<AuditRecord> => {
-  try {
-    console.log(`[API] Creating audit for case ${payload.caseObj.caseNumber}`);
-    const response = await api.post<AuditRecord>('/audits', payload);
-    
-    if (response.status >= 400) {
-      console.warn(`[API] Error ${response.status} creating audit`);
-      throw new Error(`Failed to create audit: ${response.status}`);
-    }
-    
-    return response.data;
-  } catch (error) {
-    console.error('[API] Error creating audit:', error);
-    throw error;
+  console.log(`[API] Creating audit for case ${payload.caseObj.caseNumber}`);
+  const response = await api.post<AuditRecord>('/audits', payload);
+
+  if (response.status >= 400) {
+    console.warn(`[API] Error ${response.status} creating audit`);
+    throw new Error(`Failed to create audit: ${response.status}`);
   }
+
+  return response.data;
 };
 
 // Update an existing audit record
 export const updateAudit = async (
-  auditId: AuditId,
-  payload: AuditPayload
+    caseAuditId: CaseAuditId,
+    payload: AuditPayload
 ): Promise<AuditRecord> => {
-  try {
-    console.log(`[API] Updating audit ${auditId}`);
-    const response = await api.put<AuditRecord>(`/audits/${auditId}`, payload);
-    
-    if (response.status >= 400) {
-      console.warn(`[API] Error ${response.status} updating audit ${auditId}`);
-      throw new Error(`Failed to update audit: ${response.status}`);
-    }
-    
-    return response.data;
-  } catch (error) {
-    console.error(`[API] Error updating audit ${auditId}:`, error);
-    throw error;
+  console.log(`[API] Updating audit ${caseAuditId}`);
+  const response = await api.put<AuditRecord>(`/audits/${caseAuditId}`, payload);
+
+  if (response.status >= 400) {
+    console.warn(`[API] Error ${response.status} updating audit ${caseAuditId}`);
+    throw new Error(`Failed to update audit: ${response.status}`);
   }
+
+  return response.data;
 };
 
 // Add a finding to an audit
 export const addFindingToAudit = async (
-  auditId: AuditId,
-  payload: { type: Finding['type']; description: string }
+    caseAuditId: CaseAuditId,
+    payload: { type: Finding['type']; description: string }
 ): Promise<Finding> => {
-  try {
-    console.log(`[API] Adding finding to audit ${auditId}`);
-    const response = await api.post<Finding>(`/audits/${auditId}/findings`, payload);
-    
-    if (response.status >= 400) {
-      console.warn(`[API] Error ${response.status} adding finding to audit ${auditId}`);
-      throw new Error(`Failed to add finding: ${response.status}`);
-    }
-    
-    return response.data;
-  } catch (error) {
-    console.error(`[API] Error adding finding to audit ${auditId}:`, error);
-    throw error;
+  console.log(`[API] Adding finding to audit ${caseAuditId}`);
+  const response = await api.post<Finding>(`/audits/${caseAuditId}/findings`, payload);
+
+  if (response.status >= 400) {
+    console.warn(`[API] Error ${response.status} adding finding to audit ${caseAuditId}`);
+    throw new Error(`Failed to add finding: ${response.status}`);
   }
+
+  return response.data;
 };
 
 // Get all findings for an audit
-export const getFindingsByAudit = async (auditId: AuditId): Promise<Finding[]> => {
+export const getFindingsByAudit = async (caseAuditId: CaseAuditId): Promise<Finding[]> => {
   try {
-    console.log(`[API] Fetching findings for audit ${auditId}`);
-    const response = await api.get<Finding[]>(`/audits/${auditId}/findings`);
+    console.log(`[API] Fetching findings for audit ${caseAuditId}`);
+    const response = await api.get<Finding[]>(`/audits/${caseAuditId}/findings`);
     
     if (response.status >= 400) {
-      console.warn(`[API] Error ${response.status} fetching findings for audit ${auditId}`);
+      console.warn(`[API] Error ${response.status} fetching findings for audit ${caseAuditId}`);
       return [];
     }
     
@@ -199,7 +179,7 @@ export const getFindingsByAudit = async (auditId: AuditId): Promise<Finding[]> =
     
     return response.data;
   } catch (error) {
-    console.error(`[API] Error fetching findings for audit ${auditId}:`, error);
+    console.error(`[API] Error fetching findings for audit ${caseAuditId}:`, error);
     return [];
   }
 };
@@ -255,80 +235,77 @@ export const exportAuditReport = (quarter: QuarterPeriod): void => {
 /**
  * Get a random audit for a user, with optional quarter and year
  */
+/**
+ * Get a random audit for a user, with optional quarter and year
+ */
 export async function getRandomAuditForUser(
-  userId: UserId,
-  quarter?: string | QuarterPeriod,
-  year?: number
+    userId: UserId,
+    quarter?: QuarterPeriod,
+    year?: number
 ): Promise<AuditRecord> {
-  try {
-    // Build the query parameters
-    const params = new URLSearchParams();
-    if (quarter) params.append('quarter', quarter.toString());
-    if (year) params.append('year', year.toString());
-    
-    // Make the API request
-    const response = await fetch(
-      `/api/audits/random/${userId}${params.toString() ? `?${params}` : ''}`,
-      { method: HTTP_METHOD.GET }
-    );
-    
-    if (!response.ok) {
-      throw new Error(`Failed to get random audit: ${response.status} ${response.statusText}`);
-    }
-    
-    const data = await response.json();
-    
-    if (!data.success) {
-      throw new Error(data.error || 'Failed to get random audit');
-    }
-    
-    return data.data;
-  } catch (error) {
-    console.error('Error in getRandomAuditForUser:', error);
-    throw error;
+  // Build the query parameters
+  const params = new URLSearchParams();
+  if (quarter) params.append('quarter', quarter.toString());
+  if (year) params.append('year', year.toString());
+
+  // Build the URL without nested template literals
+  const baseUrl = `/api/audits/random/${userId}`;
+  const queryString = params.toString();
+  const url = queryString ? `${baseUrl}?${queryString}` : baseUrl;
+
+  const response = await fetch(url, { method: HTTP_METHOD.GET });
+
+  if (!response.ok) {
+    throw new Error(`Failed to get random audit: ${response.status} ${response.statusText}`);
   }
+
+  const data = await response.json();
+
+  if (!data.success) {
+    throw new Error(data.error ?? 'Failed to get random audit');
+  }
+
+  return data.data;
 }
 
 /**
  * Select quarterly dossiers for verification
  */
+/**
+ * Select quarterly dossiers for verification
+ */
 export async function selectQuarterlyDossiers(
-  quarterKey: string,
-  userIds: UserId[]
+    quarterKey: string,
+    userIds: UserId[]
 ): Promise<{
   quarterKey: string;
   userQuarterlyAudits: UserAuditForSelection[];
   previousQuarterRandomAudits: AuditForSelection[];
   lastSelectionDate: ISODateString;
 }> {
-  try {
-    // Make the API request
-    const response = await fetch('/api/verification/select-quarterly', {
-      method: HTTP_METHOD.POST,
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        quarterKey,
-        userIds
-      })
-    });
-    
-    if (!response.ok) {
-      throw new Error(`Failed to select quarterly dossiers: ${response.status} ${response.statusText}`);
-    }
-    
-    const data = await response.json();
-    
-    if (!data.success) {
-      throw new Error(data.error || 'Failed to select quarterly dossiers');
-    }
-    
-    return data.data;
-  } catch (error) {
-    console.error('Error in selectQuarterlyDossiers:', error);
-    throw error;
+  // Make the API request
+  const response = await fetch('/api/verification/select-quarterly', {
+    method: HTTP_METHOD.POST,
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      quarterKey,
+      userIds
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to select quarterly dossiers: ${response.status} ${response.statusText}`);
   }
+
+  const data = await response.json();
+
+  if (!data.success) {
+    throw new Error(data.error ?? 'Failed to select quarterly dossiers');
+  }
+
+  return data.data;
 }
 
 // ===== VERIFICATION FUNCTIONS (merged from auditVerificationService.ts) =====
@@ -375,7 +352,7 @@ const convertFindingsToBackendFormat = (
 
   // Convert special findings
   Object.entries(specialFindings).forEach(([key, value]) => {
-    if (value === true) {
+    if (value) {
       findings.push({
         type: key,
         description: getSpecialFindingDescription(key as FindingType),
@@ -386,7 +363,7 @@ const convertFindingsToBackendFormat = (
 
   // Convert detailed findings
   Object.entries(detailedFindings).forEach(([key, value]) => {
-    if (value === true) {
+    if (value) {
       findings.push({
         type: key,
         description: getDetailedFindingDescription(key as FindingType),
@@ -434,44 +411,42 @@ const getDetailedFindingDescription = (findingType: FindingType): string => {
 /**
  * Save audit verification data (in-progress state)
  */
+/**
+ * Save audit verification data (in-progress state)
+ */
 export const saveAuditVerification = async (
-  auditId: CaseAuditId | string,
-  verifierId: UserId,
-  caseAuditData: CaseAuditData
+    auditId: CaseAuditId | string,
+    verifierId: UserId,
+    caseAuditData: CaseAuditData
 ): Promise<VerificationResponse> => {
-  try {
-    const numericAuditId = parseInt(typeof auditId === 'string' ? auditId.replace(/\D/g, '') : String(auditId).replace(/\D/g, ''));
-    const numericVerifierId = parseInt(String(verifierId));
+  const numericAuditId = parseInt(typeof auditId === 'string' ? auditId.replace(/\D/g, '') : String(auditId).replace(/\D/g, ''));
+  const numericVerifierId = parseInt(String(verifierId));
 
-    const findings = convertFindingsToBackendFormat(
+  const findings = convertFindingsToBackendFormat(
       caseAuditData.specialFindings,
       caseAuditData.detailedFindings
-    );
+  );
 
-    const requestData: UpdateVerificationRequest = {
-      status: 'in_progress',
-      verifierId: numericVerifierId,
-      rating: caseAuditData.rating,
-      comment: caseAuditData.comment,
-      findings: findings
-    };
+  const requestData: UpdateVerificationRequest = {
+    status: 'in_progress',
+    verifierId: numericVerifierId,
+    rating: caseAuditData.rating,
+    comment: caseAuditData.comment,
+    findings: findings
+  };
 
-    console.log(`[API] Saving verification data for audit ${auditId}:`, requestData);
+  console.log(`[API] Saving verification data for audit ${auditId}:`, requestData);
 
-    const response = await api.put<VerificationResponse>(
+  const response = await api.put<VerificationResponse>(
       `/audit-verification/${numericAuditId}`,
       requestData
-    );
+  );
 
-    if (!response.data.success) {
-      throw new Error(response.data.error || 'Failed to save verification data');
-    }
-
-    return response.data;
-  } catch (error) {
-    console.error('[API] Error saving verification data:', error);
-    throw error;
+  if (!response.data.success) {
+    throw new Error(response.data.error ?? 'Failed to save verification data');
   }
+
+  return response.data;
 };
 
 /**
@@ -507,7 +482,7 @@ export const verifyAuditAPI = async (
     );
 
     if (!response.data.success) {
-      throw new Error(response.data.error || 'Failed to verify audit');
+      throw new Error(response.data.error ?? 'Failed to verify audit');
     }
 
     return response.data;
@@ -521,53 +496,48 @@ export const verifyAuditAPI = async (
  * Reject audit
  */
 export const rejectAuditAPI = async (
-  auditId: CaseAuditId | string,
-  verifierId: UserId,
-  caseAuditData: CaseAuditData
+    caseAuditId: CaseAuditId | string,
+    verifierId: UserId,
+    caseAuditData: CaseAuditData
 ): Promise<VerificationResponse> => {
-  try {
-    const numericAuditId = parseInt(typeof auditId === 'string' ? auditId.replace(/\D/g, '') : String(auditId).replace(/\D/g, ''));
-    const numericVerifierId = parseInt(String(verifierId));
+  const numericAuditId = parseInt(typeof caseAuditId === 'string' ? caseAuditId.replace(/\D/g, '') : String(caseAuditId).replace(/\D/g, ''));
+  const numericVerifierId = parseInt(String(verifierId));
 
-    const findings = convertFindingsToBackendFormat(
+  const findings = convertFindingsToBackendFormat(
       caseAuditData.specialFindings,
       caseAuditData.detailedFindings
-    );
+  );
 
-    const requestData: UpdateVerificationRequest = {
-      status: 'rejected',
-      verifierId: numericVerifierId,
-      rating: caseAuditData.rating,
-      comment: caseAuditData.comment,
-      findings: findings
-    };
+  const requestData: UpdateVerificationRequest = {
+    status: 'rejected',
+    verifierId: numericVerifierId,
+    rating: caseAuditData.rating,
+    comment: caseAuditData.comment,
+    findings: findings
+  };
 
-    console.log(`[API] Rejecting audit ${auditId}:`, requestData);
+  console.log(`[API] Rejecting audit ${caseAuditId}:`, requestData);
 
-    const response = await api.put<VerificationResponse>(
+  const response = await api.put<VerificationResponse>(
       `/audit-verification/${numericAuditId}`,
       requestData
-    );
+  );
 
-    if (!response.data.success) {
-      throw new Error(response.data.error || 'Failed to reject audit');
-    }
-
-    return response.data;
-  } catch (error) {
-    console.error('[API] Error rejecting audit:', error);
-    throw error;
+  if (!response.data.success) {
+    throw new Error(response.data.error ?? 'Failed to reject audit');
   }
+
+  return response.data;
 };
 
 /**
  * Get verification data for an audit
  */
-export const getAuditVerification = async (auditId: CaseAuditId | string): Promise<VerificationData | null> => {
+export const getAuditVerification = async (caseAuditId: CaseAuditId | string): Promise<VerificationData | null> => {
   try {
-    const numericAuditId = parseInt(typeof auditId === 'string' ? auditId.replace(/\D/g, '') : String(auditId).replace(/\D/g, ''));
+    const numericAuditId = parseInt(typeof caseAuditId === 'string' ? caseAuditId.replace(/\D/g, '') : String(caseAuditId).replace(/\D/g, ''));
 
-    console.log(`[API] Fetching verification data for audit ${auditId}`);
+    console.log(`[API] Fetching verification data for audit ${caseAuditId}`);
 
     const response = await api.get<VerificationResponse>(`/audit-verification/${numericAuditId}`);
 

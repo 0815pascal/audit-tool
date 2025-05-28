@@ -4,24 +4,23 @@ import {
   QuarterPeriod,
   ensureUserId, createISODateString,
   createPolicyId, createCaseId,
-  User, FindingsRecord, createEmptyFindings
-} from '../types';
-import {
+  User, FindingsRecord, createEmptyFindings,
+  isQuarterPeriod,
+  CaseAuditStatus,
   CaseAudit,
   createCaseAuditId,
-  CaseAuditStatus,
   CaseAuditData
 } from '../types';
 import { USER_ROLE_ENUM, CASE_TYPE_ENUM, VERIFICATION_STATUS_ENUM, DEFAULT_VALUE_ENUM } from '../enums';
 import { useCaseAuditHandlers } from '../hooks/useCaseAuditHandlers';
-import { formatQuarterYear } from '../store/caseAuditSlice';
-import { PruefensterModal } from './common/PruefensterModal';
+import { PruefensterModal } from './common';
 import './QuarterlySelectionComponent.css';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { 
   selectUserRole,
   setCurrentUser,
-  selectAuditData
+  selectAuditData,
+  formatQuarterYear
 } from '../store/caseAuditSlice';
 import { QUARTER_CALCULATIONS } from '../constants';
 
@@ -209,13 +208,13 @@ const QuarterlySelectionComponent: React.FC = () => {
       
       // Convert to full CaseAudit object, merging with latest data from Redux
       const auditObject: CaseAudit = {
-        id: typeof audit.id === 'string' ? createCaseAuditId(audit.id) : audit.id,
+        id: createCaseAuditId(audit.id),
         userId: ensureUserId(audit.userId), // Ensure we have a proper UserId
         date: createISODateString(new Date()),
         clientName: `Client ${audit.id}`,
-        policyNumber: createPolicyId(typeof audit.id === 'string' ? parseInt(audit.id.replace(/\D/g, '')) || DEFAULT_VALUE_ENUM.DEFAULT_POLICY_ID : DEFAULT_VALUE_ENUM.DEFAULT_POLICY_ID),
+        policyNumber: createPolicyId( parseInt(audit.id.replace(/\D/g, '')) || DEFAULT_VALUE_ENUM.DEFAULT_POLICY_ID ),
         // Extract just the number from the ID or generate a random case number
-        caseNumber: createCaseId(typeof audit.id === 'string' ? parseInt(audit.id.replace(/\D/g, '')) || DEFAULT_VALUE_ENUM.DEFAULT_CASE_NUMBER : DEFAULT_VALUE_ENUM.DEFAULT_CASE_NUMBER),
+        caseNumber: createCaseId(parseInt(audit.id.replace(/\D/g, '')) || DEFAULT_VALUE_ENUM.DEFAULT_CASE_NUMBER),
         dossierRisk: 0,
         dossierName: `Case ${audit.id}`,
         totalAmount: audit.coverageAmount,
@@ -223,8 +222,8 @@ const QuarterlySelectionComponent: React.FC = () => {
         isVerified: audit.isVerified,
         isAkoReviewed,
         isSpecialist: false,
-        quarter: (audit.quarter as QuarterPeriod) || (selectedQuarter as QuarterPeriod), // Use audit's quarter or fallback
-        year: audit.year || parseInt(selectedQuarter.split('-')[1]),
+        quarter: (audit.quarter as QuarterPeriod) || (selectedQuarter), // Use audit's quarter or fallback
+        year: audit.year ?? parseInt(selectedQuarter.split('-')[1]),
         claimsStatus: (audit.claimsStatus as ClaimsStatus) || ('FULL_COVER' as ClaimsStatus),
         verifier: audit.verifier ? ensureUserId(audit.verifier) : ensureUserId(currentUserId),
         status: audit.status ? (audit.status as CaseAuditStatus) : (audit.isVerified ? CaseAuditStatus.VERIFIED : CaseAuditStatus.NOT_VERIFIED),
@@ -251,7 +250,7 @@ const QuarterlySelectionComponent: React.FC = () => {
           return notificationDate.toISOString().split('T')[0]; // Return YYYY-MM-DD format
         })(),
         // Use the notified currency from the audit data, fallback to CHF
-        notifiedCurrency: audit.notifiedCurrency || 'CHF'
+        notifiedCurrency: audit.notifiedCurrency ?? 'CHF'
       };
       
       console.log('Final auditObject.rating:', auditObject.rating);
@@ -333,8 +332,14 @@ const QuarterlySelectionComponent: React.FC = () => {
           <select
             id="quarter-select"
             value={selectedQuarter || ''}
-            onChange={e => handleQuarterChange(e.target.value)}
-            disabled={loading}
+            onChange={e => {
+              const value = e.target.value;
+              if (isQuarterPeriod(value)) {
+                handleQuarterChange(value);
+              } else {
+                console.warn('Invalid quarter period format:', value);
+              }
+            }}            disabled={loading}
           >
             <option value="" disabled>Quarter</option>
             {quarterOptions.map(option => (
@@ -443,7 +448,7 @@ const QuarterlySelectionComponent: React.FC = () => {
                       <td>{user ? user.name : 'Unknown'}</td>
                       <td>{convertToVerificationStatus(audit.status) === VERIFICATION_STATUS_ENUM.VERIFIED ? 'Geprüft' : 
                            convertToVerificationStatus(audit.status) === VERIFICATION_STATUS_ENUM.IN_PROGRESS ? 'In Bearbeitung' : 'Nicht geprüft'}</td>
-                      <td>{getUserInitials(audit.verifier || '')}</td>
+                      <td>{getUserInitials(audit.verifier ?? '')}</td>
                       <td>
                         <button
                           className="verify-button"
@@ -477,7 +482,7 @@ const QuarterlySelectionComponent: React.FC = () => {
                       <td>{user ? user.name : audit.userId}</td>
                       <td>{convertToVerificationStatus(audit.status) === VERIFICATION_STATUS_ENUM.VERIFIED ? 'Geprüft' : 
                            convertToVerificationStatus(audit.status) === VERIFICATION_STATUS_ENUM.IN_PROGRESS ? 'In Bearbeitung' : 'Nicht geprüft'}</td>
-                      <td>{getUserInitials(audit.verifier || '')}</td>
+                      <td>{getUserInitials(audit.verifier ?? '')}</td>
                       <td>
                         <button
                           className="verify-button"

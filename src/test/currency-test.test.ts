@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import {CaseAudit} from "../types.ts";
 
 describe('Currency Functionality Test', () => {
   it('should verify that mock cases have different currencies', async () => {
@@ -10,7 +11,7 @@ describe('Currency Functionality Test', () => {
     expect(cases.length).toBeGreaterThan(0);
     
     // Extract currencies from all cases
-    const currencies = cases.map((caseObj: any) => caseObj.notifiedCurrency);
+    const currencies = cases.map((caseObj: CaseAudit) => caseObj.notifiedCurrency);
     const uniqueCurrencies = [...new Set(currencies)];
     
     console.log('All currencies found:', currencies);
@@ -52,18 +53,18 @@ describe('Currency Functionality Test', () => {
     const cases = await response.json();
     
     // 2. Verify API returns cases with different currencies
-    const currencies = cases.map((caseObj: any) => caseObj.notifiedCurrency);
+    const currencies = cases.map((caseObj: CaseAudit) => caseObj.notifiedCurrency);
     const uniqueCurrencies = [...new Set(currencies)];
     expect(uniqueCurrencies.length).toBeGreaterThanOrEqual(2);
     
     // 3. Verify each case has a valid currency
-    cases.forEach((caseObj: any) => {
+    cases.forEach((caseObj: CaseAudit) => {
       expect(caseObj).toHaveProperty('notifiedCurrency');
       expect(['CHF', 'EUR', 'USD']).toContain(caseObj.notifiedCurrency);
     });
     
     // 4. Verify that the currency formatting works for all returned currencies
-    const currencyAmountPairs = cases.map((caseObj: any) => ({
+    const currencyAmountPairs = cases.map((caseObj: CaseAudit) => ({
       currency: caseObj.notifiedCurrency as string,
       amount: caseObj.coverageAmount as number
     }));
@@ -89,7 +90,7 @@ describe('Currency Functionality Test', () => {
     // Test the fallback behavior when no currency is provided
     const testAmount = 1500;
     
-    // Test with undefined currency (should fallback to CHF)
+    // Test with undefined currency (should fall back to CHF)
     const formattedFallback = new Intl.NumberFormat('de-CH', { 
       style: 'currency', 
       currency: 'CHF' // Use CHF directly instead of undefined fallback

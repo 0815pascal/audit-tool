@@ -23,5 +23,7 @@ dist-ssr
 *.sln
 *.sw?
 test-results
+test-results/.last-run.json
 playwright-report
 playwright-report/index.html
+.qodo

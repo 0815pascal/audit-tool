@@ -8,8 +8,6 @@
 
 // Finding Categories enum
 export enum FINDING_CATEGORY {
-  DETAILED = 'detailed',
-  SPECIAL = 'special'
 }
 
 // Detailed Finding Types enum
@@ -206,8 +204,7 @@ export enum TIME_MS_ENUM {
 // Default values enum
 export enum DEFAULT_VALUE_ENUM {
   RISK_SCORE = 1,
-  EMPTY_USER_ID = '',
-  FALLBACK_AUDIT_ID = 'fallback',
+  EMPTY_USER_ID = 0,
   TEAM_LEADER_ID = '4',
   DEFAULT_POLICY_ID = 10000,
   SAMPLE_POLICY_ID = 12345,
@@ -219,12 +216,6 @@ export enum DEFAULT_VALUE_ENUM {
 export enum LOCALE_ENUM {
   SWISS_GERMAN = 'de-CH',
   CURRENCY_CODE = 'CHF'
-}
-
-// Date format constants
-export enum DATE_FORMAT_ENUM {
-  ISO_DATE_SEPARATOR = 'T',
-  ISO_DATE_INDEX = 0
 }
 
 // Quarter enum
