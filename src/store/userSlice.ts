@@ -1,5 +1,6 @@
 import { createSlice, PayloadAction, createSelector, createAsyncThunk } from '@reduxjs/toolkit';
-import { User, UserId, UserRole, AsyncState, ApiResponse, ApiSuccessResponse } from '../types';
+import { User, UserRole, AsyncState, ApiResponse, ApiSuccessResponse } from '../types/types';
+import { UserId } from '../types/brandedTypes';
 import { RootState } from './index';
 import { ACTION_STATUS_ENUM, USER_ROLE_ENUM } from '../enums';
 
@@ -86,7 +87,7 @@ const userSlice = createSlice({
       const { userId, isActive } = action.payload;
       const user = state.users.find(user => user.id === userId);
       if (user) {
-        user.isActive = isActive;
+        user.enabled = isActive;
         state.status = ACTION_STATUS_ENUM.SUCCEEDED;
         state.isSuccess = true;
       }
@@ -97,7 +98,7 @@ const userSlice = createSlice({
       const { userId, role } = action.payload;
       const user = state.users.find(user => user.id === userId);
       if (user) {
-        user.role = role;
+        user.authorities = role;
         state.status = ACTION_STATUS_ENUM.SUCCEEDED;
         state.isSuccess = true;
       }
@@ -167,7 +168,7 @@ export const selectAllUsers = (state: RootState) => state.user.users;
 // Memoized selectors to prevent unnecessary rerenders
 export const selectActiveUsers = createSelector(
   [selectAllUsers],
-  (users) => users.filter(user => user.isActive)
+  (users) => users.filter(user => user.enabled)
 );
 
 export const selectUserById = (state: RootState, userId: UserId) => 
@@ -175,7 +176,7 @@ export const selectUserById = (state: RootState, userId: UserId) =>
 
 export const selectUsersByRole = createSelector(
   [selectAllUsers, (_state: RootState, role: UserRole) => role],
-  (users, role) => users.filter(user => user.role === role)
+  (users, role) => users.filter(user => user.authorities === role)
 );
 
 export const selectSelectedUser = (state: RootState) => {
@@ -191,22 +192,22 @@ export const selectIsError = (state: RootState) => state.user.isError;
 // Role-specific memoized selectors
 export const selectTeamLeaders = createSelector(
   [selectAllUsers],
-  (users) => users.filter(user => user.role === USER_ROLE_ENUM.TEAM_LEADER)
+  (users) => users.filter(user => user.authorities === USER_ROLE_ENUM.TEAM_LEADER)
 );
 
 export const selectSpecialists = createSelector(
   [selectAllUsers],
-  (users) => users.filter(user => user.role === USER_ROLE_ENUM.SPECIALIST)
+  (users) => users.filter(user => user.authorities === USER_ROLE_ENUM.SPECIALIST)
 );
 
 export const selectStaffUsers = createSelector(
   [selectAllUsers],
-  (users) => users.filter(user => user.role === USER_ROLE_ENUM.STAFF)
+  (users) => users.filter(user => user.authorities === USER_ROLE_ENUM.STAFF)
 );
 
 export const selectReaderUsers = createSelector(
   [selectAllUsers],
-  (users) => users.filter(user => user.role === USER_ROLE_ENUM.READER)
+  (users) => users.filter(user => user.authorities === USER_ROLE_ENUM.READER)
 );
 
 // Memoized selectors
@@ -217,7 +218,7 @@ export const selectUserCount = createSelector(
 
 export const selectUserCountByRole = createSelector(
   [selectAllUsers, (_state: RootState, role: UserRole) => role],
-  (users, role) => users.filter(user => user.role === role).length
+  (users, role) => users.filter(user => user.authorities === role).length
 );
 
 export const selectUserCountByDepartment = createSelector(

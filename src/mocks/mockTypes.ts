@@ -1,8 +1,6 @@
 import { 
   ClaimsStatus, 
   CaseStatus, 
-  UserId, 
-  CaseId, 
   QuarterPeriod,
   FindingType,
   CaseType,
@@ -11,7 +9,11 @@ import {
   SpecialFindingsRecord,
   ISODateString,
   UserRole
-} from '../types';
+} from '../types/types';
+import {
+  UserId,
+  CaseId
+} from '../types/brandedTypes';
 
 /**
  * Mock-specific types for MSW handlers and test data

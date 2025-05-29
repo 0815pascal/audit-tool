@@ -2,15 +2,20 @@ import React, { useState } from 'react';
 import { 
   ClaimsStatus, CaseType, RatingValue, QuarterNumber, 
   QuarterPeriod,
-  ensureUserId, createISODateString,
-  createPolicyId, createCaseId,
-  User, FindingsRecord, createEmptyFindings,
-  isQuarterPeriod,
+  User, FindingsRecord,
   CaseAuditStatus,
   CaseAudit,
-  createCaseAuditId,
   CaseAuditData
-} from '../types';
+} from '../types/types';
+import {
+  ensureUserId, 
+  createISODateString,
+  createPolicyId, 
+  createCaseId,
+  createEmptyFindings,
+  isQuarterPeriod,
+  createCaseAuditId,
+} from '../types/typeHelpers';
 import { USER_ROLE_ENUM, CASE_TYPE_ENUM, VERIFICATION_STATUS_ENUM, DEFAULT_VALUE_ENUM } from '../enums';
 import { useCaseAuditHandlers } from '../hooks/useCaseAuditHandlers';
 import { PruefensterModal } from './common';
@@ -358,7 +363,7 @@ const QuarterlySelectionComponent: React.FC = () => {
             <option value="" disabled>Current User:</option>
             {usersList.map((user: User) => (
               <option key={user.id} value={user.id}>
-                {user.name} ({user.role})
+                {user.displayName} ({user.authorities})
               </option>
             ))}
           </select>
@@ -445,7 +450,7 @@ const QuarterlySelectionComponent: React.FC = () => {
                     <tr key={audit.id}>
                       <td>{audit.id}</td>
                       <td>{audit.quarter}</td>
-                      <td>{user ? user.name : 'Unknown'}</td>
+                      <td>{user ? user.displayName : 'Unknown'}</td>
                       <td>{convertToVerificationStatus(audit.status) === VERIFICATION_STATUS_ENUM.VERIFIED ? 'Geprüft' : 
                            convertToVerificationStatus(audit.status) === VERIFICATION_STATUS_ENUM.IN_PROGRESS ? 'In Bearbeitung' : 'Nicht geprüft'}</td>
                       <td>{getUserInitials(audit.verifier ?? '')}</td>
@@ -479,7 +484,7 @@ const QuarterlySelectionComponent: React.FC = () => {
                     <tr key={audit.id}>
                       <td>{audit.id}</td>
                       <td>{audit.quarter}</td>
-                      <td>{user ? user.name : audit.userId}</td>
+                      <td>{user ? user.displayName : audit.userId}</td>
                       <td>{convertToVerificationStatus(audit.status) === VERIFICATION_STATUS_ENUM.VERIFIED ? 'Geprüft' : 
                            convertToVerificationStatus(audit.status) === VERIFICATION_STATUS_ENUM.IN_PROGRESS ? 'In Bearbeitung' : 'Nicht geprüft'}</td>
                       <td>{getUserInitials(audit.verifier ?? '')}</td>

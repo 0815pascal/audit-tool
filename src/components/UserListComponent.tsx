@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useUsers } from '../hooks/useUsers';
-import { UserRole } from '../types';
-import { USER_ROLE_ENUM, STATUS_DISPLAY_ENUM, INPUT_TYPE_ENUM } from '../enums';
+import { UserRole } from '../types/types';
+import { USER_ROLE_ENUM, STATUS_DISPLAY_ENUM, INPUT_TYPE_ENUM, Department } from '../enums';
 import './UserListComponent.css';
 
 const UserListComponent: React.FC = () => {
@@ -18,7 +18,7 @@ const UserListComponent: React.FC = () => {
   } = useUsers();
   
   const [newUserName, setNewUserName] = useState('');
-  const [newUserDepartment, setNewUserDepartment] = useState('5');
+  const [newUserDepartment, setNewUserDepartment] = useState<Department>(Department.Claims);
   const [newUserRole, setNewUserRole] = useState<UserRole>(USER_ROLE_ENUM.STAFF);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   
@@ -38,10 +38,10 @@ const UserListComponent: React.FC = () => {
     if (!newUserName.trim()) return;
     
     const newUser = {
-      name: newUserName,
+      displayName: newUserName,
       department: newUserDepartment,
-      role: newUserRole,
-      isActive: true,
+      authorities: newUserRole,
+      enabled: true,
       initials: newUserName.split(' ').map(part => part[0]).join('')
     };
     
@@ -49,7 +49,7 @@ const UserListComponent: React.FC = () => {
     
     // Reset form
     setNewUserName('');
-    setNewUserDepartment('5');
+    setNewUserDepartment(Department.Claims);
     setNewUserRole(USER_ROLE_ENUM.STAFF);
   };
   
@@ -83,7 +83,7 @@ const UserListComponent: React.FC = () => {
             type={INPUT_TYPE_ENUM.TEXT} 
             id="department" 
             value={newUserDepartment} 
-            onChange={(e) => setNewUserDepartment(e.target.value)}
+            onChange={(e) => setNewUserDepartment(e.target.value as Department)}
             placeholder="Enter department"
           />
         </div>
@@ -125,11 +125,11 @@ const UserListComponent: React.FC = () => {
                 onClick={() => setSelectedUser(user.id)}
               >
                 <td>{user.id.toString()}</td>
-                <td>{user.name}</td>
+                <td>{user.displayName}</td>
                 <td>{user.department}</td>
                 <td>
                   <select 
-                    value={user.role}
+                    value={user.authorities}
                     onChange={(e) => changeUserRole(user.id, e.target.value as UserRole)}
                     onClick={(e) => e.stopPropagation()}
                   >
@@ -143,8 +143,8 @@ const UserListComponent: React.FC = () => {
                   <label className="toggle">
                     <input 
                       type={INPUT_TYPE_ENUM.CHECKBOX} 
-                      checked={user.isActive}
-                      onChange={() => toggleUserActive(user.id, !user.isActive)}
+                      checked={user.enabled}
+                      onChange={() => toggleUserActive(user.id, !user.enabled)}
                       onClick={(e) => e.stopPropagation()}
                     />
                     <span className="slider"></span>
@@ -177,7 +177,7 @@ const UserListComponent: React.FC = () => {
           </div>
           <div className="details-row">
             <span className="label">Name:</span>
-            <span className="value">{selectedUser.name}</span>
+            <span className="value">{selectedUser.displayName}</span>
           </div>
           <div className="details-row">
             <span className="label">Department:</span>
@@ -185,12 +185,12 @@ const UserListComponent: React.FC = () => {
           </div>
           <div className="details-row">
             <span className="label">Role:</span>
-            <span className="value">{selectedUser.role}</span>
+            <span className="value">{selectedUser.authorities}</span>
           </div>
           <div className="details-row">
             <span className="label">Status:</span>
             <span className="value">
-              {selectedUser.isActive ? STATUS_DISPLAY_ENUM.ACTIVE : STATUS_DISPLAY_ENUM.INACTIVE}
+              {selectedUser.enabled ? STATUS_DISPLAY_ENUM.ACTIVE : STATUS_DISPLAY_ENUM.INACTIVE}
             </span>
           </div>
         </div>

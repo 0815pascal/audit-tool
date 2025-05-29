@@ -5,11 +5,15 @@ import {
   CaseStatus, 
   FindingType, 
   FindingCategory,
+  QuarterPeriod
+} from '../types/types';
+import {
   UserId,
   CaseId,
-  CaseAuditId,
-  QuarterPeriod
-} from '../types';// 5 minutes
+  CaseAuditId
+} from '../types/brandedTypes';
+
+// 5 minutes
 
 // Common error types
 

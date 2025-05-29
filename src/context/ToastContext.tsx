@@ -1,7 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useState, useCallback, useContext } from 'react';
 import Toast from '../components/common/Toast';
-import { ToastType, ToastData, ContextProviderProps } from '../types';
+import { ToastType, ToastData, ContextProviderProps } from '../types/types';
 import { TOAST_TYPE } from '../enums';
 
 // Define the context type

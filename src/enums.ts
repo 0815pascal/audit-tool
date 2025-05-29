@@ -268,3 +268,7 @@ export enum TEXT_ALIGN_ENUM {
   RIGHT = 'text-right',
   JUSTIFY = 'text-justify'
 } 
+
+export enum Department {
+  Admin = 'Admin', Claims = 'Claims',
+}

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import {CaseAudit} from "../types.ts";
+import {CaseAudit} from "../types/types.ts";
 
 describe('Currency Functionality Test', () => {
   it('should verify that mock cases have different currencies', async () => {

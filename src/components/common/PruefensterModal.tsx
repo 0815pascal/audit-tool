@@ -3,17 +3,21 @@ import {Modal} from './Modal';
 import {
   CaseAudit,
   CaseAuditData,
-  CaseAuditId,
   CaseAuditStatus,
-  createEmptyFindings,
-  ensureCaseAuditId,
-  ensureUserId,
   FindingsRecord,
   FindingType,
   RatingOption,
   RatingValue,
   SelectOption
-} from '../../types';
+} from '../../types/types';
+import {
+  CaseAuditId
+} from '../../types/brandedTypes';
+import {
+  createEmptyFindings,
+  ensureCaseAuditId,
+  ensureUserId,
+} from '../../types/typeHelpers';
 
 import {Button, Checkbox, Select, TextArea} from './FormControls';
 import {useToast} from '../../context/ToastContext';
@@ -477,7 +481,7 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
             <span style={{ marginTop: '2px', color: '#212529', fontWeight: '500', textAlign: 'right' }}>
               {(() => {
                 const user = allUsers.find(u => u.id === audit.userId);
-                return user ? user.name : audit.userId;
+                return user ? user.displayName : audit.userId;
               })()}
             </span>
           </div>

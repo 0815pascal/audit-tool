@@ -5,13 +5,6 @@ import {
   CaseAuditActionPayload,
   CaseAuditState,
   CaseAuditStep,
-  createCaseAuditId,
-  createEmptyFindings,
-  createISODateString,
-  createUserId,
-  createValidYear,
-  ensureUserId,
-  formatQuarterPeriod,
   Quarter,
   QuarterNumber,
   QuarterPeriod,
@@ -20,9 +13,17 @@ import {
   StoredCaseAuditData,
   User,
   UserAuditForSelection,
-  UserRole,
-  VerifyAuditActionPayload
-} from '../types';
+  UserRole
+} from '../types/types';
+import {
+  createCaseAuditId,
+  createEmptyFindings,
+  createISODateString,
+  createUserId,
+  createValidYear,
+  ensureUserId,
+  formatQuarterPeriod,
+} from '../types/typeHelpers';
 import {CASE_TYPE_ENUM, CLAIMS_STATUS_ENUM, USER_ROLE_ENUM, VERIFICATION_STATUS_ENUM} from '../enums';
 import {QUARTER_CALCULATIONS} from '../constants';
 import {mapVerificationStatusToCaseAuditStatus} from '../utils/statusUtils';
@@ -188,7 +189,7 @@ export const saveAuditVerificationThunk = createAsyncThunk<
 // Async thunk for verifying audit
 export const verifyAuditThunk = createAsyncThunk<
   VerificationResponse,
-  VerifyAuditActionPayload,
+  CaseAuditActionPayload,
   { rejectValue: string }
 >(
   'caseAudit/verifyAudit',
@@ -354,9 +355,9 @@ const caseAuditSlice = createSlice({
     },
     verifyAudit: (
       state, 
-      action: PayloadAction<VerifyAuditActionPayload>
+      action: PayloadAction<CaseAuditActionPayload>
     ) => {
-      const { auditId, isVerified, userId, verifier, comment, rating, specialFindings, detailedFindings } = action.payload;
+      const { auditId, userId, verifier, comment, rating, specialFindings, detailedFindings } = action.payload;
       const { quarter, year } = getCurrentQuarter();
       const quarterKey = formatQuarterYear(quarter, year);
       
@@ -366,68 +367,31 @@ const caseAuditSlice = createSlice({
       }
       
       // Update audit verification
-      state.verifiedAudits[auditId].isVerified = isVerified;
+      state.verifiedAudits[auditId].isVerified = true;
       state.verifiedAudits[auditId].verifier = verifier;
       state.verifiedAudits[auditId].comment = comment;
       state.verifiedAudits[auditId].rating = rating;
       state.verifiedAudits[auditId].specialFindings = specialFindings;
       state.verifiedAudits[auditId].detailedFindings = detailedFindings;
       
-      // Update verification date and verifier if verified
-      if (isVerified) {
-        state.verifiedAudits[auditId].verificationDate = createISODateString(new Date());
-        // Explicitly set status to 'verified'
-        state.verifiedAudits[auditId].status = mapVerificationStatusToCaseAuditStatus(VERIFICATION_STATUS_ENUM.VERIFIED);
-        
-        // Update user quarterly status
-        if (!state.userQuarterlyStatus[userId]) {
-          state.userQuarterlyStatus[userId] = {};
-        }
-        if (!state.userQuarterlyStatus[userId][quarterKey]) {
-          state.userQuarterlyStatus[userId][quarterKey] = {
-            verified: false
-          };
-        }
-        state.userQuarterlyStatus[userId][quarterKey] = {
-          verified: true,
-          lastVerified: createISODateString(new Date())
-        };
-      } else {
-        // If marking as unverified/in progress
-        state.verifiedAudits[auditId].verificationDate = null;
-        
-        // Filter audits for the current quarter
-        const userCurrentQuarterAudits = Object.values(state.verifiedAudits)
-          .filter(audit => {
-            // First check if the userId matches
-            if (audit.userId !== userId) return false;
-            
-            // Convert the stored quarter string to quarter/year values for comparison
-            const parts = (audit.quarter).split('-');
-            if (parts.length === 2) {
-              const auditQuarter = parseInt(parts[0].substring(1));
-              const auditYear = parseInt(parts[1]);
-              
-              // Now compare with the current quarter and year
-              return auditQuarter === quarter && auditYear === year;
-            }
-            
-            return false;
-          });
-        
-        // Check if any other audits for this user in this quarter are still verified
-        const anyRemainingVerifiedAudits = userCurrentQuarterAudits.some(
-          audit => 
-            Object.keys(state.verifiedAudits).includes(auditId) && 
-            audit !== state.verifiedAudits[auditId] && 
-            audit.isVerified
-        );
-        
-        // Only update user status if there are no other verified audits
-        if (!anyRemainingVerifiedAudits && state.userQuarterlyStatus[userId]?.[quarterKey]) {
-          state.userQuarterlyStatus[userId][quarterKey].verified = false;
-        }
+      // Update verification date and verifier when verified
+      state.verifiedAudits[auditId].verificationDate = createISODateString(new Date());
+      // Explicitly set status to 'verified'
+      state.verifiedAudits[auditId].status = mapVerificationStatusToCaseAuditStatus(VERIFICATION_STATUS_ENUM.VERIFIED);
+      
+      // Update user quarterly status
+      if (!state.userQuarterlyStatus[userId]) {
+        state.userQuarterlyStatus[userId] = {};
       }
+      if (!state.userQuarterlyStatus[userId][quarterKey]) {
+        state.userQuarterlyStatus[userId][quarterKey] = {
+          verified: false
+        };
+      }
+      state.userQuarterlyStatus[userId][quarterKey] = {
+        verified: true,
+        lastVerified: createISODateString(new Date())
+      };
     },
     rejectAudit: (
       state, 
@@ -619,7 +583,7 @@ const caseAuditSlice = createSlice({
         state.currentUserId = ensureUserId(user.id.toString());
         // Also set the user role
         state.userRoles[user.id.toString()] = {
-          role: user.role,
+          role: user.authorities,
           department: user.department || 'Unknown'
         };
       })
@@ -694,7 +658,7 @@ export const selectUserQuarterlyStatus = (state: { caseAudit: CaseAuditState }) 
 // Define the interface used by selectors - inherits from User type
 
 // Ensure consistency with User interface
-type UserForSelector = Pick<User, 'id' | 'name' | 'department' | 'role' | 'isActive'>;
+type UserForSelector = Pick<User, 'id' | 'displayName' | 'department' | 'authorities' | 'enabled'>;
 
 // Memoized selector for users needing verification
 export const selectUsersNeedingAudits = createSelector(

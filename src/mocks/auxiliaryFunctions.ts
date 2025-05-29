@@ -1,11 +1,13 @@
 import { 
   ClaimsStatus, 
   QuarterPeriod,
+  QuarterNumber
+} from '../types/types';
+import {
   isQuarterPeriod,
-  QuarterNumber,
   createCaseId,
   createUserId
-} from '../types';
+} from '../types/typeHelpers';
 import { 
   CLAIMS_STATUS, 
   CASE_STATUS, 

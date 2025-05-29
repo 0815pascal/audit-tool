@@ -1,26 +1,28 @@
 import { 
-  User, 
+  User
+} from '../types/types';
+import {
   createUserId,
   createEmptyDetailedFindings,
   createEmptySpecialFindings
-} from '../types';
+} from '../types/typeHelpers';
 import { 
   CLAIMS_STATUS, 
   CASE_TYPES
 } from '../constants';
-import { USER_ROLE_ENUM } from '../enums';
+import { USER_ROLE_ENUM, Department } from '../enums';
 import { MockCaseData } from './mockTypes';
 
 // Mock users data
 export const users: User[] = [
-  { id: createUserId('1'), name: 'John Smith', department: '5', role: USER_ROLE_ENUM.SPECIALIST, isActive: true, initials: 'JS' },
-  { id: createUserId('2'), name: 'Jane Doe', department: '5', role: USER_ROLE_ENUM.STAFF, isActive: true, initials: 'JD' },
-  { id: createUserId('3'), name: 'Robert Johnson', department: '5', role: USER_ROLE_ENUM.STAFF, isActive: true, initials: 'RJ' },
-  { id: createUserId('4'), name: 'Emily Davis', department: '5', role: USER_ROLE_ENUM.TEAM_LEADER, isActive: true, initials: 'ED' },
-  { id: createUserId('5'), name: 'Michael Brown', department: '5', role: USER_ROLE_ENUM.STAFF, isActive: true, initials: 'MB' },
-  { id: createUserId('6'), name: 'Sarah Wilson', department: '5', role: USER_ROLE_ENUM.SPECIALIST, isActive: true, initials: 'SW' },
-  { id: createUserId('7'), name: 'David Thompson', department: '5', role: USER_ROLE_ENUM.STAFF, isActive: true, initials: 'DT' },
-  { id: createUserId('8'), name: 'Lisa Garcia', department: '5', role: USER_ROLE_ENUM.STAFF, isActive: true, initials: 'LG' },
+  { id: createUserId('1'), displayName: 'John Smith', department: Department.Claims, authorities: USER_ROLE_ENUM.SPECIALIST, enabled: true, initials: 'JS' },
+  { id: createUserId('2'), displayName: 'Jane Doe', department: Department.Claims, authorities: USER_ROLE_ENUM.STAFF, enabled: true, initials: 'JD' },
+  { id: createUserId('3'), displayName: 'Robert Johnson', department: Department.Claims, authorities: USER_ROLE_ENUM.STAFF, enabled: true, initials: 'RJ' },
+  { id: createUserId('4'), displayName: 'Emily Davis', department: Department.Claims, authorities: USER_ROLE_ENUM.TEAM_LEADER, enabled: true, initials: 'ED' },
+  { id: createUserId('5'), displayName: 'Michael Brown', department: Department.Claims, authorities: USER_ROLE_ENUM.STAFF, enabled: true, initials: 'MB' },
+  { id: createUserId('6'), displayName: 'Sarah Wilson', department: Department.Claims, authorities: USER_ROLE_ENUM.SPECIALIST, enabled: true, initials: 'SW' },
+  { id: createUserId('7'), displayName: 'David Thompson', department: Department.Claims, authorities: USER_ROLE_ENUM.STAFF, enabled: true, initials: 'DT' },
+  { id: createUserId('8'), displayName: 'Lisa Garcia', department: Department.Claims, authorities: USER_ROLE_ENUM.STAFF, enabled: true, initials: 'LG' },
 ];
 
 // Mock cases data

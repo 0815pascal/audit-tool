@@ -9,23 +9,19 @@ import {
   CASE_TYPE_ENUM,
   RATING_VALUE_ENUM,
   DETAILED_FINDING_ENUM,
-  SPECIAL_FINDING_ENUM} from './enums';
+  SPECIAL_FINDING_ENUM,
+  type Department} from '../enums';
+
+// Import branded types from separate file
+import type {
+  CaseAuditId,
+  UserId,
+  CaseId,
+  PolicyId,
+  ValidYear
+} from './brandedTypes';
 
 // CaseAudit types moved from caseAuditTypes.ts
-
-// Branded type for CaseAuditId to prevent type confusion
-export type CaseAuditId = string & { readonly __brand: unique symbol };
-
-// Utility function to check if a value is a CaseAuditId
-// Create a CaseAuditId from a string
-export function createCaseAuditId(id: string): CaseAuditId {
-  return id as CaseAuditId;
-}
-
-// Ensure a value is a CaseAuditId
-export function ensureCaseAuditId(id: string | CaseAuditId): CaseAuditId {
-  return typeof id === 'string' ? createCaseAuditId(id) : id;
-}
 
 // Enum for CaseAuditStatus
 export enum CaseAuditStatus {
@@ -59,7 +55,6 @@ export interface StoredCaseAuditData extends CaseAuditData {
   isIncorrect: boolean;
   status: CaseAuditStatus;
   steps: Record<string, CaseAuditStep>;
-  // Additional fields for compatibility with StoredVerificationData
   quarter: string;
   year: number;
   caseType: CaseType;
@@ -74,12 +69,6 @@ export interface StoredCaseAuditData extends CaseAuditData {
 // Action payload for case audit operations
 export interface CaseAuditActionPayload extends BaseAuditActionPayload, CaseAuditData {
   verifier: UserId;
-}
-
-// Specific payload for verifying an audit
-// For backward compatibility
-export interface VerifyAuditActionPayload extends CaseAuditActionPayload {
-  isVerified: boolean;
 }
 
 // Summary version of CaseAudit with only essential fields
@@ -137,7 +126,6 @@ export interface CaseAuditState {
   error?: string | null;
 }
 
-// Utility function to get case audit data from state
 // Base types as string literals (enum-like)
 export type UserRole = USER_ROLE_ENUM;
 export type CaseType = CASE_TYPE_ENUM;
@@ -157,7 +145,6 @@ export type FindingType = DetailedFindingType | SpecialFindingType;
 export type DetailedFindingsRecord = Record<DetailedFindingType, boolean>;
 export type SpecialFindingsRecord = Record<SpecialFindingType, boolean>;
 
-// Step interface for verification/calculation steps
 // Define common type for verification findings as union of specific finding types
 export type FindingsRecord = {
   [K in DetailedFindingType | SpecialFindingType]: boolean;
@@ -165,12 +152,7 @@ export type FindingsRecord = {
 
 // Date representation - can be used instead of string for dates
 export type ISODateString = `${number}-${number}-${number}T${number}:${number}:${number}${string}` | `${number}-${number}-${number}`;
-/**
- * Create a date string in ISO format with type safety
- */
-export function createISODateString(date: Date = new Date()): ISODateString {
-  return date.toISOString() as ISODateString;
-}
+
 // State management types
 export interface AsyncState<T, E = string> {
   data: T | null;
@@ -180,11 +162,13 @@ export interface AsyncState<T, E = string> {
   isError: boolean;
   isSuccess: boolean;
 }
+
 // Generic API response caching
 export interface CachedItem<T> {
   data: T;
   timestamp: number;
 }
+
 // API response handling
 export interface ApiSuccessResponse<T> {
   success: true;
@@ -202,13 +186,7 @@ export type ApiResponse<T> = ApiSuccessResponse<T> | ApiErrorResponse;
 
 // Utility types for common patterns - renamed for clarity
 export type Dictionary<T> = Record<string, T>;
-// Type conversion utilities
-// Type to convert string enum to union type
-// HTTP-related types
-// Type-safe URL paths
-// Higher-order types for working with generics
-// Function-related types
-// Standardized verification data structure
+
 // Base entity interface for all main data objects
 export interface BaseEntity<T = string> {
   id: T;
@@ -219,55 +197,22 @@ export interface BaseAuditActionPayload {
   auditId: CaseAuditId;
   userId: UserId;
 }
+
 export interface StatusUpdatePayload extends BaseAuditActionPayload {
   status: CaseAuditStatus;
 }
 
-// Common types for user quarterly status
-// Create type-safe Record types for records by key
 // Quarter period representation (e.g., "Q2-2023")
 export type QuarterPeriod = `Q${QuarterNumber}-${number}`;
 
-/**
- * Type guard to check if a string is a valid QuarterPeriod
- */
-export function isQuarterPeriod(value: string): value is QuarterPeriod {
-  if (!/^Q[1-4]-\d{4}$/.test(value)) {
-    return false;
-  }
-  
-  const [quarterPart, yearPart] = value.split('-');
-  const quarterNum = parseInt(quarterPart.substring(1));
-  const year = parseInt(yearPart);
-  
-  return (
-    quarterNum >= 1 && 
-    quarterNum <= 4 && 
-    year >= 2000 && 
-    year <= 2100
-  );
-}
 // More strongly typed Quarter structure
 export type QuarterNumber = 1 | 2 | 3 | 4;
-
-// Ensure year values are reasonable
-export type ValidYear = number & { readonly brand: unique symbol };
-export function isValidYear(year: number): year is ValidYear {
-  return year >= 2000 && year <= 2100;
-}
-export function createValidYear(year: number): ValidYear {
-  if (!isValidYear(year)) {
-    throw new Error(`Invalid year: ${year}. Must be between 2000 and 2100.`);
-  }
-  return year;
-}
 
 export interface Quarter {
   quarter: QuarterNumber;
   year: ValidYear; // Use ValidYear for stronger type safety
 }
 
-// Type for quarterly selection data
 // Type for audit quarterly selection payloads
 export interface AuditForSelection extends BaseEntity<CaseAuditId> {
   auditId: CaseAuditId; // Explicitly include auditId for selection operations
@@ -294,42 +239,22 @@ export interface UserAuditForSelection extends AuditForSelection {
 
 // Common user fields extracted into a reusable interface
 export interface BaseUserFields {
-  name: string;
-  department: string;
-  role: UserRole;
-  isActive: boolean;
+  displayName: string;
+  department: Department;
+  authorities: UserRole;
+  enabled: boolean;
 }
 
-// Type for user role info - use the relevant fields from BaseUserFields
-// Branded ID types for better type safety
-export type UserId = string & { readonly __brand: unique symbol };
-export type CaseId = number & { readonly __brand: unique symbol };
-export type PolicyId = number & { readonly __brand: unique symbol };
-
-// Type guard functions for branded types
-// Helper functions for creating branded types
-export function createUserId(id: string): UserId {
-  return id as UserId;
-}
-
-export function createCaseId(id: number): CaseId {
-  return id as CaseId;
-}
-
-export function createPolicyId(id: number): PolicyId {
-  return id as PolicyId;
-}
-
-// Generic utility function to safely convert a string or number to a branded ID type
-// Improved shorthand helper functions for common ID types
-export function ensureUserId(id: string | UserId): UserId {
-  return typeof id === 'string' ? createUserId(id) : id;
-}
 // User definition using composition with BaseUserFields
 export interface User extends BaseEntity<UserId>, BaseUserFields {
+  firstName?: string;
+  lastName?: string;
   middleName?: string;
   initials?: string;
+  username?: string;
+  email?: string;
 }
+
 // Generic select option type
 export interface SelectOption<T = string> {
   value: T;
@@ -350,65 +275,10 @@ export interface PropsWithChildren {
 export interface PropsWithClassName {
   className?: string;
 }
+
 // Generic component props type helper with HTML attributes
 export type ComponentProps<T = HTMLDivElement> = HTMLAttributes<T> & PropsWithClassName;
 
-// Generic props with children helper
-// Type-safe helper functions
-export const createEmptyFindings = (): FindingsRecord => {
-  return {
-    [DETAILED_FINDING_ENUM.FACTS_INCORRECT]: false,
-    [DETAILED_FINDING_ENUM.TERMS_INCORRECT]: false,
-    [DETAILED_FINDING_ENUM.COVERAGE_INCORRECT]: false,
-    [DETAILED_FINDING_ENUM.ADDITIONAL_COVERAGE_MISSED]: false,
-    [DETAILED_FINDING_ENUM.DECISION_NOT_COMMUNICATED]: false,
-    [DETAILED_FINDING_ENUM.COLLECTION_INCORRECT]: false,
-    [DETAILED_FINDING_ENUM.RECOURSE_WRONG]: false,
-    [DETAILED_FINDING_ENUM.COST_RISK_WRONG]: false,
-    [DETAILED_FINDING_ENUM.BPR_WRONG]: false,
-    [DETAILED_FINDING_ENUM.COMMUNICATION_POOR]: false,
-    [SPECIAL_FINDING_ENUM.FEEDBACK]: false,
-    [SPECIAL_FINDING_ENUM.COMMUNICATION]: false,
-    [SPECIAL_FINDING_ENUM.RECOURSE]: false,
-    [SPECIAL_FINDING_ENUM.NEGOTIATION]: false,
-    [SPECIAL_FINDING_ENUM.PERFECT_TIMING]: false
-  };
-};
-
-// Helper to create just detailed findings
-export const createEmptyDetailedFindings = (): DetailedFindingsRecord => {
-  return {
-    [DETAILED_FINDING_ENUM.FACTS_INCORRECT]: false,
-    [DETAILED_FINDING_ENUM.TERMS_INCORRECT]: false,
-    [DETAILED_FINDING_ENUM.COVERAGE_INCORRECT]: false,
-    [DETAILED_FINDING_ENUM.ADDITIONAL_COVERAGE_MISSED]: false,
-    [DETAILED_FINDING_ENUM.DECISION_NOT_COMMUNICATED]: false,
-    [DETAILED_FINDING_ENUM.COLLECTION_INCORRECT]: false,
-    [DETAILED_FINDING_ENUM.RECOURSE_WRONG]: false,
-    [DETAILED_FINDING_ENUM.COST_RISK_WRONG]: false,
-    [DETAILED_FINDING_ENUM.BPR_WRONG]: false,
-    [DETAILED_FINDING_ENUM.COMMUNICATION_POOR]: false
-  };
-};
-
-// Helper to create just special findings
-export const createEmptySpecialFindings = (): SpecialFindingsRecord => {
-  return {
-    [SPECIAL_FINDING_ENUM.FEEDBACK]: false,
-    [SPECIAL_FINDING_ENUM.COMMUNICATION]: false,
-    [SPECIAL_FINDING_ENUM.RECOURSE]: false,
-    [SPECIAL_FINDING_ENUM.NEGOTIATION]: false,
-    [SPECIAL_FINDING_ENUM.PERFECT_TIMING]: false
-  };
-};
-
-// Helper to format a quarter period (Q1-2023 format)
-export function formatQuarterPeriod(quarter: QuarterNumber, year: number): QuarterPeriod {
-  return `Q${quarter}-${year}`;
-}
-
-// Type guard to check if a finding is a detailed finding
-// Type guard to check if a finding is a special finding
 export interface ToastData {
   message: string;
   type: ToastType;

@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { ToastType, ComponentProps } from '../../types';
+import { ToastType, ComponentProps } from '../../types/types';
 import { TOAST_TYPE, TOAST_BG_COLOR_ENUM, TIME_MS_ENUM } from '../../enums';
 
 interface ToastProps extends Omit<ComponentProps<HTMLDivElement>, 'children'> {

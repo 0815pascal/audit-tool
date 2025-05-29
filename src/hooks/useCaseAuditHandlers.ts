@@ -20,25 +20,29 @@ import {
   rejectAuditThunk
 } from '../store/caseAuditSlice';
 import {
+  CaseAuditStatus,
   QuarterPeriod,
-  ensureUserId,
+  FindingsRecord,
+  CaseAuditData,
+  RatingValue,
+  CaseAudit,
+  ClaimsStatus
+} from '../types/types';
+import {
+  CaseAuditId,
   UserId,
-  ValidYear,
+  ValidYear
+} from '../types/brandedTypes';
+import {
+  ensureUserId,
   createValidYear,
   createUserId,
-  ClaimsStatus,
-  RatingValue,
-  FindingsRecord,
   createEmptyFindings,
   createISODateString,
   createPolicyId,
   createCaseId,
-  CaseAuditStatus,
-  CaseAuditData,
   createCaseAuditId,
-  CaseAudit,
-  CaseAuditId
-} from '../types';
+} from '../types/typeHelpers';
 import { useUsers } from './useUsers';
 import {
   TAB_VIEWS,
@@ -143,7 +147,7 @@ export const useCaseAuditHandlers = () => {
     if (user) {
       dispatch(setUserRole({
         userId: userIdString,
-        role: user.role,
+        role: user.authorities,
         department: user.department || 'Unknown'
       }));
     }
@@ -172,7 +176,6 @@ export const useCaseAuditHandlers = () => {
       auditId: auditIdBranded,
       userId: currentUserId,
       verifier: verifierBranded,
-      isVerified: true,
       ...caseAuditData
     }));
     
@@ -181,7 +184,6 @@ export const useCaseAuditHandlers = () => {
       auditId: auditIdBranded,
       userId: currentUserId,
       verifier: verifierBranded,
-      isVerified: true,
       ...caseAuditData
     }));
   };

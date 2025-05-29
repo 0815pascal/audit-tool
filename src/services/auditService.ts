@@ -1,4 +1,6 @@
-import { createCaseId, QuarterPeriod, UserId, CaseAuditId, CaseAuditData, FindingType, FindingsRecord, UserAuditForSelection, AuditForSelection, ISODateString } from '../types';
+import { QuarterPeriod, CaseAuditData, FindingType, FindingsRecord, UserAuditForSelection, AuditForSelection, ISODateString } from '../types/types';
+import { UserId, CaseAuditId } from '../types/brandedTypes';
+import { createCaseId } from '../types/typeHelpers';
 import axios from 'axios';
 import {
   ApiCache,

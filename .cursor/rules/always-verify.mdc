@@ -1,0 +1,6 @@
+---
+description: When asked to refactor
+globs: 
+alwaysApply: false
+---
+When given a refactoring-task, always run the linter, build script and tests before considering the task to be finished

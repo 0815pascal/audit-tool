@@ -15,7 +15,7 @@ import {
   DetailedFindingType,
   SpecialFindingType,
   ActionStatus,
-} from './types';
+} from './types/types';
 
 // Claims status options 
 export const CLAIMS_STATUS: Record<ClaimsStatus, ClaimsStatus> = {

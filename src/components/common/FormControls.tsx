@@ -1,5 +1,5 @@
 import React from 'react';
-import { SelectOption } from '../../types';
+import { SelectOption } from '../../types/types';
 import { BUTTON_COLOR, BUTTON_SIZE, INPUT_TYPE_ENUM, UI_COLOR_ENUM } from '../../enums';
 
 /**

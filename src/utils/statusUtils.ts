@@ -6,7 +6,7 @@
  */
 
 import { VERIFICATION_STATUS_ENUM } from '../enums';
-import { CaseAuditStatus } from '../types';
+import { CaseAuditStatus } from '../types/types';
 
 /**
  * Generates a realistic 8-digit case number starting with 4 (like 40001912)

@@ -17,7 +17,9 @@ import {
   resetStatus,
   fetchUsers
 } from '../store/userSlice';
-import { User, UserId, UserRole, createUserId } from '../types';
+import { User, UserRole } from '../types/types';
+import { UserId } from '../types/brandedTypes';
+import { createUserId } from '../types/typeHelpers';
 
 /**
  * Type for user creation without requiring an ID
@@ -69,7 +71,7 @@ export const useUsers = () => {
   // Get users by role
   const getUsersByRole = useCallback(
     (role: UserRole) => {
-      return allUsers.filter(user => user.role === role);
+      return allUsers.filter(user => user.authorities === role);
     },
     [allUsers]
   );
@@ -98,7 +100,7 @@ export const useUsers = () => {
   const createUser = useCallback(
     (user: NewUser) => {
       // Generate initials if not provided
-      const initials = user.initials ?? generateInitials(user.name);
+      const initials = user.initials ?? generateInitials(user.displayName);
       
       // Create a new User with a generated ID if none provided
       const newUser: User = {

@@ -3,8 +3,8 @@ import { configureStore } from '@reduxjs/toolkit';
 import caseAuditSlice from '../store/caseAuditSlice';
 import userSlice from '../store/userSlice';
 import { RootState } from '../store';
-import { createUserId } from '../types';
-import { USER_ROLE_ENUM, ACTION_STATUS_ENUM } from '../enums';
+import { createUserId } from '../types/typeHelpers';
+import { USER_ROLE_ENUM, ACTION_STATUS_ENUM, Department } from '../enums';
 
 describe('Redux User Integration Tests', () => {
   it('should verify that components use Redux store for user data', () => {
@@ -19,18 +19,18 @@ describe('Redux User Integration Tests', () => {
           users: [
             {
               id: createUserId('1'),
-              name: 'John Smith',
-              department: '5',
-              role: USER_ROLE_ENUM.SPECIALIST,
-              isActive: true,
+              displayName: 'John Smith',
+              department: Department.Claims,
+              authorities: USER_ROLE_ENUM.SPECIALIST,
+              enabled: true,
               initials: 'JS'
             },
             {
               id: createUserId('2'),
-              name: 'Jane Doe',
-              department: '5',
-              role: USER_ROLE_ENUM.STAFF,
-              isActive: true,
+              displayName: 'Jane Doe',
+              department: Department.Claims,
+              authorities: USER_ROLE_ENUM.STAFF,
+              enabled: true,
               initials: 'JD'
             }
           ],
@@ -47,8 +47,8 @@ describe('Redux User Integration Tests', () => {
           userQuarterlyStatus: {},
           quarterlySelection: {},
           userRoles: {
-            '1': { role: USER_ROLE_ENUM.SPECIALIST, department: '5' },
-            '2': { role: USER_ROLE_ENUM.STAFF, department: '5' }
+            '1': { role: USER_ROLE_ENUM.SPECIALIST, department: 'Claims' },
+            '2': { role: USER_ROLE_ENUM.STAFF, department: 'Claims' }
           },
           loading: false,
           error: null
@@ -59,8 +59,8 @@ describe('Redux User Integration Tests', () => {
     // Verify that the Redux store contains the expected user data
     const state = store.getState() as RootState;
     expect(state.user.users).toHaveLength(2);
-    expect(state.user.users[0].name).toBe('John Smith');
-    expect(state.user.users[1].name).toBe('Jane Doe');
+    expect(state.user.users[0].displayName).toBe('John Smith');
+    expect(state.user.users[1].displayName).toBe('Jane Doe');
     
     // Verify that user roles are properly stored
     expect(state.caseAudit.userRoles['1'].role).toBe(USER_ROLE_ENUM.SPECIALIST);
@@ -79,10 +79,10 @@ describe('Redux User Integration Tests', () => {
           users: [
             {
               id: createUserId('99'),
-              name: 'Redux User',
-              department: '5',
-              role: USER_ROLE_ENUM.SPECIALIST,
-              isActive: true,
+              displayName: 'Redux User',
+              department: Department.Claims,
+              authorities: USER_ROLE_ENUM.SPECIALIST,
+              enabled: true,
               initials: 'RU'
             }
           ],
@@ -99,7 +99,7 @@ describe('Redux User Integration Tests', () => {
           userQuarterlyStatus: {},
           quarterlySelection: {},
           userRoles: {
-            '99': { role: USER_ROLE_ENUM.SPECIALIST, department: '5' }
+            '99': { role: USER_ROLE_ENUM.SPECIALIST, department: 'Claims' }
           },
           loading: false,
           error: null
@@ -110,10 +110,10 @@ describe('Redux User Integration Tests', () => {
     // Verify that this store has different user data
     const state = storeWithDifferentUsers.getState() as RootState;
     expect(state.user.users).toHaveLength(1);
-    expect(state.user.users[0].name).toBe('Redux User');
+    expect(state.user.users[0].displayName).toBe('Redux User');
     
     // Verify that the original mock users are not in this store
-    const userNames = state.user.users.map(u => u.name);
+    const userNames = state.user.users.map(u => u.displayName);
     expect(userNames).not.toContain('John Smith');
     expect(userNames).not.toContain('Jane Doe');
     expect(userNames).toContain('Redux User');

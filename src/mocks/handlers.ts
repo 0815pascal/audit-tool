@@ -2,13 +2,15 @@ import {http, HttpResponse} from 'msw';
 import {
   CaseStatus,
   ClaimsStatus,
+  QuarterNumber,
+  QuarterPeriod
+} from '../types/types';
+import {
   createCaseAuditId,
   createCaseId,
   createUserId,
   isQuarterPeriod,
-  QuarterNumber,
-  QuarterPeriod
-} from '../types';
+} from '../types/typeHelpers';
 import {CASE_STATUS, CLAIMS_STATUS, QUARTER_CALCULATIONS} from '../constants';
 import {DEFAULT_VALUE_ENUM, USER_ROLE_ENUM} from '../enums';
 import {generateRealisticCaseNumber} from '../utils/statusUtils';
@@ -513,7 +515,7 @@ export const handlers = [
           caseNumber: createCaseId(40000000 + i),
           claimOwner: {
             userId: users[i % users.length].id,
-            role: users[i % users.length].role
+            role: users[i % users.length].authorities
           },
           claimsStatus: i % 2 === 0 ? CLAIMS_STATUS.FULL_COVER : CLAIMS_STATUS.PARTIAL_COVER,
           coverageAmount: Math.floor(Math.random() * 100000) + 1000,
@@ -539,7 +541,7 @@ export const handlers = [
           caseNumber: createCaseId(30000000 + i),
           claimOwner: {
             userId: users[i % users.length].id,
-            role: users[i % users.length].role
+            role: users[i % users.length].authorities
           },
           claimsStatus: i % 2 === 0 ? CLAIMS_STATUS.FULL_COVER : CLAIMS_STATUS.PARTIAL_COVER,
           coverageAmount: Math.floor(Math.random() * 100000) + 1000,
@@ -747,7 +749,7 @@ export const handlers = [
       
       // Generate mock user audits (would be one per eligible user)
       const userQuarterlyAudits = users
-        .filter(user => user.isActive)
+        .filter(user => user.enabled)
         .map(user => {
           const id = generateRealisticCaseNumber(); // Remove QUARTERLY prefix
           return {
@@ -756,7 +758,7 @@ export const handlers = [
             dossierId: id,
             userId: user.id,
             coverageAmount: Math.floor(
-              Math.random() * (user.role === USER_ROLE_ENUM.STAFF ? 30000 : 150000)
+              Math.random() * (user.authorities === USER_ROLE_ENUM.STAFF ? 30000 : 150000)
             ),
             claimsStatus: CLAIMS_STATUS.FULL_COVER,
             isAkoReviewed: false,
@@ -770,7 +772,7 @@ export const handlers = [
       const previousQuarterRandomAudits = Array.from({ length: 2 }).map((_, index) => {
         const id = generateRealisticCaseNumber(); // Remove PREV-QUARTER prefix
         // Assign to a random active user
-        const activeUsers = users.filter(user => user.isActive && user.role !== USER_ROLE_ENUM.READER);
+        const activeUsers = users.filter(user => user.enabled && user.authorities !== USER_ROLE_ENUM.READER);
         const randomUser = activeUsers[index % activeUsers.length];
         
         return {
