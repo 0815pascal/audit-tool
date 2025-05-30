@@ -362,34 +362,6 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
     showToast('Audit verified', TOAST_TYPE.SUCCESS);
   };
 
-  // Handle reset - clears all form fields
-  const handleReset = () => {
-    setComment('');
-    setRating('' as RatingValue);
-    setSelectedFindings(createEmptyFindings());
-    setSelectedDetailedFindings(createEmptyFindings());
-    
-    // Reset verifier to current user's initials
-    const getUserInitials = (userId: string): string => {
-      try {
-        const user = allUsers.find(u => u.id === userId);
-        if (user && 'initials' in user && user.initials) {
-          return user.initials;
-        }
-      } catch (error) {
-        console.error(`Error finding initials for user ${userId}:`, error);
-      }
-      
-      // If we can't find the user, generate initials from the userId
-      return userId?.substring(0, 2).toUpperCase() || 'XX';
-    };
-    
-    const currentUserInitials = getUserInitials(currentUserId || '');
-    setVerifier(currentUserInitials);
-    
-    showToast('Formular zurückgesetzt', TOAST_TYPE.INFO);
-  };
-
   // Handle when modal is being closed
   const handleCloseModal = () => {
     // Save current form state to Redux
@@ -595,13 +567,6 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
             size={BUTTON_SIZE.MEDIUM}
           >
             Abbrechen
-          </Button>
-          <Button
-            onClick={handleReset}
-            color={BUTTON_COLOR.DANGER}
-            size={BUTTON_SIZE.MEDIUM}
-          >
-            Zurücksetzen
           </Button>
           <Button
             onClick={handleVerify}

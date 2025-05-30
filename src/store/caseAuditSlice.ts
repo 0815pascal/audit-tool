@@ -27,7 +27,7 @@ import {
 import {CASE_TYPE_ENUM, CLAIMS_STATUS_ENUM, USER_ROLE_ENUM, VERIFICATION_STATUS_ENUM} from '../enums';
 import {QUARTER_CALCULATIONS} from '../constants';
 import {mapVerificationStatusToCaseAuditStatus} from '../utils/statusUtils';
-import {rejectAuditAPI, saveAuditVerification, VerificationResponse, verifyAuditAPI} from '../services';
+import {saveAuditVerification, VerificationResponse, verifyAuditAPI} from '../services';
 
 // Memoize the getCurrentQuarter function to avoid creating new objects on each call
 let cachedQuarter: Quarter | null = null;
@@ -211,31 +211,6 @@ export const verifyAuditThunk = createAsyncThunk<
   }
 );
 
-// Async thunk for rejecting audit
-export const rejectAuditThunk = createAsyncThunk<
-  VerificationResponse,
-  CaseAuditActionPayload,
-  { rejectValue: string }
->(
-  'caseAudit/rejectAudit',
-  async (payload, { rejectWithValue }) => {
-    try {
-      return await rejectAuditAPI(
-          payload.auditId,
-          payload.verifier,
-          {
-            comment: payload.comment,
-            rating: payload.rating,
-            specialFindings: payload.specialFindings,
-            detailedFindings: payload.detailedFindings
-          }
-      );
-    } catch (error) {
-      return rejectWithValue(error instanceof Error ? error.message : 'Failed to reject audit');
-    }
-  }
-);
-
 const caseAuditSlice = createSlice({
   name: 'caseAudit',
   initialState,
@@ -392,27 +367,6 @@ const caseAuditSlice = createSlice({
         verified: true,
         lastVerified: createISODateString(new Date())
       };
-    },
-    rejectAudit: (
-      state, 
-      action: PayloadAction<CaseAuditActionPayload>
-    ) => {
-      const { auditId, userId, verifier, comment, rating, specialFindings, detailedFindings } = action.payload;
-      
-      // Initialize audit data if it doesn't exist
-      if (!state.verifiedAudits[auditId]) {
-        state.verifiedAudits[auditId] = createDefaultCaseAuditData(userId);
-      }
-      
-      // Update audit verification
-      state.verifiedAudits[auditId].isVerified = false;
-      state.verifiedAudits[auditId].verifier = verifier;
-      state.verifiedAudits[auditId].comment = comment;
-      state.verifiedAudits[auditId].rating = rating;
-      state.verifiedAudits[auditId].specialFindings = specialFindings;
-      state.verifiedAudits[auditId].detailedFindings = detailedFindings;
-      // Explicitly set status to 'not-verified'
-      state.verifiedAudits[auditId].status = mapVerificationStatusToCaseAuditStatus(VERIFICATION_STATUS_ENUM.NOT_VERIFIED);
     },
     updateAuditStatus: (
       state,
@@ -618,20 +572,6 @@ const caseAuditSlice = createSlice({
         state.loading = false;
         state.error = action.payload ?? 'Failed to verify audit';
         console.error('Failed to verify audit on backend:', action.payload);
-      })
-      
-      // Handle rejectAuditThunk lifecycle
-      .addCase(rejectAuditThunk.pending, (state) => {
-        state.loading = true;
-      })
-      .addCase(rejectAuditThunk.fulfilled, (state, action) => {
-        state.loading = false;
-        console.log('Successfully rejected audit on backend:', action.payload);
-      })
-      .addCase(rejectAuditThunk.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload ?? 'Failed to reject audit';
-        console.error('Failed to reject audit on backend:', action.payload);
       });
   }
 });
@@ -639,7 +579,6 @@ const caseAuditSlice = createSlice({
 export const { 
   initializeState,
   verifyAudit,
-  rejectAudit,
   updateAuditStatus,
   selectQuarterlyAudits,
   updateAuditInProgress,

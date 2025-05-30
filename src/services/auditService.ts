@@ -1,6 +1,6 @@
-import { QuarterPeriod, CaseAuditData, FindingType, FindingsRecord, UserAuditForSelection, AuditForSelection, ISODateString } from '../types/types';
+import { QuarterPeriod, CaseAuditData, UserAuditForSelection, AuditForSelection, ISODateString, ApiResponse } from '../types/types';
 import { UserId, CaseAuditId } from '../types/brandedTypes';
-import { createCaseId } from '../types/typeHelpers';
+import { createCaseId, createEmptyFindings } from '../types/typeHelpers';
 import axios from 'axios';
 import {
   ApiCache,
@@ -314,17 +314,12 @@ export async function selectQuarterlyDossiers(
 
 // Backend API types for verification data
 export interface VerificationData {
-  auditId: number;
-  status: 'verified' | 'rejected' | 'in_progress' | 'not_verified';
   verifierId: number;
+  status: 'verified' | 'in_progress' | 'not_verified';
   rating?: string;
   comment?: string;
-  verificationDate?: string;
-  findings?: Array<{
-    type: string;
-    description: string;
-    category: 'special' | 'detailed';
-  }>;
+  findings?: Finding[];
+  isVerified?: boolean;
 }
 
 // Request payload for updating verification data
@@ -344,73 +339,6 @@ export interface VerificationResponse {
 }
 
 /**
- * Convert frontend findings to backend format
- */
-const convertFindingsToBackendFormat = (
-  specialFindings: FindingsRecord,
-  detailedFindings: FindingsRecord
-): VerificationData['findings'] => {
-  const findings: VerificationData['findings'] = [];
-
-  // Convert special findings
-  Object.entries(specialFindings).forEach(([key, value]) => {
-    if (value) {
-      findings.push({
-        type: key,
-        description: getSpecialFindingDescription(key as FindingType),
-        category: 'special'
-      });
-    }
-  });
-
-  // Convert detailed findings
-  Object.entries(detailedFindings).forEach(([key, value]) => {
-    if (value) {
-      findings.push({
-        type: key,
-        description: getDetailedFindingDescription(key as FindingType),
-        category: 'detailed'
-      });
-    }
-  });
-
-  return findings;
-};
-
-/**
- * Get description for special findings
- */
-const getSpecialFindingDescription = (findingType: FindingType): string => {
-  const descriptions: Record<string, string> = {
-    'FEEDBACK': 'Kundenfeedback über ausgezeichnete Bearbeitung',
-    'COMMUNICATION': 'Optimale Kundenkommunikation',
-    'RECOURSE': 'Überdurchschnittliche Leistung im Regress oder zur Schadenvermeidung',
-    'NEGOTIATION': 'Besonderes Verhandlungsgeschick',
-    'PERFECT_TIMING': 'Perfekte zeitliche und inhaltliche Bearbeitung'
-  };
-  return descriptions[findingType] || 'Special finding';
-};
-
-/**
- * Get description for detailed findings
- */
-const getDetailedFindingDescription = (findingType: FindingType): string => {
-  const descriptions: Record<string, string> = {
-    'FACTS_INCORRECT': 'Relevanter Sachverhalt nicht plausibel dargestellt.',
-    'TERMS_INCORRECT': 'Liefer-/Vertragsbedingungen nicht erfasst.',
-    'COVERAGE_INCORRECT': 'Deckungssumme nicht korrekt erfasst.',
-    'ADDITIONAL_COVERAGE_MISSED': 'Zusatzdeckungen nicht berücksichtigt.',
-    'DECISION_NOT_COMMUNICATED': 'Entschädigungsabrechnung nicht fristgerecht.',
-    'COLLECTION_INCORRECT': 'Falsche oder keine Inkassomassnahmen.',
-    'RECOURSE_WRONG': 'Regressmassnahmen falsch beurteilt.',
-    'COST_RISK_WRONG': 'Kostenrisiko rechtlicher Beitreibung falsch eingeschätzt.',
-    'BPR_WRONG': 'BPR nicht richtig instruiert.',
-    'COMMUNICATION_POOR': 'Kommunikation mit VN verbesserungswürdig.'
-  };
-  return descriptions[findingType] || 'Detailed finding';
-};
-
-/**
  * Save audit verification data (in-progress state)
  */
 /**
@@ -424,17 +352,11 @@ export const saveAuditVerification = async (
   const numericAuditId = parseInt(typeof auditId === 'string' ? auditId.replace(/\D/g, '') : String(auditId).replace(/\D/g, ''));
   const numericVerifierId = parseInt(String(verifierId));
 
-  const findings = convertFindingsToBackendFormat(
-      caseAuditData.specialFindings,
-      caseAuditData.detailedFindings
-  );
-
   const requestData: UpdateVerificationRequest = {
     status: 'in_progress',
     verifierId: numericVerifierId,
     rating: caseAuditData.rating,
-    comment: caseAuditData.comment,
-    findings: findings
+    comment: caseAuditData.comment
   };
 
   console.log(`[API] Saving verification data for audit ${auditId}:`, requestData);
@@ -452,38 +374,33 @@ export const saveAuditVerification = async (
 };
 
 /**
- * Verify audit (mark as verified)
+ * Verify audit
  */
 export const verifyAuditAPI = async (
-  auditId: CaseAuditId | string,
-  verifierId: UserId,
+  caseAuditId: CaseAuditId | string,
+  verifier: UserId | string,
   caseAuditData: CaseAuditData
 ): Promise<VerificationResponse> => {
+  const numericAuditId = parseInt(typeof caseAuditId === 'string' ? caseAuditId.replace(/\D/g, '') : String(caseAuditId).replace(/\D/g, ''));
+  const numericVerifierId = parseInt(typeof verifier === 'string' ? verifier.replace(/\D/g, '') : String(verifier).replace(/\D/g, ''));
+
+  const requestData = {
+    verifier: numericVerifierId,
+    comment: caseAuditData.comment || '',
+    rating: caseAuditData.rating || '',
+    specialFindings: caseAuditData.specialFindings || createEmptyFindings(),
+    detailedFindings: caseAuditData.detailedFindings || createEmptyFindings(),
+    status: 'verified' as const,
+    isVerified: true
+  };
+
   try {
-    const numericAuditId = parseInt(typeof auditId === 'string' ? auditId.replace(/\D/g, '') : String(auditId).replace(/\D/g, ''));
-    const numericVerifierId = parseInt(String(verifierId));
+    console.log(`[API] Verifying audit ${caseAuditId}:`, requestData);
 
-    const findings = convertFindingsToBackendFormat(
-      caseAuditData.specialFindings,
-      caseAuditData.detailedFindings
-    );
-
-    const requestData: UpdateVerificationRequest = {
-      status: 'verified',
-      verifierId: numericVerifierId,
-      rating: caseAuditData.rating,
-      comment: caseAuditData.comment,
-      findings: findings
-    };
-
-    console.log(`[API] Verifying audit ${auditId}:`, requestData);
-
-    const response = await api.put<VerificationResponse>(
-      `/audit-verification/${numericAuditId}`,
-      requestData
-    );
+    const response = await api.put<ApiResponse<VerificationData>>(`/audit-verification/${numericAuditId}`, requestData);
 
     if (!response.data.success) {
+      console.error(`Failed to verify audit: ${response.data.error}`);
       throw new Error(response.data.error ?? 'Failed to verify audit');
     }
 
@@ -492,44 +409,6 @@ export const verifyAuditAPI = async (
     console.error('[API] Error verifying audit:', error);
     throw error;
   }
-};
-
-/**
- * Reject audit
- */
-export const rejectAuditAPI = async (
-    caseAuditId: CaseAuditId | string,
-    verifierId: UserId,
-    caseAuditData: CaseAuditData
-): Promise<VerificationResponse> => {
-  const numericAuditId = parseInt(typeof caseAuditId === 'string' ? caseAuditId.replace(/\D/g, '') : String(caseAuditId).replace(/\D/g, ''));
-  const numericVerifierId = parseInt(String(verifierId));
-
-  const findings = convertFindingsToBackendFormat(
-      caseAuditData.specialFindings,
-      caseAuditData.detailedFindings
-  );
-
-  const requestData: UpdateVerificationRequest = {
-    status: 'rejected',
-    verifierId: numericVerifierId,
-    rating: caseAuditData.rating,
-    comment: caseAuditData.comment,
-    findings: findings
-  };
-
-  console.log(`[API] Rejecting audit ${caseAuditId}:`, requestData);
-
-  const response = await api.put<VerificationResponse>(
-      `/audit-verification/${numericAuditId}`,
-      requestData
-  );
-
-  if (!response.data.success) {
-    throw new Error(response.data.error ?? 'Failed to reject audit');
-  }
-
-  return response.data;
 };
 
 /**

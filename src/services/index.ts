@@ -27,7 +27,6 @@ export {
   selectQuarterlyDossiers,
   saveAuditVerification,
   verifyAuditAPI,
-  rejectAuditAPI,
   getAuditVerification
 } from './auditService';
 

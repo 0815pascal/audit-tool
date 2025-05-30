@@ -1,20 +1,20 @@
 import {
-  ACTION_STATUS_ENUM,
-  CASE_STATUS_ENUM,
-  CLAIMS_STATUS_ENUM,
+  ClaimsStatus
+} from './types/types';
+import { CASE_STATUS_ENUM, CLAIMS_STATUS_ENUM, ACTION_STATUS_ENUM } from './enums';
+
+import {
   USER_ROLE_ENUM,
   CASE_TYPE_ENUM,
   TAB_VIEW_ENUM
 } from './enums';
 
 import {
-  ClaimsStatus,
-  CaseStatus,
   CaseType,
   FindingType,
   DetailedFindingType,
   SpecialFindingType,
-  ActionStatus,
+  ActionStatus
 } from './types/types';
 
 // Claims status options 
@@ -26,13 +26,15 @@ export const CLAIMS_STATUS: Record<ClaimsStatus, ClaimsStatus> = {
 };
 
 // Case status options
-export const CASE_STATUS: Record<CaseStatus, CaseStatus> = {
+export const CASE_STATUS_MAPPING = {
   [CASE_STATUS_ENUM.OPEN]: CASE_STATUS_ENUM.OPEN,
   [CASE_STATUS_ENUM.IN_PROGRESS]: CASE_STATUS_ENUM.IN_PROGRESS,
   [CASE_STATUS_ENUM.COMPENSATED]: CASE_STATUS_ENUM.COMPENSATED,
-  [CASE_STATUS_ENUM.REJECTED]: CASE_STATUS_ENUM.REJECTED,
   [CASE_STATUS_ENUM.CLOSED]: CASE_STATUS_ENUM.CLOSED
 };
+
+// Export as CASE_STATUS for backward compatibility
+export const CASE_STATUS = CASE_STATUS_MAPPING;
 
 // Case types
 export const CASE_TYPES: Record<CaseType, CaseType> = {

@@ -4,7 +4,6 @@ import {
   selectUserQuarterlyStatus,
   selectUsersNeedingAudits,
   verifyAudit,
-  rejectAudit,
   getCurrentQuarter,
   initializeState,
   updateAuditStatus,
@@ -16,8 +15,7 @@ import {
   setCurrentUser,
   setUserRole,
   fetchCurrentUser,
-  verifyAuditThunk,
-  rejectAuditThunk
+  verifyAuditThunk
 } from '../store/caseAuditSlice';
 import {
   CaseAuditStatus,
@@ -181,28 +179,6 @@ export const useCaseAuditHandlers = () => {
     
     // Then persist to backend API
     dispatch(verifyAuditThunk({
-      auditId: auditIdBranded,
-      userId: currentUserId,
-      verifier: verifierBranded,
-      ...caseAuditData
-    }));
-  };
-  
-  // Handle reject audit
-  const handleReject = (auditId: CaseAuditId | string, verifier: UserId | string, caseAuditData: CaseAuditData): void => {
-    const auditIdBranded = typeof auditId === 'string' ? createCaseAuditId(auditId) : auditId;
-    const verifierBranded = ensureUserId(verifier);
-    
-    // First update local Redux state
-    dispatch(rejectAudit({
-      auditId: auditIdBranded,
-      userId: currentUserId,
-      verifier: verifierBranded,
-      ...caseAuditData
-    }));
-    
-    // Then persist to backend API
-    dispatch(rejectAuditThunk({
       auditId: auditIdBranded,
       userId: currentUserId,
       verifier: verifierBranded,
@@ -435,7 +411,6 @@ export const useCaseAuditHandlers = () => {
     handleSelectUser,
     handleUserChange,
     handleVerify,
-    handleReject,
     handleStatusChange,
     auditToCaseAudit,
     getRandomAuditForUser,
