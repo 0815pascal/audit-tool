@@ -1,26 +1,19 @@
-import {
-  ClaimsStatus
-} from './types/types';
-import { CASE_STATUS_ENUM, CLAIMS_STATUS_ENUM, ACTION_STATUS_ENUM } from './enums';
-
-import {
+import { 
+  CASE_STATUS_ENUM, 
+  CLAIMS_STATUS_ENUM, 
+  ACTION_STATUS_ENUM, 
   USER_ROLE_ENUM,
   CASE_TYPE_ENUM,
-  TAB_VIEW_ENUM
+  TAB_VIEW_ENUM,
+  DETAILED_FINDING_ENUM,
+  SPECIAL_FINDING_ENUM
 } from './enums';
-
-import {
-  CaseType,
-  DetailedFindingType,
-  SpecialFindingType,
-  ActionStatus
-} from './types/types';
 
 // API configuration
 export const API_BASE_PATH = '/rest/kuk/v1';
 
 // Claims status options 
-export const CLAIMS_STATUS: Record<ClaimsStatus, ClaimsStatus> = {
+export const CLAIMS_STATUS: Record<CLAIMS_STATUS_ENUM, CLAIMS_STATUS_ENUM> = {
   [CLAIMS_STATUS_ENUM.FULL_COVER]: CLAIMS_STATUS_ENUM.FULL_COVER,
   [CLAIMS_STATUS_ENUM.PARTIAL_COVER]: CLAIMS_STATUS_ENUM.PARTIAL_COVER,
   [CLAIMS_STATUS_ENUM.DECLINED]: CLAIMS_STATUS_ENUM.DECLINED,
@@ -36,7 +29,7 @@ export const CASE_STATUS_MAPPING = {
 };
 
 // Case types
-export const CASE_TYPES: Record<CaseType, CaseType> = {
+export const CASE_TYPES: Record<CASE_TYPE_ENUM, CASE_TYPE_ENUM> = {
   [CASE_TYPE_ENUM.USER_QUARTERLY]: CASE_TYPE_ENUM.USER_QUARTERLY,
   [CASE_TYPE_ENUM.PREVIOUS_QUARTER_RANDOM]: CASE_TYPE_ENUM.PREVIOUS_QUARTER_RANDOM
 };
@@ -56,7 +49,7 @@ export const TAB_VIEWS_DISPLAY: Record<TAB_VIEW_ENUM, string> = {
 };
 
 // Action status constants for async operations
-export const ACTION_STATUS: Record<ActionStatus, ActionStatus> = {
+export const ACTION_STATUS: Record<ACTION_STATUS_ENUM, ACTION_STATUS_ENUM> = {
   [ACTION_STATUS_ENUM.IDLE]: ACTION_STATUS_ENUM.IDLE,
   [ACTION_STATUS_ENUM.LOADING]: ACTION_STATUS_ENUM.LOADING,
   [ACTION_STATUS_ENUM.SUCCEEDED]: ACTION_STATUS_ENUM.SUCCEEDED,
@@ -64,25 +57,25 @@ export const ACTION_STATUS: Record<ActionStatus, ActionStatus> = {
 };
 
 // Finding types - Split into detailed and special findings
-export const DETAILED_FINDING_TYPES: Record<DetailedFindingType, string> = {
-  facts_incorrect: "Facts incorrect",
-  terms_incorrect: "Terms incorrect",
-  coverage_incorrect: "Coverage incorrect",
-  additional_coverage_missed: "Additional coverage missed",
-  decision_not_communicated: "Decision not communicated",
-  collection_incorrect: "Collection incorrect",
-  recourse_wrong: "Recourse wrong",
-  cost_risk_wrong: "Cost risk wrong",
-  bpr_wrong: "BPR wrong",
-  communication_poor: "Communication poor"
+export const DETAILED_FINDING_TYPES: Record<DETAILED_FINDING_ENUM, string> = {
+  [DETAILED_FINDING_ENUM.FACTS_INCORRECT]: "Facts incorrect",
+  [DETAILED_FINDING_ENUM.TERMS_INCORRECT]: "Terms incorrect",
+  [DETAILED_FINDING_ENUM.COVERAGE_INCORRECT]: "Coverage incorrect",
+  [DETAILED_FINDING_ENUM.ADDITIONAL_COVERAGE_MISSED]: "Additional coverage missed",
+  [DETAILED_FINDING_ENUM.DECISION_NOT_COMMUNICATED]: "Decision not communicated",
+  [DETAILED_FINDING_ENUM.COLLECTION_INCORRECT]: "Collection incorrect",
+  [DETAILED_FINDING_ENUM.RECOURSE_WRONG]: "Recourse wrong",
+  [DETAILED_FINDING_ENUM.COST_RISK_WRONG]: "Cost risk wrong",
+  [DETAILED_FINDING_ENUM.BPR_WRONG]: "BPR wrong",
+  [DETAILED_FINDING_ENUM.COMMUNICATION_POOR]: "Communication poor"
 };
 
-export const SPECIAL_FINDING_TYPES: Record<SpecialFindingType, string> = {
-  feedback: "Feedback",
-  communication: "Communication",
-  recourse: "Recourse",
-  negotiation: "Negotiation",
-  perfect_timing: "Perfect timing"
+export const SPECIAL_FINDING_TYPES: Record<SPECIAL_FINDING_ENUM, string> = {
+  [SPECIAL_FINDING_ENUM.FEEDBACK]: "Feedback",
+  [SPECIAL_FINDING_ENUM.COMMUNICATION]: "Communication",
+  [SPECIAL_FINDING_ENUM.RECOURSE]: "Recourse",
+  [SPECIAL_FINDING_ENUM.NEGOTIATION]: "Negotiation",
+  [SPECIAL_FINDING_ENUM.PERFECT_TIMING]: "Perfect timing"
 };
 
 // Coverage amount limits by user role

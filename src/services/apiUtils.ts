@@ -1,35 +1,29 @@
-import { 
-  CachedItem, 
-  ClaimsStatus,
-  UserRole, 
-  CaseStatus, 
+import type { 
+  CachedItem,
   FindingType, 
   FindingCategory,
   QuarterPeriod
 } from '../types/types';
-import {
+import type { 
+  CacheKey, 
+  FindingId,
+  CaseAuditId,
   UserId,
-  CaseId,
-  CaseAuditId
+  CaseId
 } from '../types/brandedTypes';
+import { USER_ROLE_ENUM, CLAIMS_STATUS_ENUM, CASE_STATUS_ENUM } from '../enums';
 
-// 5 minutes
-
-// Common error types
+// Type aliases for easier use in this file
+type UserRole = USER_ROLE_ENUM;
+type ClaimsStatus = CLAIMS_STATUS_ENUM;
+type CaseStatus = CASE_STATUS_ENUM;
 
 // Cache-related branded types for stronger typings
-export type CacheKey = string & { readonly __brand: 'CacheKey' };
-
-export function createCacheKey(prefix: string, identifier: string): CacheKey {
-  return `${prefix}-${identifier}` as CacheKey;
-}
+export const createCacheKey = (prefix: string, identifier: string): CacheKey => 
+  `${prefix}-${identifier}` as CacheKey;
 
 // Finding ID branded type
-export type FindingId = number & { readonly __brand: 'FindingId' };
-
-export function createFindingId(id: number): FindingId {
-  return id as FindingId;
-}
+export const createFindingId = (id: number): FindingId => id as FindingId;
 
 // Create an API cache type for consistent usage
 export type ApiCache<T> = Map<CacheKey, CachedItem<T>>;

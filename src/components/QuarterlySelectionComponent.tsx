@@ -16,7 +16,7 @@ import {
   isQuarterPeriod,
   createCaseAuditId,
 } from '../types/typeHelpers';
-import { USER_ROLE_ENUM, CASE_TYPE_ENUM, AUDIT_STATUS_ENUM, DEFAULT_VALUE_ENUM } from '../enums';
+import { USER_ROLE_ENUM, CASE_TYPE_ENUM, AUDIT_STATUS_ENUM, DEFAULT_VALUE_ENUM, CLAIMS_STATUS_ENUM } from '../enums';
 import { useCaseAuditHandlers } from '../hooks/useCaseAuditHandlers';
 import { PruefensterModal } from './common';
 import './QuarterlySelectionComponent.css';
@@ -229,9 +229,9 @@ const QuarterlySelectionComponent: React.FC = () => {
         isSpecialist: false,
         quarter: (audit.quarter as QuarterPeriod) || (selectedQuarter), // Use audit's quarter or fallback
         year: audit.year ?? parseInt(selectedQuarter.split('-')[1]),
-        claimsStatus: (audit.claimsStatus as ClaimsStatus) || ('FULL_COVER' as ClaimsStatus),
+        claimsStatus: (audit.claimsStatus as ClaimsStatus) || CLAIMS_STATUS_ENUM.FULL_COVER,
         auditor: audit.auditor ? ensureUserId(audit.auditor) : ensureUserId(currentUserId),
-        status: audit.status ? (audit.status as CaseAuditStatus) : (audit.isCompleted ? CaseAuditStatus.COMPLETED : CaseAuditStatus.PENDING),
+        status: audit.status ? (audit.status as CaseAuditStatus) : (audit.isCompleted ? AUDIT_STATUS_ENUM.COMPLETED : AUDIT_STATUS_ENUM.PENDING),
         // Use latest data from Redux if available, otherwise fall back to audit data
         comment: latestAuditData?.comment || audit.comment || '',
         rating: (latestAuditData?.rating || audit.rating || '') as RatingValue,
@@ -297,16 +297,15 @@ const QuarterlySelectionComponent: React.FC = () => {
       return statusString as AUDIT_STATUS_ENUM;
     }
     
-    // Map CaseAuditStatus to AUDIT_STATUS_ENUM 
+    // Map CaseAuditStatus to AUDIT_STATUS_ENUM
     switch (statusString) {
-      case CaseAuditStatus.COMPLETED:
+      case AUDIT_STATUS_ENUM.COMPLETED:
         return AUDIT_STATUS_ENUM.COMPLETED;
-      case CaseAuditStatus.IN_PROGRESS:
+      case AUDIT_STATUS_ENUM.IN_PROGRESS:
         return AUDIT_STATUS_ENUM.IN_PROGRESS;
-      case CaseAuditStatus.PENDING:
+      case AUDIT_STATUS_ENUM.PENDING:
         return AUDIT_STATUS_ENUM.PENDING;
       default:
-        console.warn(`Unknown status: ${statusString}, defaulting to PENDING`);
         return AUDIT_STATUS_ENUM.PENDING;
     }
   };

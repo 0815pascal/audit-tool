@@ -32,7 +32,7 @@ import {
   TOAST_TYPE,
   AUDIT_STATUS_ENUM
 } from '../../enums';
-import {convertToAuditStatus} from '../../utils/statusUtils';
+import {convertStatusToAuditStatus} from '../../utils/statusUtils';
 
 // Use the useUsers hook to get user data from Redux store
 import {useUsers} from '../../hooks/useUsers';
@@ -59,7 +59,7 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
   
   const [currentStatus, setCurrentStatus] = useState<AUDIT_STATUS_ENUM>(
     audit.status ? 
-      convertToAuditStatus(audit.status as CaseAuditStatus | AUDIT_STATUS_ENUM) :
+      convertStatusToAuditStatus(audit.status as CaseAuditStatus | AUDIT_STATUS_ENUM) :
       (audit.isCompleted ? AUDIT_STATUS_ENUM.COMPLETED : AUDIT_STATUS_ENUM.PENDING)
   );
 
@@ -173,7 +173,7 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
       
       // Update the current status based on audit
       setCurrentStatus(audit.status ? 
-        convertToAuditStatus(audit.status as CaseAuditStatus | AUDIT_STATUS_ENUM) :
+        convertStatusToAuditStatus(audit.status as CaseAuditStatus | AUDIT_STATUS_ENUM) :
         (audit.isCompleted ? AUDIT_STATUS_ENUM.COMPLETED : AUDIT_STATUS_ENUM.PENDING));
       
       // Update findings with all options set to false by default
@@ -251,7 +251,7 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
     } else {
       // Only reset to NOT_VERIFIED if the audit wasn't already verified
       const auditCompletionStatus = audit.status ? 
-        convertToAuditStatus(audit.status as CaseAuditStatus | AUDIT_STATUS_ENUM) :
+        convertStatusToAuditStatus(audit.status as CaseAuditStatus | AUDIT_STATUS_ENUM) :
         (audit.isCompleted ? AUDIT_STATUS_ENUM.COMPLETED : AUDIT_STATUS_ENUM.PENDING);
       if (auditCompletionStatus !== AUDIT_STATUS_ENUM.COMPLETED) {
         setCurrentStatus(audit.isCompleted ? AUDIT_STATUS_ENUM.COMPLETED : AUDIT_STATUS_ENUM.PENDING);

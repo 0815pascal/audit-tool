@@ -9,5 +9,9 @@ export type UserId = string & { readonly __brand: unique symbol };
 export type CaseId = number & { readonly __brand: unique symbol };
 export type PolicyId = number & { readonly __brand: unique symbol };
 
+// Branded types for API utilities (moved from apiUtils.ts for centralization)
+export type CacheKey = string & { readonly __brand: 'CacheKey' };
+export type FindingId = number & { readonly __brand: 'FindingId' };
+
 // Ensure year values are reasonable
 export type ValidYear = number & { readonly brand: unique symbol }; 

@@ -24,7 +24,10 @@ import {
 import {CASE_TYPE_ENUM, CLAIMS_STATUS_ENUM, USER_ROLE_ENUM, AUDIT_STATUS_ENUM} from '../enums';
 import {QUARTER_CALCULATIONS, API_BASE_PATH} from '../constants';
 import {mapAuditStatusToCaseAuditStatus} from '../utils/statusUtils';
-import {saveAuditCompletion, CompletionResponse, completeAuditAPI} from '../services/auditService';
+import {
+  completeAuditAPI,
+  CompletionResponse
+} from '../services/auditService';
 
 // Memoize the getCurrentQuarter function to avoid creating new objects on each call
 let cachedQuarter: Quarter | null = null;
@@ -143,7 +146,7 @@ export const saveAuditCompletionThunk = createAsyncThunk<
     try {
       console.log('[Redux] Saving audit completion:', payload);
       
-      return await saveAuditCompletion(
+      return await completeAuditAPI(
         payload.auditId,
         payload.auditor,
         payload
@@ -339,7 +342,7 @@ const caseAuditSlice = createSlice({
       state.auditData[auditId].status = status;
       
       // Update isCompleted based on the status value
-      state.auditData[auditId].isCompleted = status === 'completed';
+      state.auditData[auditId].isCompleted = status === AUDIT_STATUS_ENUM.COMPLETED;
     },
     // Update user roles
     updateUserRole: (

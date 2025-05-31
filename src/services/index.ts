@@ -3,24 +3,28 @@ export * from './apiUtils';
 
 // Re-export types from apiUtils
 export type {
-  AuditRecord,
-  CaseObj,
-  AuditPayload,
-  Finding,
-  CacheKey,
-  Auditor,
   ClaimOwner,
-  FindingId
+  CaseObj,
+  Auditor,
+  AuditRecord,
+  Finding,
+  AuditPayload,
+  ApiCache
 } from './apiUtils';
 
-// Re-export completion types from auditService
+// Re-export branded types from brandedTypes
 export type {
-  CompletionData,
-  CompletionResponse,
-  UpdateCompletionRequest
-} from './auditService';
+  CacheKey,
+  FindingId
+} from '../types/brandedTypes';
 
-// Re-export all API functions for centralized access
+// Re-export helper functions
+export {
+  createCacheKey,
+  createFindingId
+} from './apiUtils';
+
+// Re-export audit service functions
 export {
   getAuditsByQuarter,
   getAuditsByAuditor,
@@ -32,10 +36,13 @@ export {
   exportAuditsForQuarter,
   getRandomAuditForUser,
   selectQuarterlyDossiers,
-  saveAuditCompletion,
   completeAuditAPI,
   getAuditCompletion
 } from './auditService';
 
-// Re-export helper functions
-export { createCacheKey, createFindingId } from './apiUtils';
+// Re-export types separately
+export type {
+  CompletionData,
+  UpdateCompletionRequest,
+  CompletionResponse
+} from './auditService';

@@ -8,11 +8,12 @@ import {
   CaseObj,
   AuditPayload,
   Finding,
-  CacheKey,
   createCacheKey
 } from './apiUtils';
 import { HTTP_METHOD } from '../enums';
 import { API_BASE_PATH } from '../constants';
+import { AUDIT_STATUS_ENUM } from '../enums';
+import { CacheKey } from '../types/brandedTypes';
 
 // Create an axios instance with base URL and improved error handling
 const api = axios.create({
@@ -20,7 +21,10 @@ const api = axios.create({
   // Add request timeout
   timeout: 30000,
   // Accept all status codes to handle them in catch blocks
-  validateStatus: () => true
+  validateStatus: () => true,
+  headers: {
+    'Content-Type': 'application/json'
+  }
 });
 
 // Cache TTL configuration
@@ -317,7 +321,7 @@ export async function selectQuarterlyDossiers(
 
 export interface CompletionData {
   auditorId: number;
-  status: 'completed' | 'in_progress' | 'pending';
+  status: AUDIT_STATUS_ENUM;
   rating?: string;
   comment?: string;
   findings?: Finding[];
@@ -325,7 +329,9 @@ export interface CompletionData {
 }
 
 export interface UpdateCompletionRequest {
-  status: CompletionData['status'];
+  auditId: CaseAuditId;
+  auditor: UserId;
+  status: AUDIT_STATUS_ENUM;
   auditorId: number;
   rating?: string;
   comment?: string;
@@ -334,46 +340,8 @@ export interface UpdateCompletionRequest {
 
 export interface CompletionResponse {
   success: boolean;
-  data?: CompletionData;
-  error?: string;
+  data: CompletionData;
 }
-
-export const saveAuditCompletion = async (
-    auditId: CaseAuditId | string,
-    auditorId: UserId,
-    caseAuditData: CaseAuditData
-): Promise<CompletionResponse> => {
-  try {
-    console.log(`[API] Saving audit completion for ${auditId}:`, caseAuditData);
-
-    const response = await fetch(`${API_BASE_PATH}/audit/${auditId}/complete`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        auditorId,
-        status: 'completed' as const,
-        rating: caseAuditData.rating,
-        comment: caseAuditData.comment,
-        specialFindings: caseAuditData.specialFindings,
-        detailedFindings: caseAuditData.detailedFindings,
-        isCompleted: true
-      })
-    });
-
-    const data = await response.json();
-    if (!response.ok) {
-      console.error(`Failed to save audit completion: ${data.error}`);
-      throw new Error(data.error ?? 'Failed to save audit completion');
-    }
-
-    return data;
-  } catch (error) {
-    console.error('[API] Error saving audit completion:', error);
-    throw error;
-  }
-};
 
 export const completeAuditAPI = async (
   caseAuditId: CaseAuditId | string,
@@ -392,7 +360,7 @@ export const completeAuditAPI = async (
         comment: caseAuditData.comment,
         specialFindings: caseAuditData.specialFindings,
         detailedFindings: caseAuditData.detailedFindings,
-        status: 'completed' as const,
+        status: AUDIT_STATUS_ENUM.COMPLETED,
         isCompleted: true
       })
     });

@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { QUARTER_CALCULATIONS } from '../constants';
+import { 
+  CLAIMS_STATUS_ENUM, 
+  USER_ROLE_ENUM 
+} from '../enums';
 
 /**
  * Tests for the notificationDate functionality introduced to the backend API.
@@ -70,9 +74,9 @@ describe('NotificationDate API Functionality', () => {
         caseNumber: 30045678,
         claimOwner: {
           userId: 1,
-          role: 'TEAM_LEADER'
+          role: USER_ROLE_ENUM.TEAM_LEADER
         },
-        claimsStatus: 'FULL_COVER',
+        claimsStatus: CLAIMS_STATUS_ENUM.FULL_COVER,
         coverageAmount: 25000.00,
         caseStatus: 'COMPENSATED',
         notificationDate: '2025-04-20'
@@ -92,8 +96,8 @@ describe('NotificationDate API Functionality', () => {
       // The new API response should include all existing fields plus notificationDate
       const apiResponse = {
         caseNumber: 123,
-        claimOwner: { userId: 1, role: 'TEAM_LEADER' },
-        claimsStatus: 'FULL_COVER',
+        claimOwner: { userId: 1, role: USER_ROLE_ENUM.TEAM_LEADER },
+        claimsStatus: CLAIMS_STATUS_ENUM.FULL_COVER,
         coverageAmount: 25000.00,
         caseStatus: 'COMPENSATED',
         notificationDate: '2025-04-20' // New field
@@ -120,7 +124,7 @@ describe('NotificationDate API Functionality', () => {
         date: '2025-04-10',
         notificationDate: '2025-04-20', // Quarter deduction should use this
         caseNumber: 30045678,
-        claimsStatus: 'FULL_COVER',
+        claimsStatus: CLAIMS_STATUS_ENUM.FULL_COVER,
         coverageAmount: 525,
         caseStatus: 'COMPENSATED'
       };

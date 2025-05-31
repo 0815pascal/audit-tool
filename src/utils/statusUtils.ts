@@ -24,17 +24,16 @@ export const generateRealisticCaseNumber = (): string => {
  * Since both enums use the same underlying values, this is a simple cast with validation.
  */
 export function mapAuditStatusToCaseAuditStatus(status: AUDIT_STATUS_ENUM): CaseAuditStatus {
-  // Direct mapping since values are now aligned
+  // Since CaseAuditStatus is now just an alias for AUDIT_STATUS_ENUM, we can return the input directly
   switch (status) {
     case AUDIT_STATUS_ENUM.COMPLETED:
-      return CaseAuditStatus.COMPLETED;
+      return AUDIT_STATUS_ENUM.COMPLETED;
     case AUDIT_STATUS_ENUM.IN_PROGRESS:
-      return CaseAuditStatus.IN_PROGRESS;
+      return AUDIT_STATUS_ENUM.IN_PROGRESS;
     case AUDIT_STATUS_ENUM.PENDING:
-      return CaseAuditStatus.PENDING;
+      return AUDIT_STATUS_ENUM.PENDING;
     default:
-      console.warn(`Unknown audit status: ${status}. Using PENDING as fallback.`);
-      return CaseAuditStatus.PENDING;
+      return AUDIT_STATUS_ENUM.PENDING;
   }
 }
 
@@ -43,16 +42,15 @@ export function mapAuditStatusToCaseAuditStatus(status: AUDIT_STATUS_ENUM): Case
  * Since both enums use the same underlying values, this is a simple cast with validation.
  */
 export function mapCaseAuditStatusToAuditStatus(status: CaseAuditStatus): AUDIT_STATUS_ENUM {
-  // Direct mapping since values are now aligned
+  // Since CaseAuditStatus is now just an alias for AUDIT_STATUS_ENUM, we can return the input directly
   switch (status) {
-    case CaseAuditStatus.COMPLETED:
+    case AUDIT_STATUS_ENUM.COMPLETED:
       return AUDIT_STATUS_ENUM.COMPLETED;
-    case CaseAuditStatus.IN_PROGRESS:
+    case AUDIT_STATUS_ENUM.IN_PROGRESS:
       return AUDIT_STATUS_ENUM.IN_PROGRESS;
-    case CaseAuditStatus.PENDING:
+    case AUDIT_STATUS_ENUM.PENDING:
       return AUDIT_STATUS_ENUM.PENDING;
     default:
-      console.warn(`Unknown case audit status: ${status}. Using PENDING as fallback.`);
       return AUDIT_STATUS_ENUM.PENDING;
   }
 }
@@ -60,20 +58,17 @@ export function mapCaseAuditStatusToAuditStatus(status: CaseAuditStatus): AUDIT_
 /**
  * Safely converts a status value of either type to AUDIT_STATUS_ENUM
  */
-export function convertToAuditStatus(
+export function convertStatusToAuditStatus(
   status: CaseAuditStatus | AUDIT_STATUS_ENUM | string
 ): AUDIT_STATUS_ENUM {
-  // If it's already an AUDIT_STATUS_ENUM
-  if (Object.values(AUDIT_STATUS_ENUM).includes(status as AUDIT_STATUS_ENUM)) {
-    return status as AUDIT_STATUS_ENUM;
+  // Handle string inputs
+  if (typeof status === 'string') {
+    // If it's a CaseAuditStatus (which is now just AUDIT_STATUS_ENUM)
+    if (Object.values(AUDIT_STATUS_ENUM).includes(status as AUDIT_STATUS_ENUM)) {
+      return mapCaseAuditStatusToAuditStatus(status as CaseAuditStatus);
+    }
   }
   
-  // If it's a CaseAuditStatus
-  if (Object.values(CaseAuditStatus).includes(status as CaseAuditStatus)) {
-    return mapCaseAuditStatusToAuditStatus(status as CaseAuditStatus);
-  }
-  
-  // Default fallback
-  console.warn(`Unknown status value: ${status}. Using PENDING as fallback.`);
-  return AUDIT_STATUS_ENUM.PENDING;
+  // If it's already an AUDIT_STATUS_ENUM, return it
+  return status as AUDIT_STATUS_ENUM;
 }

@@ -1,6 +1,5 @@
 import { 
   ClaimsStatus, 
-  CaseStatus, 
   QuarterPeriod,
   FindingType,
   CaseType,
@@ -14,6 +13,7 @@ import {
   UserId,
   CaseId
 } from '../types/brandedTypes';
+import { CASE_STATUS_ENUM } from '../enums';
 
 /**
  * Mock-specific types for MSW handlers and test data
@@ -55,7 +55,7 @@ export interface ApiCaseResponse {
   };
   claimsStatus: ClaimsStatus;
   coverageAmount: number;
-  caseStatus: CaseStatus;
+  caseStatus: CASE_STATUS_ENUM;
   notificationDate: string;
   notifiedCurrency: string;
 }
@@ -90,7 +90,7 @@ export interface ApiAuditRequestPayload {
     };
     claimsStatus?: ClaimsStatus;
     coverageAmount?: number;
-    caseStatus?: CaseStatus;
+    caseStatus?: CASE_STATUS_ENUM;
     notifiedCurrency?: string;
     [key: string]: unknown;
   };

@@ -2,7 +2,6 @@ import {
   FINDING_CATEGORY,
   TOAST_TYPE,
   ACTION_STATUS_ENUM,
-  CASE_STATUS_ENUM,
   CLAIMS_STATUS_ENUM,
   USER_ROLE_ENUM,
   CASE_TYPE_ENUM,
@@ -23,12 +22,8 @@ import type {
 
 // CaseAudit types moved from caseAuditTypes.ts
 
-// Enum for CaseAuditStatus
-export enum CaseAuditStatus {
-  PENDING = 'pending',
-  IN_PROGRESS = 'in_progress',
-  COMPLETED = 'completed'
-}
+// Use centralized AUDIT_STATUS_ENUM instead of duplicate enum
+export type CaseAuditStatus = AUDIT_STATUS_ENUM;
 
 // Core audit step interface
 export interface CaseAuditStep {
@@ -120,28 +115,24 @@ export interface CaseAuditState {
   error?: string | null;
 }
 
-// Base types as string literals (enum-like)
+// Base types as string literals (enum-like) - Keep only meaningful aliases
 export type UserRole = USER_ROLE_ENUM;
 export type CaseType = CASE_TYPE_ENUM;
 
-// Types using enums for stronger typing
+// Types using enums for stronger typing - Keep only ones that are used
 export type ClaimsStatus = CLAIMS_STATUS_ENUM;
-export type CaseStatus = CASE_STATUS_ENUM;
-export type AuditStatus = AUDIT_STATUS_ENUM;
-export type ActionStatus = ACTION_STATUS_ENUM;
 export type FindingCategory = FINDING_CATEGORY;
 export type ToastType = TOAST_TYPE;
 export type RatingValue = RATING_VALUE_ENUM | '';
-export type DetailedFindingType = DETAILED_FINDING_ENUM;
-export type SpecialFindingType = SPECIAL_FINDING_ENUM;
-export type FindingType = DetailedFindingType | SpecialFindingType;
+export type FindingType = DETAILED_FINDING_ENUM | SPECIAL_FINDING_ENUM;
+
 // Define detailed and special findings as separate subsets for stronger typing
-export type DetailedFindingsRecord = Record<DetailedFindingType, boolean>;
-export type SpecialFindingsRecord = Record<SpecialFindingType, boolean>;
+export type DetailedFindingsRecord = Record<DETAILED_FINDING_ENUM, boolean>;
+export type SpecialFindingsRecord = Record<SPECIAL_FINDING_ENUM, boolean>;
 
 // Define common type for audit findings as union of specific finding types
 export type FindingsRecord = {
-  [K in DetailedFindingType | SpecialFindingType]: boolean;
+  [K in DETAILED_FINDING_ENUM | SPECIAL_FINDING_ENUM]: boolean;
 };
 
 // Date representation - can be used instead of string for dates
@@ -150,7 +141,7 @@ export type ISODateString = `${number}-${number}-${number}T${number}:${number}:$
 // State management types
 export interface AsyncState<T, E = string> {
   data: T | null;
-  status: ActionStatus;
+  status: ACTION_STATUS_ENUM;
   error: E | null;
   isLoading: boolean;
   isError: boolean;

@@ -1,6 +1,5 @@
 import {http, HttpResponse} from 'msw';
 import {
-  CaseStatus,
   ClaimsStatus,
   QuarterNumber,
   QuarterPeriod
@@ -11,7 +10,7 @@ import {
   isQuarterPeriod,
 } from '../types/typeHelpers';
 import {CASE_STATUS_MAPPING, CLAIMS_STATUS, QUARTER_CALCULATIONS, API_BASE_PATH} from '../constants';
-import {DEFAULT_VALUE_ENUM, USER_ROLE_ENUM} from '../enums';
+import {DEFAULT_VALUE_ENUM, USER_ROLE_ENUM, AUDIT_STATUS_ENUM, CASE_STATUS_ENUM} from '../enums';
 import {generateRealisticCaseNumber} from '../utils/statusUtils';
 import {ApiAuditRequestPayload, ApiAuditResponse, ApiCaseResponse} from './mockTypes';
 import {
@@ -74,7 +73,7 @@ export const handlers = [
       
       // Add any audits from our store that match this quarter
       let storeAudits = 0;
-      for (const [, audit] of auditStore.entries()) {
+      for (const [, audit] of Array.from(auditStore.entries())) {
         if (audit.quarter === quarter) {
           audits.push(audit);
           storeAudits++;
@@ -119,7 +118,7 @@ export const handlers = [
         .filter(audit => audit !== null);
       
       // Add any audits from our store that match this auditor
-      for (const [, audit] of auditStore.entries()) {
+      for (const [, audit] of Array.from(auditStore.entries())) {
         if (audit.auditor && audit.auditor.userId === numericAuditorId) {
           audits.push(audit);
         }
@@ -173,7 +172,7 @@ export const handlers = [
           },
           claimsStatus: (requestData.caseObj?.claimsStatus as ClaimsStatus) || CLAIMS_STATUS.FULL_COVER,
           coverageAmount: requestData.caseObj?.coverageAmount ?? 10000.00,
-          caseStatus: (requestData.caseObj?.caseStatus as CaseStatus) || CASE_STATUS_MAPPING.COMPENSATED,
+          caseStatus: (requestData.caseObj?.caseStatus as CASE_STATUS_ENUM) || CASE_STATUS_MAPPING.COMPENSATED,
           notificationDate: new Date().toISOString().split('T')[0],
           notifiedCurrency: 'CHF'
         },
@@ -268,7 +267,7 @@ export const handlers = [
         
         existingAudit = {
           auditId: numericAuditorId,
-          quarter: requestData.quarter as QuarterPeriod || quarterStr,
+          quarter: (requestData.quarter && isQuarterPeriod(requestData.quarter) ? requestData.quarter : quarterStr) as QuarterPeriod,
           caseObj: {
             caseNumber: createCaseId(Math.floor(DEFAULT_VALUE_ENUM.DEFAULT_CASE_NUMBER + Math.random() * DEFAULT_VALUE_ENUM.CASE_NUMBER_RANGE)),
             claimOwner: {
@@ -797,7 +796,7 @@ export const handlers = [
         verifierId: requestData.verifierId ?? 1,
         rating: requestData.rating ?? '',
         comment: requestData.comment ?? '',
-        completionDate: requestData.status === 'completed' ? new Date().toISOString() : undefined,
+        completionDate: requestData.status === AUDIT_STATUS_ENUM.COMPLETED ? new Date().toISOString() : undefined,
         findings: requestData.findings || []
       };
       

@@ -184,7 +184,7 @@ export const useCaseAuditHandlers = () => {
       dispatch(updateAuditStatus({
         auditId: auditIdTyped,
         userId: currentUserId,
-        status: CaseAuditStatus.COMPLETED
+        status: AUDIT_STATUS_ENUM.COMPLETED
       }));
 
       console.log(`Audit ${auditId} completed by ${auditor}`);
