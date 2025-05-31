@@ -25,7 +25,7 @@ import {
   formatQuarterPeriod,
 } from '../types/typeHelpers';
 import {CASE_TYPE_ENUM, CLAIMS_STATUS_ENUM, USER_ROLE_ENUM, VERIFICATION_STATUS_ENUM} from '../enums';
-import {QUARTER_CALCULATIONS} from '../constants';
+import {QUARTER_CALCULATIONS, API_BASE_PATH} from '../constants';
 import {mapVerificationStatusToCaseAuditStatus} from '../utils/statusUtils';
 import {saveAuditVerification, VerificationResponse, verifyAuditAPI} from '../services';
 
@@ -147,7 +147,7 @@ export const fetchCurrentUser = createAsyncThunk<
   'caseAudit/fetchCurrentUser',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await fetch('/api/auth/current-user');
+      const response = await fetch(`${API_BASE_PATH}/auth/current-user`);
       const data = await response.json() as ApiResponse<User>;
       
       if (!data.success) {

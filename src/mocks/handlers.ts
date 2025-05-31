@@ -11,7 +11,7 @@ import {
   createUserId,
   isQuarterPeriod,
 } from '../types/typeHelpers';
-import {CASE_STATUS, CLAIMS_STATUS, QUARTER_CALCULATIONS} from '../constants';
+import {CASE_STATUS, CLAIMS_STATUS, QUARTER_CALCULATIONS, API_BASE_PATH} from '../constants';
 import {DEFAULT_VALUE_ENUM, USER_ROLE_ENUM} from '../enums';
 import {generateRealisticCaseNumber} from '../utils/statusUtils';
 import {ApiAuditRequestPayload, ApiAuditResponse, ApiCaseResponse} from './mockTypes';
@@ -30,7 +30,7 @@ import {mockCases, users} from './mockData';
 
 export const handlers = [
   // Get audits by quarter
-  http.get('/api/audits/quarter/:quarter', ({ params }) => {
+  http.get(`${API_BASE_PATH}/audits/quarter/:quarter`, ({ params }) => {
     try {
       const { quarter } = params;
       console.log(`[MSW] Handling request for quarter: ${quarter}`);
@@ -85,13 +85,13 @@ export const handlers = [
       
       return HttpResponse.json(audits || [], { status: 200 });
     } catch (error) {
-      console.error("[MSW] Error in /api/audits/quarter/:quarter handler:", error);
+      console.error("[MSW] Error in /rest/kuk/v1/audits/quarter/:quarter handler:", error);
       return HttpResponse.json([], { status: 200 });
     }
   }),
 
   // Get audits by auditor
-  http.get('/api/audits/auditor/:auditorId', ({ params }) => {
+  http.get(`${API_BASE_PATH}/audits/auditor/:auditorId`, ({ params }) => {
     try {
       const { auditorId } = params;
       const auditorIdValue = Array.isArray(auditorId) ? auditorId[0] : auditorId;
@@ -128,13 +128,13 @@ export const handlers = [
       
       return HttpResponse.json(audits, { status: 200 });
     } catch (error) {
-      console.error("[MSW] Error in /api/audits/auditor/:auditorId handler:", error);
+      console.error("[MSW] Error in /rest/kuk/v1/audits/auditor/:auditorId handler:", error);
       return HttpResponse.json([], { status: 200 });
     }
   }),
 
   // Create Audit
-  http.post('/api/audits', async ({ request }) => {
+  http.post(`${API_BASE_PATH}/audits`, async ({ request }) => {
     try {
       let requestData: ApiAuditRequestPayload = {};
       
@@ -142,7 +142,7 @@ export const handlers = [
         requestData = await request.json() as typeof requestData;
       } catch (error) {
         // Ignore parse error but log warning
-        console.warn("[MSW] Failed to parse request body for /api/audits POST", error);
+        console.warn("[MSW] Failed to parse request body for /rest/kuk/v1/audits POST", error);
       }
       
       // Generate a new audit ID
@@ -192,7 +192,7 @@ export const handlers = [
       
       return HttpResponse.json(newAudit, { status: 201 });
     } catch (error) {
-      console.error("[MSW] Error in /api/audits POST handler:", error);
+      console.error("[MSW] Error in /rest/kuk/v1/audits POST handler:", error);
       
       // Return a fallback audit object
       const fallbackAudit = {
@@ -222,7 +222,7 @@ export const handlers = [
   }),
 
   // Update Audit
-  http.put('/api/audits/:auditId', async ({ params, request }) => {
+  http.put(`${API_BASE_PATH}/audits/:auditId`, async ({ params, request }) => {
     try {
       const { auditId } = params;
       const auditIdValue = Array.isArray(auditId) ? auditId[0] : auditId;
@@ -345,7 +345,7 @@ export const handlers = [
       
       return HttpResponse.json(updatedAudit, { status: 200 });
     } catch (error) {
-      console.error("[MSW] Error in /api/audits/:auditId PUT handler:", error);
+      console.error("[MSW] Error in /rest/kuk/v1/audits/:auditId PUT handler:", error);
       
       // Return a fallback updated audit
       const fallbackAudit: ApiAuditResponse = {
@@ -375,7 +375,7 @@ export const handlers = [
   }),
 
   // Get findings for an audit
-  http.get('/api/audits/:auditId/findings', ({ params }) => {
+  http.get(`${API_BASE_PATH}/audits/:auditId/findings`, ({ params }) => {
     try {
       const { auditId } = params;
       console.log(`[MSW] Getting findings for audit ${auditId}`);
@@ -386,13 +386,13 @@ export const handlers = [
       
       return HttpResponse.json(findings, { status: 200 });
     } catch (error) {
-      console.error("[MSW] Error in /api/audits/:auditId/findings GET handler:", error);
+      console.error("[MSW] Error in /rest/kuk/v1/audits/:auditId/findings GET handler:", error);
       return HttpResponse.json([], { status: 200 });
     }
   }),
 
   // Add finding to audit
-  http.post('/api/audits/:auditId/findings', async ({ params, request }) => {
+  http.post(`${API_BASE_PATH}/audits/:auditId/findings`, async ({ params, request }) => {
     try {
       const { auditId } = params;
       
@@ -425,7 +425,7 @@ export const handlers = [
       
       return HttpResponse.json(newFinding, { status: 201 });
     } catch (error) {
-      console.error("[MSW] Error in /api/audits/:auditId/findings POST handler:", error);
+      console.error("[MSW] Error in /rest/kuk/v1/audits/:auditId/findings POST handler:", error);
       return HttpResponse.json({
         findingId: Math.floor(Math.random() * 1000) + 1,
         type: "DOCUMENTATION_ISSUE",
@@ -435,7 +435,7 @@ export const handlers = [
   }),
 
   // Select cases for audit
-  http.get('/api/audits/select-cases/:quarter', ({ params }) => {
+  http.get(`${API_BASE_PATH}/audits/select-cases/:quarter`, ({ params }) => {
     try {
       const { quarter } = params;
       console.log(`[MSW] Selecting cases for quarter ${quarter}`);
@@ -567,20 +567,20 @@ export const handlers = [
       
       return HttpResponse.json(allCases, { status: 200 });
     } catch (error) {
-      console.error("[MSW] Error in /api/audits/select-cases/:quarter handler:", error);
+      console.error("[MSW] Error in /rest/kuk/v1/audits/select-cases/:quarter handler:", error);
       return HttpResponse.json([], { status: 200 });
     }
   }),
 
   // Get all users
-  http.get('/api/users', () => {
+  http.get(`${API_BASE_PATH}/users`, () => {
     return HttpResponse.json({ 
       success: true, 
       data: users
     });
   }),
   
-  http.get('/api/users/:id', ({ params }) => {
+  http.get(`${API_BASE_PATH}/users/:id`, ({ params }) => {
     const user = users.find(u => u.id === createUserId(params.id as string));
     
     if (!user) {
@@ -599,7 +599,7 @@ export const handlers = [
   // Verification handlers
   
   // Handler for getting audits by user/auditor
-  http.get('/api/audits/auditor/:userId', ({ params }) => {
+  http.get(`${API_BASE_PATH}/audits/auditor/:userId`, ({ params }) => {
     const { userId } = params;
     const userIdValue = userId ? userId.toString() : '';
     
@@ -641,7 +641,7 @@ export const handlers = [
   }),
   
   // Get random audit for user
-  http.get('/api/audits/random/:userId', ({ params, request }) => {
+  http.get(`${API_BASE_PATH}/audits/random/:userId`, ({ params, request }) => {
     try {
       const { userId } = params;
     const url = new URL(request.url);
@@ -720,7 +720,7 @@ export const handlers = [
       }, { status: 200 });
       
     } catch (error) {
-      console.error("[MSW] Error in /api/audits/random/:userId handler:", error);
+      console.error("[MSW] Error in /rest/kuk/v1/audits/random/:userId handler:", error);
       
       // Return error response
       return HttpResponse.json({
@@ -731,7 +731,7 @@ export const handlers = [
   }),
   
   // Handler for selecting quarterly dossiers
-  http.post('/api/verification/select-quarterly', async ({ request }) => {
+  http.post(`${API_BASE_PATH}/verification/select-quarterly`, async ({ request }) => {
     try {
       const body = await request.json() as { quarterKey: string; userIds: string[] };
       const { quarterKey } = body;
@@ -808,7 +808,7 @@ export const handlers = [
   }),
 
   // Get current logged-in user
-  http.get('/api/auth/current-user', () => {
+  http.get(`${API_BASE_PATH}/auth/current-user`, () => {
     // In production, this would return information about the currently logged-in user
     // For our mock, we pretend the logged-in user is the team leader with id '4'
     const currentUser = users.find(u => u.id === createUserId('4'));
@@ -827,7 +827,7 @@ export const handlers = [
   }),
   
   // Get audit verification data
-  http.get('/api/audit-verification/:auditId', async ({ params }) => {
+  http.get(`${API_BASE_PATH}/audit-verification/:auditId`, async ({ params }) => {
     try {
       const { auditId } = params;
       const numericAuditId = safeParseInt(Array.isArray(auditId) ? auditId[0] : auditId);
@@ -848,7 +848,7 @@ export const handlers = [
         data: verificationData
       }, { status: 200 });
     } catch (error) {
-      console.error("[MSW] Error in /api/audit-verification/:auditId GET handler:", error);
+      console.error("[MSW] Error in /rest/kuk/v1/audit-verification/:auditId GET handler:", error);
       return HttpResponse.json({
         success: false,
         error: 'Failed to fetch verification data'
@@ -857,7 +857,7 @@ export const handlers = [
   }),
   
   // Update audit verification data
-  http.put('/api/audit-verification/:auditId', async ({ params, request }) => {
+  http.put(`${API_BASE_PATH}/audit-verification/:auditId`, async ({ params, request }) => {
     try {
       const { auditId } = params;
       const numericAuditId = safeParseInt(Array.isArray(auditId) ? auditId[0] : auditId);
@@ -902,7 +902,7 @@ export const handlers = [
         data: verificationResponse
       }, { status: 200 });
     } catch (error) {
-      console.error("[MSW] Error in /api/audit-verification/:auditId PUT handler:", error);
+      console.error("[MSW] Error in /rest/kuk/v1/audit-verification/:auditId PUT handler:", error);
       return HttpResponse.json({
         success: false,
         error: 'Failed to update verification data'

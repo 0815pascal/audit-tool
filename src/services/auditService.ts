@@ -12,10 +12,11 @@ import {
   createCacheKey
 } from './apiUtils';
 import { HTTP_METHOD } from '../enums';
+import { API_BASE_PATH } from '../constants';
 
 // Create an axios instance with base URL and improved error handling
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: API_BASE_PATH,
   // Add request timeout
   timeout: 30000,
   // Accept all status codes to handle them in catch blocks
@@ -229,14 +230,19 @@ export const selectCasesForAudit = async (quarter: QuarterPeriod): Promise<CaseO
   }
 };
 
-// Export audit report
-export const exportAuditReport = (quarter: QuarterPeriod): void => {
-  window.open(`/api/audits/export?quarter=${quarter}`, '_blank');
+/**
+ * Export audits for a given quarter
+ */
+export const exportAuditsForQuarter = (quarter: QuarterPeriod): void => {
+  try {
+    console.log(`[API] Exporting audits for quarter ${quarter}`);
+    // Open the export endpoint in a new tab for download
+    window.open(`${API_BASE_PATH}/audits/export?quarter=${quarter}`, '_blank');
+  } catch (error) {
+    console.error(`[API] Error exporting audits for quarter ${quarter}:`, error);
+  }
 };
 
-/**
- * Get a random audit for a user, with optional quarter and year
- */
 /**
  * Get a random audit for a user, with optional quarter and year
  */
@@ -251,7 +257,7 @@ export async function getRandomAuditForUser(
   if (year) params.append('year', year.toString());
 
   // Build the URL without nested template literals
-  const baseUrl = `/api/audits/random/${userId}`;
+  const baseUrl = `${API_BASE_PATH}/audits/random/${userId}`;
   const queryString = params.toString();
   const url = queryString ? `${baseUrl}?${queryString}` : baseUrl;
 
@@ -273,9 +279,6 @@ export async function getRandomAuditForUser(
 /**
  * Select quarterly dossiers for verification
  */
-/**
- * Select quarterly dossiers for verification
- */
 export async function selectQuarterlyDossiers(
     quarterKey: string,
     userIds: UserId[]
@@ -286,7 +289,7 @@ export async function selectQuarterlyDossiers(
   lastSelectionDate: ISODateString;
 }> {
   // Make the API request
-  const response = await fetch('/api/verification/select-quarterly', {
+  const response = await fetch(`${API_BASE_PATH}/verification/select-quarterly`, {
     method: HTTP_METHOD.POST,
     headers: {
       'Content-Type': 'application/json'
@@ -338,9 +341,6 @@ export interface VerificationResponse {
   error?: string;
 }
 
-/**
- * Save audit verification data (in-progress state)
- */
 /**
  * Save audit verification data (in-progress state)
  */

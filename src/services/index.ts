@@ -22,7 +22,7 @@ export {
   addFindingToAudit,
   getFindingsByAudit,
   selectCasesForAudit,
-  exportAuditReport,
+  exportAuditsForQuarter,
   getRandomAuditForUser,
   selectQuarterlyDossiers,
   saveAuditVerification,

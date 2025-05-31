@@ -13,7 +13,7 @@ export default defineConfig({
   base: process.env.NODE_ENV === 'production' ? '/audit-tool/' : '/',
   server: {
     // No proxy needed - MSW handles API mocking
-    // In production, configure your reverse proxy (nginx, etc.) to handle /api routes
+    // In production, configure your reverse proxy (nginx, etc.) to handle /rest/kuk/v1 routes
   },
   build: {
     outDir: 'dist',

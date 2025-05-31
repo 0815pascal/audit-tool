@@ -3,6 +3,7 @@ import { User, UserRole, AsyncState, ApiResponse, ApiSuccessResponse } from '../
 import { UserId } from '../types/brandedTypes';
 import { RootState } from './index';
 import { ACTION_STATUS_ENUM, USER_ROLE_ENUM } from '../enums';
+import { API_BASE_PATH } from '../constants';
 
 // User state structure using AsyncState pattern
 export interface UserState extends Omit<AsyncState<User[]>, 'data'> {
@@ -19,7 +20,7 @@ export const fetchUsers = createAsyncThunk<
   'user/fetchUsers',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await fetch('/api/users');
+      const response = await fetch(`${API_BASE_PATH}/users`);
       const data = await response.json() as ApiResponse<User[]>;
       
       if (!data.success) {

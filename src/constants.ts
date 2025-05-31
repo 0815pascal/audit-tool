@@ -17,6 +17,9 @@ import {
   ActionStatus
 } from './types/types';
 
+// API configuration
+export const API_BASE_PATH = '/rest/kuk/v1';
+
 // Claims status options 
 export const CLAIMS_STATUS: Record<ClaimsStatus, ClaimsStatus> = {
   [CLAIMS_STATUS_ENUM.FULL_COVER]: CLAIMS_STATUS_ENUM.FULL_COVER,

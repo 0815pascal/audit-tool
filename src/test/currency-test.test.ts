@@ -1,10 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import {CaseAudit} from "../types/types.ts";
+import { API_BASE_PATH } from '../constants';
 
 describe('Currency Functionality Test', () => {
   it('should verify that mock cases have different currencies', async () => {
     // Test the select-cases API endpoint directly
-    const response = await fetch('/api/audits/select-cases/Q2-2025');
+    const response = await fetch(`${API_BASE_PATH}/audits/select-cases/Q2-2025`);
     const cases = await response.json();
     
     expect(cases).toBeInstanceOf(Array);
@@ -49,7 +50,7 @@ describe('Currency Functionality Test', () => {
     // This test verifies that the currency is preserved from API → Redux → UI
     
     // 1. Get cases from API
-    const response = await fetch('/api/audits/select-cases/Q2-2025');
+    const response = await fetch(`${API_BASE_PATH}/audits/select-cases/Q2-2025`);
     const cases = await response.json();
     
     // 2. Verify API returns cases with different currencies
@@ -102,5 +103,48 @@ describe('Currency Functionality Test', () => {
     expect(formattedFallback).toContain('500');
     expect(formattedFallback).toContain('.00');
     // Don't check exact format since Swiss locale uses different apostrophe character
+  });
+
+  it('should fetch audit data successfully', async () => {
+    const response = await fetch(`${API_BASE_PATH}/audits/select-cases/Q2-2025`);
+    expect(response.status).toBe(200);
+
+    const data = await response.json();
+    expect(Array.isArray(data)).toBe(true);
+
+    // Check that we have valid case data
+    if (data.length > 0) {
+      const firstCase = data[0];
+      expect(firstCase).toHaveProperty('caseNumber');
+      expect(firstCase).toHaveProperty('claimOwner');
+      expect(firstCase).toHaveProperty('claimsStatus');
+      expect(firstCase).toHaveProperty('coverageAmount');
+      expect(firstCase).toHaveProperty('caseStatus');
+      expect(firstCase).toHaveProperty('notificationDate');
+      expect(firstCase).toHaveProperty('notifiedCurrency');
+      
+      // Verify the currency is properly formatted
+      expect(firstCase.notifiedCurrency).toBe('CHF');
+      expect(typeof firstCase.coverageAmount).toBe('number');
+      expect(firstCase.coverageAmount).toBeGreaterThan(0);
+    }
+  });
+
+  it('should handle currency formatting for large amounts', async () => {
+    const response = await fetch(`${API_BASE_PATH}/audits/select-cases/Q2-2025`);
+    const data = await response.json();
+
+    // Verify currency formatting works for larger amounts
+    data.forEach((caseObj: CaseAudit) => {
+      if (caseObj.coverageAmount > 10000) {
+        const formatted = new Intl.NumberFormat('de-CH', { 
+          style: 'currency', 
+          currency: caseObj.notifiedCurrency 
+        }).format(caseObj.coverageAmount);
+        
+        expect(formatted).toBeDefined();
+        expect(formatted.length).toBeGreaterThan(0);
+      }
+    });
   });
 }); 
