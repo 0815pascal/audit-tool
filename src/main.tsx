@@ -46,9 +46,9 @@ window.addEventListener('error', (event) => {
   
   // Show error to user
   setTimeout(() => {
-    const loadingEl = document.getElementById('loading');
-    if (loadingEl) {
-      loadingEl.innerHTML = `
+    const rootEl = document.getElementById('root');
+    if (rootEl) {
+      rootEl.innerHTML = `
         <div style="color: red; text-align: center; margin: 20px;">
           <p>Error loading application:</p>
           <pre style="background: #f8f8f8; padding: 10px; text-align: left; max-width: 800px; margin: 0 auto; overflow: auto;">${event.message}</pre>

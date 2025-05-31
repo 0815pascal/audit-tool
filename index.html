@@ -35,32 +35,9 @@
         }
       })();
     </script>
-    <style>
-      #loading {
-        font-family: 'Inter', sans-serif;
-        text-align: center;
-        margin-top: 50px;
-        font-size: 18px;
-      }
-      #loading.hidden {
-        display: none;
-      }
-    </style>
   </head>
   <body>
-    <div id="loading">Loading application...</div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
-    <script>
-      // Hide the loading message once React renders
-      window.addEventListener('DOMContentLoaded', () => {
-        setTimeout(() => {
-          const rootContent = document.getElementById('root').children.length > 0;
-          if (rootContent) {
-            document.getElementById('loading').classList.add('hidden');
-          }
-        }, 500);
-      });
-    </script>
   </body>
 </html>
