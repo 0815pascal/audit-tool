@@ -30,10 +30,10 @@ export interface MockCaseData extends Record<string, unknown> {
   dossierRisk: number;
   dossierName: string;
   totalAmount: number;
-  isVerified: boolean;
+  isCompleted: boolean;
   claimsStatus: ClaimsStatus;
   coverageAmount: number;
-  verifier: string;
+  auditor: string;
   comment: string;
   rating: RatingValue;
   specialFindings: SpecialFindingsRecord;

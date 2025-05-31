@@ -16,7 +16,7 @@ import {
   isQuarterPeriod,
   createCaseAuditId,
 } from '../types/typeHelpers';
-import { USER_ROLE_ENUM, CASE_TYPE_ENUM, VERIFICATION_STATUS_ENUM, DEFAULT_VALUE_ENUM } from '../enums';
+import { USER_ROLE_ENUM, CASE_TYPE_ENUM, AUDIT_STATUS_ENUM, DEFAULT_VALUE_ENUM } from '../enums';
 import { useCaseAuditHandlers } from '../hooks/useCaseAuditHandlers';
 import { PruefensterModal } from './common';
 import './QuarterlySelectionComponent.css';
@@ -30,14 +30,14 @@ import {
 import { QUARTER_CALCULATIONS } from '../constants';
 
 // Define an interface for what we actually get from the API/store
-// This interface is compatible with both CaseAuditStatus and VERIFICATION_STATUS_ENUM
+// This interface is compatible with both CaseAuditStatus and AUDIT_STATUS_ENUM
 interface AuditItem {
   id: string;
   userId: string;
-  status: CaseAuditStatus | VERIFICATION_STATUS_ENUM;
-  verifier?: string;
+  status: CaseAuditStatus | AUDIT_STATUS_ENUM;
+  auditor?: string;
   coverageAmount: number;
-  isVerified: boolean;
+  isCompleted: boolean;
   isAkoReviewed?: boolean;
   claimsStatus?: ClaimsStatus;
   comment?: string;
@@ -63,8 +63,8 @@ const QuarterlySelectionComponent: React.FC = () => {
     handleUserChange: originalHandleUserChange,
     usersList,
     loading,
-    handleVerify,
-    canVerifyAudit
+    canCompleteAudit,
+    handleCompleteAudit
   } = useCaseAuditHandlers();
   
   const dispatch = useAppDispatch();
@@ -112,7 +112,7 @@ const QuarterlySelectionComponent: React.FC = () => {
     originalHandleUserChange(userId); // Also call the original function
   };
   
-  // Get audit data from Redux to access latest verification data
+  // Get audit data from Redux to access latest completion data
   const auditData = useAppSelector(selectAuditData);
   
   // Handle auto-selection of audits for a quarter
@@ -145,7 +145,7 @@ const QuarterlySelectionComponent: React.FC = () => {
     }
   };
   
-  // Handle export of verification results
+  // Handle export of completion results
   const handleExport = () => {
     setErrorMessage('');
     setSuccessMessage('');
@@ -191,8 +191,8 @@ const QuarterlySelectionComponent: React.FC = () => {
     return userId?.substring(0, 2).toUpperCase() || 'XX';
   };
   
-  // Handle opening the verification modal
-  const handleOpenVerification = (auditId: string) => {
+  // Handle opening the completion modal
+  const handleOpenCompletion = (auditId: string) => {
     // Find the audit in the quarterlyDossiers
     const audit = [...quarterlyDossiers.userQuarterlyAudits, ...quarterlyDossiers.previousQuarterRandomAudits]
       .find(a => a.id === auditId) as AuditItem | undefined;
@@ -204,7 +204,7 @@ const QuarterlySelectionComponent: React.FC = () => {
       // Get the latest audit data from Redux (which may include saved form state)
       const latestAuditData = auditData[auditId];
       
-      console.log('=== DEBUG: handleOpenVerification ===');
+      console.log('=== DEBUG: handleOpenCompletion ===');
       console.log('auditId:', auditId);
       console.log('audit from quarterlyDossiers:', audit);
       console.log('latestAuditData from Redux:', latestAuditData);
@@ -224,14 +224,14 @@ const QuarterlySelectionComponent: React.FC = () => {
         dossierName: `Case ${audit.id}`,
         totalAmount: audit.coverageAmount,
         coverageAmount: audit.coverageAmount,
-        isVerified: audit.isVerified,
+        isCompleted: audit.isCompleted,
         isAkoReviewed,
         isSpecialist: false,
         quarter: (audit.quarter as QuarterPeriod) || (selectedQuarter), // Use audit's quarter or fallback
         year: audit.year ?? parseInt(selectedQuarter.split('-')[1]),
         claimsStatus: (audit.claimsStatus as ClaimsStatus) || ('FULL_COVER' as ClaimsStatus),
-        verifier: audit.verifier ? ensureUserId(audit.verifier) : ensureUserId(currentUserId),
-        status: audit.status ? (audit.status as CaseAuditStatus) : (audit.isVerified ? CaseAuditStatus.VERIFIED : CaseAuditStatus.NOT_VERIFIED),
+        auditor: audit.auditor ? ensureUserId(audit.auditor) : ensureUserId(currentUserId),
+        status: audit.status ? (audit.status as CaseAuditStatus) : (audit.isCompleted ? CaseAuditStatus.COMPLETED : CaseAuditStatus.PENDING),
         // Use latest data from Redux if available, otherwise fall back to audit data
         comment: latestAuditData?.comment || audit.comment || '',
         rating: (latestAuditData?.rating || audit.rating || '') as RatingValue,
@@ -268,15 +268,15 @@ const QuarterlySelectionComponent: React.FC = () => {
     }
   };
   
-  // Handle verify audit
-  const handleVerifyAudit = (auditId: string, verifierId: string, caseAuditData: CaseAuditData) => {
-    console.log('=== Verify Audit Debug ===');
+  // Handle complete audit
+  const handleCompleteAuditAction = (auditId: string, auditorId: string, caseAuditData: CaseAuditData) => {
+    console.log('=== Complete Audit Debug ===');
     console.log('auditId:', auditId);
-    console.log('verifierId:', verifierId);
+    console.log('auditorId:', auditorId);
     console.log('caseAuditData:', caseAuditData);
     
-    // Call the audit verification handler
-    handleVerify(auditId, verifierId, caseAuditData);
+    // Call the audit completion handler
+    handleCompleteAudit(auditId, auditorId, caseAuditData);
     
     // Close the modal
     setIsModalOpen(false);
@@ -285,32 +285,29 @@ const QuarterlySelectionComponent: React.FC = () => {
     // Show success message
     setSuccessMessage('Audit erfolgreich verifiziert!');
     setTimeout(() => setSuccessMessage(''), 3000);
-    console.log('=== End Verify Debug ===');
+    console.log('=== End Complete Audit Debug ===');
   };
   
-  // Note: Reject functionality removed - audit outcomes are now handled through the Prüfergebnis dropdown
-  // where users can select "Überwiegend nicht erfüllt" for failed audits
-  
-  const convertToVerificationStatus = (status: CaseAuditStatus | VERIFICATION_STATUS_ENUM): VERIFICATION_STATUS_ENUM => {
+  const convertToAuditStatus = (status: CaseAuditStatus | AUDIT_STATUS_ENUM): AUDIT_STATUS_ENUM => {
     // Handle both string statuses and enum values
     const statusString = typeof status === 'string' ? status : String(status);
     
-    // Check if it's already a VERIFICATION_STATUS_ENUM value
-    if (Object.values(VERIFICATION_STATUS_ENUM).includes(statusString as VERIFICATION_STATUS_ENUM)) {
-      return statusString as VERIFICATION_STATUS_ENUM;
+    // Check if it's already an AUDIT_STATUS_ENUM value
+    if (Object.values(AUDIT_STATUS_ENUM).includes(statusString as AUDIT_STATUS_ENUM)) {
+      return statusString as AUDIT_STATUS_ENUM;
     }
     
-    // Map CaseAuditStatus to VERIFICATION_STATUS_ENUM 
+    // Map CaseAuditStatus to AUDIT_STATUS_ENUM 
     switch (statusString) {
-      case CaseAuditStatus.VERIFIED:
-        return VERIFICATION_STATUS_ENUM.VERIFIED;
+      case CaseAuditStatus.COMPLETED:
+        return AUDIT_STATUS_ENUM.COMPLETED;
       case CaseAuditStatus.IN_PROGRESS:
-        return VERIFICATION_STATUS_ENUM.IN_PROGRESS;
-      case CaseAuditStatus.NOT_VERIFIED:
-        return VERIFICATION_STATUS_ENUM.NOT_VERIFIED;
+        return AUDIT_STATUS_ENUM.IN_PROGRESS;
+      case CaseAuditStatus.PENDING:
+        return AUDIT_STATUS_ENUM.PENDING;
       default:
-        console.warn(`Unknown status: ${statusString}, defaulting to NOT_VERIFIED`);
-        return VERIFICATION_STATUS_ENUM.NOT_VERIFIED;
+        console.warn(`Unknown status: ${statusString}, defaulting to PENDING`);
+        return AUDIT_STATUS_ENUM.PENDING;
     }
   };
   
@@ -428,7 +425,7 @@ const QuarterlySelectionComponent: React.FC = () => {
                   <th data-testid="case-id-header">CaseID</th>
                   <th data-testid="quarter-header">Quartal</th>
                   <th data-testid="responsible-user-header">Verantwortlicher Fallbearbeiter</th>
-                  <th data-testid="verification-result-header">Prüfergebnis</th>
+                  <th data-testid="completion-result-header">Prüfergebnis</th>
                   <th data-testid="verifier-header">Prüfer</th>
                   <th data-testid="actions-header">Aktionen</th>
                 </tr>
@@ -437,30 +434,35 @@ const QuarterlySelectionComponent: React.FC = () => {
                 {/* User Quarterly Audits */}
                 {quarterlyDossiers.userQuarterlyAudits.map((audit: AuditItem) => {
                   const user = findUserById(audit.userId);
-                  // Store the result of canVerifyAudit in a variable with a default false value for safety
-                  let canVerify = false;
-                  if (audit && audit.id) {
-                    try {
-                      canVerify = canVerifyAudit(audit.id);
-                    } catch (error) {
-                      console.error(`Error checking if audit can be verified:`, error);
-                    }
+                  // Get the latest audit data from Redux to ensure we show current status
+                  const latestAuditData = auditData[audit.id];
+                  
+                  // Use Redux data for status if available, otherwise fallback to audit data
+                  const currentStatus = latestAuditData?.status || audit.status;
+                  const currentAuditor = latestAuditData?.auditor || audit.auditor;
+                  
+                  // Store the result of canCompleteAudit in a variable with a default false value for safety
+                  let canComplete = false;
+                  try {
+                    canComplete = canCompleteAudit(audit.id);
+                  } catch {
+                    // If canCompleteAudit throws an error, keep canComplete as false
                   }
                   return (
                     <tr key={audit.id}>
                       <td>{audit.id}</td>
                       <td>{audit.quarter}</td>
                       <td>{user ? user.displayName : 'Unknown'}</td>
-                      <td>{convertToVerificationStatus(audit.status) === VERIFICATION_STATUS_ENUM.VERIFIED ? 'Geprüft' : 
-                           convertToVerificationStatus(audit.status) === VERIFICATION_STATUS_ENUM.IN_PROGRESS ? 'In Bearbeitung' : 'Nicht geprüft'}</td>
-                      <td>{getUserInitials(audit.verifier ?? '')}</td>
+                      <td>{convertToAuditStatus(currentStatus) === AUDIT_STATUS_ENUM.COMPLETED ? 'Geprüft' : 
+                           convertToAuditStatus(currentStatus) === AUDIT_STATUS_ENUM.IN_PROGRESS ? 'In Bearbeitung' : 'Nicht geprüft'}</td>
+                      <td>{getUserInitials(currentAuditor ?? '')}</td>
                       <td>
                         <button
-                          className="verify-button"
-                          onClick={() => handleOpenVerification(audit.id)}
-                          disabled={!canVerify}
+                          className="complete-button"
+                          onClick={() => handleOpenCompletion(audit.id)}
+                          disabled={!canComplete}
                         >
-                          {convertToVerificationStatus(audit.status) === VERIFICATION_STATUS_ENUM.VERIFIED ? 'Ansehen' : 'Prüfen'}
+                          {convertToAuditStatus(currentStatus) === AUDIT_STATUS_ENUM.COMPLETED ? 'Ansehen' : 'Prüfen'}
                         </button>
                       </td>
                     </tr>
@@ -470,14 +472,19 @@ const QuarterlySelectionComponent: React.FC = () => {
                 {/* Random Previous Quarter Audits */}
                 {quarterlyDossiers.previousQuarterRandomAudits.map((audit: AuditItem) => {
                   const user = findUserById(audit.userId);
-                  // Store the result of canVerifyAudit in a variable with a default false value for safety
-                  let canVerify = false;
-                  if (audit && audit.id) {
-                    try {
-                      canVerify = canVerifyAudit(audit.id);
-                    } catch (error) {
-                      console.error(`Error checking if audit ${audit.id} can be verified:`, error);
-                    }
+                  // Get the latest audit data from Redux to ensure we show current status
+                  const latestAuditData = auditData[audit.id];
+                  
+                  // Use Redux data for status if available, otherwise fallback to audit data
+                  const currentStatus = latestAuditData?.status || audit.status;
+                  const currentAuditor = latestAuditData?.auditor || audit.auditor;
+                  
+                  // Store the result of canCompleteAudit in a variable with a default false value for safety
+                  let canComplete = false;
+                  try {
+                    canComplete = canCompleteAudit(audit.id);
+                  } catch {
+                    // If canCompleteAudit throws an error, keep canComplete as false
                   }
                   
                   return (
@@ -485,16 +492,16 @@ const QuarterlySelectionComponent: React.FC = () => {
                       <td>{audit.id}</td>
                       <td>{audit.quarter}</td>
                       <td>{user ? user.displayName : audit.userId}</td>
-                      <td>{convertToVerificationStatus(audit.status) === VERIFICATION_STATUS_ENUM.VERIFIED ? 'Geprüft' : 
-                           convertToVerificationStatus(audit.status) === VERIFICATION_STATUS_ENUM.IN_PROGRESS ? 'In Bearbeitung' : 'Nicht geprüft'}</td>
-                      <td>{getUserInitials(audit.verifier ?? '')}</td>
+                      <td>{convertToAuditStatus(currentStatus) === AUDIT_STATUS_ENUM.COMPLETED ? 'Geprüft' : 
+                           convertToAuditStatus(currentStatus) === AUDIT_STATUS_ENUM.IN_PROGRESS ? 'In Bearbeitung' : 'Nicht geprüft'}</td>
+                      <td>{getUserInitials(currentAuditor ?? '')}</td>
                       <td>
                         <button
-                          className="verify-button"
-                          onClick={() => handleOpenVerification(audit.id)}
-                          disabled={!canVerify}
+                          className="complete-button"
+                          onClick={() => handleOpenCompletion(audit.id)}
+                          disabled={!canComplete}
                         >
-                          {convertToVerificationStatus(audit.status) === VERIFICATION_STATUS_ENUM.VERIFIED ? 'Ansehen' : 'Prüfen'}
+                          {convertToAuditStatus(currentStatus) === AUDIT_STATUS_ENUM.COMPLETED ? 'Ansehen' : 'Prüfen'}
                         </button>
                       </td>
                     </tr>
@@ -506,13 +513,13 @@ const QuarterlySelectionComponent: React.FC = () => {
         </div>
       </div>
       
-      {/* Verification Modal */}
+      {/* Completion Modal */}
       {selectedAudit && (
         <PruefensterModal
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
           audit={selectedAudit}
-          onVerify={handleVerifyAudit}
+          onVerify={handleCompleteAuditAction}
         />
       )}
     </div>

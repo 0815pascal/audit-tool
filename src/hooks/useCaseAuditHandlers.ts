@@ -3,19 +3,18 @@ import { useAppDispatch, useAppSelector } from '../store/hooks';
 import {
   selectUserQuarterlyStatus,
   selectUsersNeedingAudits,
-  verifyAudit,
+  completeAudit,
   getCurrentQuarter,
   initializeState,
   updateAuditStatus,
   selectQuarterlyAuditsForPeriod,
   selectUserRole,
-  selectQuarterlyAudits,
   selectAuditData,
   formatQuarterYear,
   setCurrentUser,
   setUserRole,
   fetchCurrentUser,
-  verifyAuditThunk
+  storeQuarterlyAudits
 } from '../store/caseAuditSlice';
 import {
   CaseAuditStatus,
@@ -48,8 +47,8 @@ import {
   COVERAGE_LIMITS,
   QUARTER_CALCULATIONS
 } from '../constants';
-import { CLAIMS_STATUS_ENUM, CASE_TYPE_ENUM, DEFAULT_VALUE_ENUM, USER_ROLE_ENUM, VERIFICATION_STATUS_ENUM, TAB_VIEW_ENUM } from '../enums';
-import { mapVerificationStatusToCaseAuditStatus } from '../utils/statusUtils';
+import { CLAIMS_STATUS_ENUM, CASE_TYPE_ENUM, DEFAULT_VALUE_ENUM, USER_ROLE_ENUM, AUDIT_STATUS_ENUM, TAB_VIEW_ENUM } from '../enums';
+import { mapAuditStatusToCaseAuditStatus } from '../utils/statusUtils';
 import { selectCasesForAudit } from '../services';
 
 // Tab view type alias
@@ -82,7 +81,7 @@ export const useCaseAuditHandlers = () => {
   const currentUserId = useAppSelector(state => state.caseAudit.currentUserId);
   const currentUserRole = useAppSelector(state => selectUserRole(state, currentUserId));
   
-  // Get verification data from Redux store
+  // Get audit data from Redux store
   const auditData = useAppSelector(selectAuditData);
   
   const usersNeedingAudits = useAppSelector(state =>
@@ -97,7 +96,7 @@ export const useCaseAuditHandlers = () => {
     selectQuarterlyAuditsForPeriod(state, selectedQuarter)
   );
   
-  // Calculate verification count
+  // Calculate audit count
   const auditCount = useMemo(() => {
     return usersNeedingAudits.length;
   }, [usersNeedingAudits]);
@@ -164,26 +163,34 @@ export const useCaseAuditHandlers = () => {
     setFilteredYear(createValidYear(year));
   };
   
-  // Handle verify audit
-  const handleVerify = (auditId: CaseAuditId | string, verifier: UserId | string, caseAuditData: CaseAuditData): void => {
-    const auditIdBranded = typeof auditId === 'string' ? createCaseAuditId(auditId) : auditId;
-    const verifierBranded = ensureUserId(verifier);
-    
-    // First update local Redux state
-    dispatch(verifyAudit({
-      auditId: auditIdBranded,
-      userId: currentUserId,
-      verifier: verifierBranded,
-      ...caseAuditData
-    }));
-    
-    // Then persist to backend API
-    dispatch(verifyAuditThunk({
-      auditId: auditIdBranded,
-      userId: currentUserId,
-      verifier: verifierBranded,
-      ...caseAuditData
-    }));
+  // Handle complete audit
+  const handleCompleteAudit = (auditId: CaseAuditId | string, auditor: UserId | string, caseAuditData: CaseAuditData): void => {
+    try {
+      const auditIdTyped = typeof auditId === 'string' ? createCaseAuditId(auditId) : auditId;
+      const auditorTyped = ensureUserId(auditor);
+      
+      // Dispatch complete audit action
+      dispatch(completeAudit({
+        auditId: auditIdTyped,
+        userId: currentUserId,
+        auditor: auditorTyped,
+        comment: caseAuditData.comment,
+        rating: caseAuditData.rating,
+        specialFindings: caseAuditData.specialFindings,
+        detailedFindings: caseAuditData.detailedFindings
+      }));
+
+      // Update status to completed
+      dispatch(updateAuditStatus({
+        auditId: auditIdTyped,
+        userId: currentUserId,
+        status: CaseAuditStatus.COMPLETED
+      }));
+
+      console.log(`Audit ${auditId} completed by ${auditor}`);
+    } catch (error) {
+      console.error('Error completing audit:', error);
+    }
   };
   
   // Handle status change
@@ -197,8 +204,8 @@ export const useCaseAuditHandlers = () => {
     }));
   };
   
-  // Check if a user can verify an audit
-  const canVerifyAudit = (auditId: CaseAuditId | string): boolean => {
+  // Check if a user can complete an audit
+  const canCompleteAuditCheck = (auditId: CaseAuditId | string): boolean => {
     if (!currentUserId) {
       return false;
     }
@@ -217,23 +224,23 @@ export const useCaseAuditHandlers = () => {
         return false;
       }
       
-      // Special case: If audit is IN_PROGRESS and current user is the verifier, allow them to continue
-      if (audit.status === mapVerificationStatusToCaseAuditStatus(VERIFICATION_STATUS_ENUM.IN_PROGRESS)) {
-        // Convert verifier to string for comparison
-        const verifierString = audit.verifier ? String(audit.verifier) : '';
+      // Special case: If audit is IN_PROGRESS and current user is the auditor, allow them to continue
+      if (audit.status === mapAuditStatusToCaseAuditStatus(AUDIT_STATUS_ENUM.IN_PROGRESS)) {
+        // Convert auditor to string for comparison
+        const auditorString = audit.auditor ? String(audit.auditor) : '';
         const currentUserString = String(currentUserId);
         
-        if (verifierString === currentUserString) {
+        if (auditorString === currentUserString) {
           // User can continue their own in-progress audit
           return true;
-        } else if (verifierString && verifierString !== currentUserString) {
-          // Another user is working on this audit - current user cannot verify
+        } else if (auditorString && auditorString !== currentUserString) {
+          // Another user is working on this audit - current user cannot perform it
           return false;
         }
-        // If no verifier is set yet, continue with normal rules below
+        // If no auditor is set yet, continue with normal rules below
       }
       
-      // Team leaders can't verify their own audits - must be verified by a specialist
+      // Team leaders can't complete their own audits - must be completed by a specialist
       if (currentUserRole.role === USER_ROLE_ENUM.TEAM_LEADER && audit.userId === currentUserId) {
         return false;
       }
@@ -250,7 +257,7 @@ export const useCaseAuditHandlers = () => {
       
 
     } catch (error) {
-      console.error('Error checking if user can verify audit:', error);
+      console.error('Error checking if user can complete audit:', error);
       return false;
     }
   };
@@ -289,17 +296,18 @@ export const useCaseAuditHandlers = () => {
         console.log(`[DEBUG] Case ${index + 1}: notificationDate=${caseObj.notificationDate}, actualQuarter=${actualQuarter}, notifiedCurrency=${caseObj.notifiedCurrency}`);
         
         const auditObj = {
-          id: createCaseAuditId(String(caseObj.caseNumber)),
+          id: String(caseObj.caseNumber), // Convert to string
           auditId: createCaseAuditId(String(caseObj.caseNumber)),
-          userId: ensureUserId(String(caseObj.claimOwner.userId)),
-          status: VERIFICATION_STATUS_ENUM.NOT_VERIFIED,
-          verifier: '', // No verifier assigned yet
+          userId: String(caseObj.claimOwner.userId), // Convert to string
+          status: String(AUDIT_STATUS_ENUM.PENDING), // Convert to string
+          auditor: '', // No auditor assigned yet
           coverageAmount: caseObj.coverageAmount,
-          isVerified: false,
-          claimsStatus: caseObj.claimsStatus,
+          isCompleted: false,
+          claimsStatus: String(caseObj.claimsStatus), // Convert to string
           quarter: actualQuarter, // Use the calculated quarter from notification date
           isAkoReviewed: false,
-          notifiedCurrency: caseObj.notifiedCurrency || 'CHF' // Include the currency from API response
+          notifiedCurrency: caseObj.notifiedCurrency || 'CHF', // Include the currency from API response
+          caseType: String(CASE_TYPE_ENUM.USER_QUARTERLY) // Add the missing caseType property
         };
         
         console.log(`[DEBUG] Created audit object:`, auditObj);
@@ -310,11 +318,11 @@ export const useCaseAuditHandlers = () => {
       const currentQuarterAudits = userQuarterlyAudits.slice(0, 8);
       const previousQuarterRandomAudits = userQuarterlyAudits.slice(8, 10);
       
-      // Store the quarterly selection in Redux
-      dispatch(selectQuarterlyAudits({
-        quarterKey: quarterPeriod,
-        userQuarterlyAudits: currentQuarterAudits,
-        previousQuarterRandomAudits
+      console.log(`Selected ${currentQuarterAudits.length} current quarter audits and ${previousQuarterRandomAudits.length} previous quarter audits`);
+      
+      // Dispatch the storeQuarterlyAudits action to store the fetched audits in Redux
+      dispatch(storeQuarterlyAudits({
+        audits: currentQuarterAudits
       }));
       
       setLoadingStatus(ACTION_STATUS.idle);
@@ -337,14 +345,14 @@ export const useCaseAuditHandlers = () => {
     id: string;
     userId?: string;
     status?: string;
-    verifier?: string;
+    auditor?: string;
     coverageAmount?: number;
     claimsStatus?: ClaimsStatus;
     comment?: string;
     rating?: string;
     specialFindings?: FindingsRecord;
     detailedFindings?: FindingsRecord;
-    isVerified?: boolean;
+    isCompleted?: boolean;
     isAkoReviewed?: boolean;
     [key: string]: unknown; // Allow additional properties
   }
@@ -363,13 +371,13 @@ export const useCaseAuditHandlers = () => {
       dossierName: `Case ${audit.id || 'Unknown'}`,
       totalAmount: audit.coverageAmount ?? 0,
       coverageAmount: audit.coverageAmount ?? 0,
-      isVerified: audit.isVerified || false,
+      isCompleted: audit.isCompleted || false,
       isAkoReviewed: audit.isAkoReviewed || false,
       isSpecialist: false,
       quarter: selectedQuarter,
       year: filteredYear,
       claimsStatus: audit.claimsStatus ?? CLAIMS_STATUS_ENUM.FULL_COVER,
-      verifier: ensureUserId(audit.verifier ?? ''),
+      auditor: ensureUserId(audit.auditor ?? ''),
       comment: audit.comment ?? '',
       rating: (audit.rating ?? '') as RatingValue,
       specialFindings: audit.specialFindings || createEmptyFindings(),
@@ -410,13 +418,13 @@ export const useCaseAuditHandlers = () => {
     handleTabChange,
     handleSelectUser,
     handleUserChange,
-    handleVerify,
+    handleCompleteAudit,
     handleStatusChange,
     auditToCaseAudit,
     getRandomAuditForUser,
     handleQuarterChange,
     handleYearChange,
-    canVerifyAudit,
+    canCompleteAudit: canCompleteAuditCheck,
     handleSelectQuarterlyAudits,
     exportQuarterlyResults
   };

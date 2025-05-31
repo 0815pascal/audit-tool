@@ -22,7 +22,7 @@ import {
 import {Button, Checkbox, Select, TextArea} from './FormControls';
 import {useToast} from '../../context/ToastContext';
 import {useAppDispatch, useAppSelector} from '../../store/hooks';
-import {saveAuditVerificationThunk, updateAuditInProgress} from '../../store/caseAuditSlice';
+import {saveAuditCompletionThunk, updateAuditInProgress} from '../../store/caseAuditSlice';
 import {
   BUTTON_COLOR,
   BUTTON_SIZE,
@@ -30,9 +30,9 @@ import {
   RATING_VALUE_ENUM,
   SPECIAL_FINDING_ENUM,
   TOAST_TYPE,
-  VERIFICATION_STATUS_ENUM
+  AUDIT_STATUS_ENUM
 } from '../../enums';
-import {convertToVerificationStatus} from '../../utils/statusUtils';
+import {convertToAuditStatus} from '../../utils/statusUtils';
 
 // Use the useUsers hook to get user data from Redux store
 import {useUsers} from '../../hooks/useUsers';
@@ -41,7 +41,7 @@ interface PruefensterModalProps {
   isOpen: boolean;
   onClose: () => void;
   audit: CaseAudit;
-  onVerify?: (auditId: string | CaseAuditId, verifierId: string, caseAuditData: CaseAuditData) => void;
+  onVerify?: (auditId: string | CaseAuditId, auditorId: string, caseAuditData: CaseAuditData) => void;
 }
 
 export const PruefensterModal: React.FC<PruefensterModalProps> = ({
@@ -57,10 +57,10 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
   // Get users from Redux store via useUsers hook
   const { allUsers } = useUsers();
   
-  const [currentStatus, setCurrentStatus] = useState<VERIFICATION_STATUS_ENUM>(
+  const [currentStatus, setCurrentStatus] = useState<AUDIT_STATUS_ENUM>(
     audit.status ? 
-      convertToVerificationStatus(audit.status as CaseAuditStatus | VERIFICATION_STATUS_ENUM) :
-      (audit.isVerified ? VERIFICATION_STATUS_ENUM.VERIFIED : VERIFICATION_STATUS_ENUM.NOT_VERIFIED)
+      convertToAuditStatus(audit.status as CaseAuditStatus | AUDIT_STATUS_ENUM) :
+      (audit.isCompleted ? AUDIT_STATUS_ENUM.COMPLETED : AUDIT_STATUS_ENUM.PENDING)
   );
 
   const ratingOptions: RatingOption[] = [
@@ -158,11 +158,11 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
       };
       
       // Set verifier to initials (whether from existing audit or current user)
-      if (audit.verifier) {
-        console.log('Using existing verifier ID:', audit.verifier);
-        // Convert verifier ID to string and get initials
-        const verifierId = audit.verifier.toString?.() || String(audit.verifier);
-        const verifierInitials = getUserInitials(verifierId);
+      if (audit.auditor) {
+        console.log('Using existing auditor ID:', audit.auditor);
+        // Use the existing auditor ID
+        const auditorId = audit.auditor.toString?.() || String(audit.auditor);
+        const verifierInitials = getUserInitials(auditorId);
         setVerifier(verifierInitials);
       } else {
         // Use the current user's initials as the verifier
@@ -173,8 +173,8 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
       
       // Update the current status based on audit
       setCurrentStatus(audit.status ? 
-        convertToVerificationStatus(audit.status as CaseAuditStatus | VERIFICATION_STATUS_ENUM) :
-        (audit.isVerified ? VERIFICATION_STATUS_ENUM.VERIFIED : VERIFICATION_STATUS_ENUM.NOT_VERIFIED));
+        convertToAuditStatus(audit.status as CaseAuditStatus | AUDIT_STATUS_ENUM) :
+        (audit.isCompleted ? AUDIT_STATUS_ENUM.COMPLETED : AUDIT_STATUS_ENUM.PENDING));
       
       // Update findings with all options set to false by default
       setSelectedFindings(() => {
@@ -247,24 +247,24 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
   // Update status based on form data
   useEffect(() => {
     if (hasFormData()) {
-      setCurrentStatus(VERIFICATION_STATUS_ENUM.IN_PROGRESS);
+      setCurrentStatus(AUDIT_STATUS_ENUM.IN_PROGRESS);
     } else {
       // Only reset to NOT_VERIFIED if the audit wasn't already verified
-      const auditVerificationStatus = audit.status ? 
-        convertToVerificationStatus(audit.status as CaseAuditStatus | VERIFICATION_STATUS_ENUM) :
-        (audit.isVerified ? VERIFICATION_STATUS_ENUM.VERIFIED : VERIFICATION_STATUS_ENUM.NOT_VERIFIED);
-      if (auditVerificationStatus !== VERIFICATION_STATUS_ENUM.VERIFIED) {
-        setCurrentStatus(audit.isVerified ? VERIFICATION_STATUS_ENUM.VERIFIED : VERIFICATION_STATUS_ENUM.NOT_VERIFIED);
+      const auditCompletionStatus = audit.status ? 
+        convertToAuditStatus(audit.status as CaseAuditStatus | AUDIT_STATUS_ENUM) :
+        (audit.isCompleted ? AUDIT_STATUS_ENUM.COMPLETED : AUDIT_STATUS_ENUM.PENDING);
+      if (auditCompletionStatus !== AUDIT_STATUS_ENUM.COMPLETED) {
+        setCurrentStatus(audit.isCompleted ? AUDIT_STATUS_ENUM.COMPLETED : AUDIT_STATUS_ENUM.PENDING);
       }
     }
-  }, [comment, rating, selectedFindings, selectedDetailedFindings, audit.status, audit.isVerified, hasFormData]);
+  }, [comment, rating, selectedFindings, selectedDetailedFindings, audit.status, audit.isCompleted, hasFormData]);
 
   // Update the saveFormState function
   const saveFormState = () => {
-    setCurrentStatus(VERIFICATION_STATUS_ENUM.IN_PROGRESS);
+    setCurrentStatus(AUDIT_STATUS_ENUM.IN_PROGRESS);
     
     // Convert verifier initials back to user ID
-    let verifierId = currentUserId; // Default to current user
+    let auditorId = currentUserId; // Default to current user
     
     if (verifier) {
       // Find user by initials
@@ -273,7 +273,7 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
       );
       
       if (userByInitials) {
-        verifierId = userByInitials.id;
+        auditorId = userByInitials.id;
       } else {
         // If we can't find by initials, use current user
         console.warn(`Could not find user with initials ${verifier}, using current user`);
@@ -290,7 +290,7 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
     console.log('=== DEBUG: saveFormState ===');
     console.log('audit.id:', audit.id);
     console.log('audit.userId:', audit.userId);
-    console.log('verifierId:', verifierId);
+    console.log('auditorId:', auditorId);
     console.log('caseAuditData:', caseAuditData);
     console.log('rating being saved:', rating);
     console.log('=== END DEBUG ===');
@@ -299,33 +299,33 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
     dispatch(updateAuditInProgress({
       auditId: ensureCaseAuditId(audit.id),
       userId: ensureUserId(audit.userId),
-      verifier: ensureUserId(verifierId || currentUserId),
+      auditor: ensureUserId(auditorId || currentUserId),
       ...caseAuditData
     }));
     
     // Then persist to backend API
-    dispatch(saveAuditVerificationThunk({
+    dispatch(saveAuditCompletionThunk({
       auditId: ensureCaseAuditId(audit.id),
       userId: ensureUserId(audit.userId),
-      verifier: ensureUserId(verifierId || currentUserId),
+      auditor: ensureUserId(auditorId || currentUserId),
       ...caseAuditData
     }));
     
     showToast('Form saved', TOAST_TYPE.SUCCESS);
   };
 
-  const handleVerify = () => {
+  const handleComplete = () => {
     if (!onVerify) {
       console.error('No onVerify handler provided');
       return;
     }
-    
-    console.log('=== DEBUG: handleVerify ===');
-    console.log('Before verification - rating:', rating);
+
+    console.log('=== DEBUG: handleComplete ===');
+    console.log('Before completion - rating:', rating);
     console.log('audit.id:', audit.id);
     
     // Convert verifier initials back to user ID
-    let verifierId = currentUserId; // Default to current user
+    let auditorId = currentUserId; // Default to current user
     
     if (verifier) {
       // Find user by initials
@@ -334,7 +334,7 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
       );
       
       if (userByInitials) {
-        verifierId = userByInitials.id;
+        auditorId = userByInitials.id;
       } else {
         // If we can't find by initials, use current user
         console.warn(`Could not find user with initials ${verifier}, using current user`);
@@ -355,11 +355,10 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
     // Save the form state to Redux for persistence
     saveFormState();
     
-    // Pass the current form data directly to the verification handler
-    // instead of relying on Redux state that might not be updated yet
-    onVerify(audit.id, ensureUserId(verifierId || currentUserId), currentFormData);
+    // Pass the current form data directly to the completion handler
+    onVerify(audit.id, ensureUserId(auditorId || currentUserId), currentFormData);
     
-    showToast('Audit verified', TOAST_TYPE.SUCCESS);
+    showToast('Audit completed', TOAST_TYPE.SUCCESS);
   };
 
   // Handle when modal is being closed
@@ -403,16 +402,16 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
             className={`status-badge ${currentStatus}`}
             style={{
               color: 
-                currentStatus === VERIFICATION_STATUS_ENUM.VERIFIED ? 'var(--success-color)' : 
-                currentStatus === VERIFICATION_STATUS_ENUM.IN_PROGRESS ? 'var(--warning-color)' : /* warning color */
+                currentStatus === AUDIT_STATUS_ENUM.COMPLETED ? 'var(--success-color)' : 
+                currentStatus === AUDIT_STATUS_ENUM.IN_PROGRESS ? 'var(--warning-color)' : /* warning color */
                 'var(--danger-color)', /* danger color */
               fontWeight: 'bold',
               textTransform: 'uppercase',
               fontSize: '0.8rem',
             }}
           >
-            {currentStatus === VERIFICATION_STATUS_ENUM.VERIFIED ? 'Verifiziert' : 
-             currentStatus === VERIFICATION_STATUS_ENUM.IN_PROGRESS ? 'In Bearbeitung' : 
+            {currentStatus === AUDIT_STATUS_ENUM.COMPLETED ? 'Verifiziert' : 
+             currentStatus === AUDIT_STATUS_ENUM.IN_PROGRESS ? 'In Bearbeitung' : 
              'Nicht Verifiziert'}
           </span>
           </div>
@@ -569,7 +568,7 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
             Abbrechen
           </Button>
           <Button
-            onClick={handleVerify}
+            onClick={handleComplete}
             color={BUTTON_COLOR.PRIMARY}
             size={BUTTON_SIZE.MEDIUM}
             disabled={!verifier.trim()}

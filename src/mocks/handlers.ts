@@ -6,12 +6,11 @@ import {
   QuarterPeriod
 } from '../types/types';
 import {
-  createCaseAuditId,
-  createCaseId,
   createUserId,
+  createCaseId,
   isQuarterPeriod,
 } from '../types/typeHelpers';
-import {CASE_STATUS, CLAIMS_STATUS, QUARTER_CALCULATIONS, API_BASE_PATH} from '../constants';
+import {CASE_STATUS_MAPPING, CLAIMS_STATUS, QUARTER_CALCULATIONS, API_BASE_PATH} from '../constants';
 import {DEFAULT_VALUE_ENUM, USER_ROLE_ENUM} from '../enums';
 import {generateRealisticCaseNumber} from '../utils/statusUtils';
 import {ApiAuditRequestPayload, ApiAuditResponse, ApiCaseResponse} from './mockTypes';
@@ -64,7 +63,8 @@ export const handlers = [
       const audits = filteredCases
         .map(caseItem => {
           try {
-            return caseToAudit(caseItem, quarterValue);
+            const caseObj = caseToCaseObj(caseItem);
+            return caseToAudit(caseObj, quarterValue);
           } catch (e) {
             console.warn(`[MSW] Error converting case ${caseItem.id} to audit:`, e);
             return null;
@@ -105,11 +105,12 @@ export const handlers = [
       );
       
       // Convert to API format - use a recent quarter for these
-      const currentQuarter = `Q${Math.floor((new Date().getMonth()) / 3) + 1}-${new Date().getFullYear()}`;
+      const currentQuarter: QuarterPeriod = `Q${Math.floor((new Date().getMonth()) / 3) + 1}-${new Date().getFullYear()}` as QuarterPeriod;
       const audits = filteredCases
         .map(caseItem => {
           try {
-            return caseToAudit(caseItem, currentQuarter);
+            const caseObj = caseToCaseObj(caseItem);
+            return caseToAudit(caseObj, currentQuarter);
           } catch (e) {
             console.warn(`[MSW] Error converting case to audit:`, e);
             return null;
@@ -172,7 +173,7 @@ export const handlers = [
           },
           claimsStatus: (requestData.caseObj?.claimsStatus as ClaimsStatus) || CLAIMS_STATUS.FULL_COVER,
           coverageAmount: requestData.caseObj?.coverageAmount ?? 10000.00,
-          caseStatus: (requestData.caseObj?.caseStatus as CaseStatus) || CASE_STATUS.COMPENSATED,
+          caseStatus: (requestData.caseObj?.caseStatus as CaseStatus) || CASE_STATUS_MAPPING.COMPENSATED,
           notificationDate: new Date().toISOString().split('T')[0],
           notifiedCurrency: 'CHF'
         },
@@ -206,7 +207,7 @@ export const handlers = [
           },
           claimsStatus: CLAIMS_STATUS.FULL_COVER,
           coverageAmount: 10000.00,
-          caseStatus: CASE_STATUS.COMPENSATED,
+          caseStatus: CASE_STATUS_MAPPING.COMPENSATED,
           notificationDate: new Date().toISOString().split('T')[0],
           notifiedCurrency: 'CHF'
         },
@@ -276,7 +277,7 @@ export const handlers = [
             },
             claimsStatus: CLAIMS_STATUS.FULL_COVER,
             coverageAmount: 10000.00,
-            caseStatus: CASE_STATUS.COMPENSATED,
+            caseStatus: CASE_STATUS_MAPPING.COMPENSATED,
             notificationDate: new Date().toISOString().split('T')[0],
             notifiedCurrency: 'CHF'
           },
@@ -359,7 +360,7 @@ export const handlers = [
           },
           claimsStatus: CLAIMS_STATUS.FULL_COVER,
           coverageAmount: 10000.00,
-          caseStatus: CASE_STATUS.COMPENSATED,
+          caseStatus: CASE_STATUS_MAPPING.COMPENSATED,
           notificationDate: new Date().toISOString().split('T')[0],
           notifiedCurrency: 'CHF'
         },
@@ -476,20 +477,9 @@ export const handlers = [
       
       const previousQuarterCases = mockCases
         .filter(caseItem => {
-          try {
-            // Use the notificationDate property to deduce quarter
-            const notificationDate = caseItem.notificationDate;
-            const { quarterNum, year } = getQuarterFromDate(notificationDate);
-            
-            const isMatch = quarterNum === prevQuarterNum && year === prevYear;
-            if (isMatch) {
-              console.log(`[MSW] Found previous quarter case: ${caseItem.id} with notificationDate ${notificationDate} (Q${quarterNum}-${year})`);
-            }
-            return isMatch;
-          } catch (_e) {
-            console.warn(`[MSW] Error filtering case ${caseItem.id}:`, _e);
-            return false;
-          }
+          if (!caseItem.notificationDate) return false;
+          const { quarterNum: caseQuarter, year: caseYear } = getQuarterFromDate(caseItem.notificationDate);
+          return caseQuarter === prevQuarterNum && caseYear === prevYear;
         })
         .slice(0, 2) // Take 2 random cases from previous quarter
         .map(caseItem => caseToCaseObj(caseItem))
@@ -519,7 +509,7 @@ export const handlers = [
           },
           claimsStatus: i % 2 === 0 ? CLAIMS_STATUS.FULL_COVER : CLAIMS_STATUS.PARTIAL_COVER,
           coverageAmount: Math.floor(Math.random() * 100000) + 1000,
-          caseStatus: CASE_STATUS.COMPENSATED,
+          caseStatus: CASE_STATUS_MAPPING.COMPENSATED,
           notificationDate: currentQuarterDate.toISOString().split('T')[0],
           notifiedCurrency: randomCurrency
         };
@@ -545,7 +535,7 @@ export const handlers = [
           },
           claimsStatus: i % 2 === 0 ? CLAIMS_STATUS.FULL_COVER : CLAIMS_STATUS.PARTIAL_COVER,
           coverageAmount: Math.floor(Math.random() * 100000) + 1000,
-          caseStatus: CASE_STATUS.COMPENSATED,
+          caseStatus: CASE_STATUS_MAPPING.COMPENSATED,
           notificationDate: previousQuarterDate.toISOString().split('T')[0],
           notifiedCurrency: randomCurrency
         };
@@ -559,7 +549,7 @@ export const handlers = [
       console.log(`[MSW] Returning ${allCases.length} cases (${currentQuarterCases.length} current quarter + ${previousQuarterCases.length} previous quarter)`);
       console.log(`[MSW] Cases now include notificationDate for quarter deduction`);
       
-      // Log the notification dates of all returned cases for verification
+      // Log the notification dates of all returned cases for auditing
       allCases.forEach((caseObj, index) => {
         const { quarterNum, year } = getQuarterFromDate(caseObj.notificationDate);
         console.log(`[MSW] Case ${index + 1}: notificationDate ${caseObj.notificationDate} → Q${quarterNum}-${year}, currency: ${caseObj.notifiedCurrency}`);
@@ -596,142 +586,75 @@ export const handlers = [
     });
   }),
   
-  // Verification handlers
-  
-  // Handler for getting audits by user/auditor
-  http.get(`${API_BASE_PATH}/audits/auditor/:userId`, ({ params }) => {
-    const { userId } = params;
-    const userIdValue = userId ? userId.toString() : '';
+  // Get current logged-in user
+  http.get(`${API_BASE_PATH}/auth/current-user`, () => {
+    // In production, this would return information about the currently logged-in user
+    // For our mock, we pretend the logged-in user is the team leader with id '4'
+    const currentUser = users.find(u => u.id === createUserId('4'));
     
-    // Generate audit objects for this user
-    const auditCount = getNumericId(userIdValue) % 5 + 1; // 1-5 audits based on ID
-    const now = new Date();
-    const currentQuarter = Math.floor(now.getMonth() / 3) + 1;
-    const year = now.getFullYear();
+    if (currentUser) {
+      return HttpResponse.json({ 
+        success: true, 
+        data: currentUser
+      });
+    }
     
-    const audits = Array.from({ length: auditCount }, (_, i) => {
-      const caseNumber = createCaseId(30040000 + getNumericId(userIdValue) * 100 + i);
-      const caseObj = {
-        caseNumber,
-        claimOwner: {
-          userId: createUserId(userIdValue),
-          role: Math.random() > 0.7 ? USER_ROLE_ENUM.SPECIALIST : USER_ROLE_ENUM.STAFF
-        },
-        coverageAmount: Math.floor(Math.random() * 100000) + 500,
-        claimsStatus: Math.random() > 0.7 ? CLAIMS_STATUS.PARTIAL_COVER : CLAIMS_STATUS.FULL_COVER,
-        caseStatus: CASE_STATUS.COMPENSATED
-      };
-      
-      return {
-        auditId: (getNumericId(userIdValue) * 1000 + i + 1),
-        quarter: `Q${currentQuarter}-${year}` as QuarterPeriod,
-        caseObj,
-        auditor: {
-          userId: createUserId(userIdValue),
-          role: Math.random() > 0.7 ? USER_ROLE_ENUM.SPECIALIST : USER_ROLE_ENUM.STAFF
-        },
-        isAkoReviewed: Math.random() > 0.8 // 20% chance of being reviewed
-      };
-    });
-    
-    return HttpResponse.json({ 
-      success: true, 
-      data: audits
-    });
+    return HttpResponse.json(
+      { success: false, error: 'No current user found' },
+      { status: 404 }
+    );
   }),
-  
-  // Get random audit for user
-  http.get(`${API_BASE_PATH}/audits/random/:userId`, ({ params, request }) => {
+
+  // Audit completion handlers
+  http.get(`${API_BASE_PATH}/audit-completion/select-quarterly/:quarterPeriod`, async ({ params }) => {
     try {
-      const { userId } = params;
-    const url = new URL(request.url);
-      const quarter = url.searchParams.get('quarter');
-      const year = url.searchParams.get('year');
+      const quarterPeriod = params.quarterPeriod as string;
       
-      console.log(`[MSW] Getting random audit for user ${userId}, quarter ${quarter}, year ${year}`);
+      // Parse the quarter key (e.g., "Q1-2023")
+      const [quarterStr, yearStr] = quarterPeriod.split('-');
+      const quarterNum = parseInt(quarterStr.replace('Q', ''));
+      const year = parseInt(yearStr);
       
-      // Parse the user ID
-      const userIdValue = Array.isArray(userId) ? userId[0] : userId;
-      const numericUserId = safeParseInt(userIdValue);
+      // Generate mock cases for audit selection
+      const cases = users
+        .filter(user => user.enabled)
+        .slice(0, 10) // Limit to 10 cases
+        .map((user, index) => {
+          const caseNumber = parseInt(generateRealisticCaseNumber());
+          return {
+            caseNumber,
+            claimOwner: {
+              userId: user.id,
+              displayName: user.displayName
+            },
+            coverageAmount: Math.floor(
+              Math.random() * (user.authorities === USER_ROLE_ENUM.STAFF ? 30000 : 150000)
+            ),
+            claimsStatus: CLAIMS_STATUS.FULL_COVER,
+            notificationDate: (() => {
+              // Generate a realistic date within the quarter
+              const startMonth = (quarterNum - 1) * 3; // 0-indexed month
+              const randomDay = Math.floor(Math.random() * 28) + 1; // 1-28 to avoid month-end issues
+              const randomMonth = startMonth + Math.floor(Math.random() * 3); // Random month within quarter
+              
+              const notificationDate = new Date(year, randomMonth, randomDay);
+              return notificationDate.toISOString().split('T')[0]; // Return YYYY-MM-DD format
+            })(),
+            notifiedCurrency: index % 3 === 0 ? 'EUR' : index % 3 === 1 ? 'USD' : 'CHF' // Mix of currencies
+          };
+        });
       
-      // Parse the quarter (e.g., "Q1-2023")
-      let quarterPeriod: QuarterPeriod;
-      if (!quarter || !isQuarterPeriod(quarter)) {
-        const currentYear = year ? parseInt(year) : new Date().getFullYear();
-        const currentQuarter = Math.floor((new Date().getMonth()) / 3) + 1 as QuarterNumber;
-        quarterPeriod = `Q${currentQuarter}-${currentYear}`;
-      } else {
-        quarterPeriod = quarter;
-      }
+      console.log(`[MSW] Generated ${cases.length} cases for quarter ${quarterPeriod}`);
       
-      // Try to find a suitable audit for this user
-      const filteredAudits = mockCases
-        .filter(caseItem => {
-          // Some logic to determine if this case should be assigned to this user
-          return getNumericId(caseItem.id) % 5 === numericUserId % 5;
-        })
-        .slice(0, 3); // Limit to 3 possible audits
-      
-      if (filteredAudits.length > 0) {
-        // Pick one randomly
-        const randomIndex = Math.floor(Math.random() * filteredAudits.length);
-        const randomCase = filteredAudits[randomIndex];
-        const auditRecord = caseToAudit(randomCase, quarterPeriod);
-        
-        // Add dossierRisk to the audit record
-        const auditWithRisk = {
-          ...auditRecord,
-          dossierRisk: Math.floor(Math.random() * 10) + 1
-        };
-        
-        console.log(`[MSW] Found random audit for user ${userId}`);
-        return HttpResponse.json({
-          success: true,
-          data: auditWithRisk
-        }, { status: 200 });
-      }
-      
-      // If no audit found, create a fallback audit
-      console.log(`[MSW] Creating fallback audit for user ${userId}`);
-      const fallbackAudit = {
-        auditId: createCaseAuditId((Math.floor(Math.random() * 10000) + 1).toString()),
-        quarter: quarterPeriod,
-        caseObj: {
-          caseNumber: createCaseId(Math.floor(DEFAULT_VALUE_ENUM.DEFAULT_CASE_NUMBER + Math.random() * DEFAULT_VALUE_ENUM.CASE_NUMBER_RANGE)),
-          claimOwner: {
-            userId: numericUserId,
-            role: USER_ROLE_ENUM.SPECIALIST
-          },
-          coverageAmount: 0,
-          claimsStatus: CLAIMS_STATUS.FULL_COVER,
-          caseStatus: CASE_STATUS.COMPENSATED
-        },
-        isAkoReviewed: false,
-        auditor: {
-          userId: numericUserId,
-          role: USER_ROLE_ENUM.SPECIALIST
-        },
-        dossierRisk: Math.floor(Math.random() * 10) + 1
-      };
-      
-      return HttpResponse.json({
-        success: true,
-        data: fallbackAudit
-      }, { status: 200 });
-      
+      return HttpResponse.json(cases);
     } catch (error) {
-      console.error("[MSW] Error in /rest/kuk/v1/audits/random/:userId handler:", error);
-      
-      // Return error response
-      return HttpResponse.json({
-        success: false,
-        error: "Failed to get random audit"
-      }, { status: 500 });
+      console.error('Error in quarterly case selection handler:', error);
+      return HttpResponse.json([], { status: 500 });
     }
   }),
-  
-  // Handler for selecting quarterly dossiers
-  http.post(`${API_BASE_PATH}/verification/select-quarterly`, async ({ request }) => {
+
+  // POST handler for selecting quarterly dossiers (legacy)
+  http.post(`${API_BASE_PATH}/audit-completion/select-quarterly`, async ({ request }) => {
     try {
       const body = await request.json() as { quarterKey: string; userIds: string[] };
       const { quarterKey } = body;
@@ -807,36 +730,17 @@ export const handlers = [
     }
   }),
 
-  // Get current logged-in user
-  http.get(`${API_BASE_PATH}/auth/current-user`, () => {
-    // In production, this would return information about the currently logged-in user
-    // For our mock, we pretend the logged-in user is the team leader with id '4'
-    const currentUser = users.find(u => u.id === createUserId('4'));
-    
-    if (currentUser) {
-      return HttpResponse.json({ 
-        success: true, 
-        data: currentUser
-      });
-    }
-    
-    return HttpResponse.json(
-      { success: false, error: 'No current user found' },
-      { status: 404 }
-    );
-  }),
-  
-  // Get audit verification data
-  http.get(`${API_BASE_PATH}/audit-verification/:auditId`, async ({ params }) => {
+  // Get audit completion data
+  http.get(`${API_BASE_PATH}/audit-completion/:auditId`, async ({ params }) => {
     try {
       const { auditId } = params;
       const numericAuditId = safeParseInt(Array.isArray(auditId) ? auditId[0] : auditId);
       
-      // For now, return a basic verification response
-      // In a real implementation, this would fetch from the database
-      const verificationData = {
+      // For now, return a basic completion response
+      
+      const completionData = {
         auditId: numericAuditId,
-        status: 'not_verified' as const,
+        status: 'not_completed' as const,
         verifierId: 1,
         rating: '',
         comment: '',
@@ -845,19 +749,19 @@ export const handlers = [
       
       return HttpResponse.json({
         success: true,
-        data: verificationData
+        data: completionData
       }, { status: 200 });
     } catch (error) {
-      console.error("[MSW] Error in /rest/kuk/v1/audit-verification/:auditId GET handler:", error);
+      console.error("[MSW] Error in /rest/kuk/v1/audit-completion/:auditId GET handler:", error);
       return HttpResponse.json({
         success: false,
-        error: 'Failed to fetch verification data'
+        error: 'Failed to fetch completion data'
       }, { status: 500 });
     }
   }),
   
-  // Update audit verification data
-  http.put(`${API_BASE_PATH}/audit-verification/:auditId`, async ({ params, request }) => {
+  // Update audit completion data
+  http.put(`${API_BASE_PATH}/audit-completion/:auditId`, async ({ params, request }) => {
     try {
       const { auditId } = params;
       const numericAuditId = safeParseInt(Array.isArray(auditId) ? auditId[0] : auditId);
@@ -880,33 +784,33 @@ export const handlers = [
           requestData = jsonData as typeof requestData;
         }
       } catch {
-        console.warn("[MSW] Failed to parse request body for verification update");
+        console.warn("[MSW] Failed to parse request body for completion update");
       }
       
-      console.log(`[MSW] Updating verification data for audit ${numericAuditId}:`, requestData);
+      console.log(`[MSW] Updating completion data for audit ${numericAuditId}:`, requestData);
       
       // In a real implementation, this would save to the database
       // For now, just return a success response with the data
-      const verificationResponse = {
+      const completionResponse = {
         auditId: numericAuditId,
-        status: requestData.status ?? 'not_verified',
+        status: requestData.status ?? 'not_completed',
         verifierId: requestData.verifierId ?? 1,
         rating: requestData.rating ?? '',
         comment: requestData.comment ?? '',
-        verificationDate: requestData.status === 'verified' ? new Date().toISOString() : undefined,
+        completionDate: requestData.status === 'completed' ? new Date().toISOString() : undefined,
         findings: requestData.findings || []
       };
       
       return HttpResponse.json({
         success: true,
-        data: verificationResponse
+        data: completionResponse
       }, { status: 200 });
     } catch (error) {
-      console.error("[MSW] Error in /rest/kuk/v1/audit-verification/:auditId PUT handler:", error);
+      console.error("[MSW] Error in /rest/kuk/v1/audit-completion/:auditId PUT handler:", error);
       return HttpResponse.json({
         success: false,
-        error: 'Failed to update verification data'
+        error: 'Failed to update completion data'
       }, { status: 500 });
     }
   }),
-]; 
+];

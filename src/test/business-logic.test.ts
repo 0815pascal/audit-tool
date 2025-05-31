@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { USER_ROLE_ENUM, VERIFICATION_STATUS_ENUM, CASE_TYPE_ENUM } from '../enums'
+import { USER_ROLE_ENUM, AUDIT_STATUS_ENUM, CASE_TYPE_ENUM } from '../enums'
 import { generateRealisticCaseNumber } from '../utils/statusUtils'
 import { COVERAGE_LIMITS } from '../constants'
 
@@ -33,14 +33,13 @@ const getCoverageAmountLimit = (role: string) => {
   }
 }
 
-const canUserVerifyAudit = (auditUserId: string, currentUserId: string, currentUserRole: string) => {
-  // Team leaders can't verify their own audits (IKS requirement)
+const canUserCompleteAudit = (auditUserId: string, currentUserId: string, currentUserRole: string) => {
+  // Team leaders can't complete their own audits (IKS requirement)
   if (currentUserRole === USER_ROLE_ENUM.TEAM_LEADER && auditUserId === currentUserId) {
-    return false
+    return false;
   }
-  
-  // Only team leaders and specialists can verify audits
-  return currentUserRole === USER_ROLE_ENUM.TEAM_LEADER || currentUserRole === USER_ROLE_ENUM.SPECIALIST
+  // Only team leaders and specialists can complete audits
+  return currentUserRole === USER_ROLE_ENUM.TEAM_LEADER || currentUserRole === USER_ROLE_ENUM.SPECIALIST;
 }
 
 const generateUserAuditsForQuarter = (users: typeof mockUsers) => {
@@ -54,9 +53,9 @@ const generateUserAuditsForQuarter = (users: typeof mockUsers) => {
       id: `audit-${user.id}-${Date.now()}`,
       userId: user.id,
       coverageAmount,
-      status: VERIFICATION_STATUS_ENUM.NOT_VERIFIED,
+      status: AUDIT_STATUS_ENUM.PENDING,
       caseType: CASE_TYPE_ENUM.USER_QUARTERLY,
-      isVerified: false
+      isCompleted: false
     }
   })
 }
@@ -66,9 +65,9 @@ const generatePreviousQuarterRandomAudits = (count: number = 2) => {
     id: `prev-quarter-${generateRealisticCaseNumber()}`,
     userId: '', // Random audits not tied to specific user
     coverageAmount: Math.floor(Math.random() * 100000) + 5000,
-    status: VERIFICATION_STATUS_ENUM.NOT_VERIFIED,
+    status: AUDIT_STATUS_ENUM.PENDING,
     caseType: CASE_TYPE_ENUM.PREVIOUS_QUARTER_RANDOM,
-    isVerified: false
+    isCompleted: false
   }))
 }
 
@@ -109,29 +108,29 @@ describe('IKS Audit Business Logic', () => {
     })
   })
 
-  describe('canUserVerifyAudit', () => {
-    it('should prevent team leaders from verifying their own audits', () => {
-      const result = canUserVerifyAudit('1', '1', USER_ROLE_ENUM.TEAM_LEADER)
+  describe('canUserCompleteAudit', () => {
+    it('should prevent team leaders from completing their own audits', () => {
+      const result = canUserCompleteAudit('1', '1', USER_ROLE_ENUM.TEAM_LEADER)
       expect(result).toBe(false)
     })
 
-    it('should allow team leaders to verify other users audits', () => {
-      const result = canUserVerifyAudit('2', '1', USER_ROLE_ENUM.TEAM_LEADER)
+    it('should allow team leaders to complete other users audits', () => {
+      const result = canUserCompleteAudit('2', '1', USER_ROLE_ENUM.TEAM_LEADER)
       expect(result).toBe(true)
     })
 
-    it('should allow specialists to verify audits', () => {
-      const result = canUserVerifyAudit('1', '2', USER_ROLE_ENUM.SPECIALIST)
+    it('should allow specialists to complete audits', () => {
+      const result = canUserCompleteAudit('1', '2', USER_ROLE_ENUM.SPECIALIST)
       expect(result).toBe(true)
     })
 
-    it('should prevent staff from verifying audits', () => {
-      const result = canUserVerifyAudit('1', '3', USER_ROLE_ENUM.STAFF)
+    it('should prevent staff from completing audits', () => {
+      const result = canUserCompleteAudit('1', '3', USER_ROLE_ENUM.STAFF)
       expect(result).toBe(false)
     })
 
-    it('should prevent readers from verifying audits', () => {
-      const result = canUserVerifyAudit('1', '5', USER_ROLE_ENUM.READER)
+    it('should prevent readers from completing audits', () => {
+      const result = canUserCompleteAudit('1', '5', USER_ROLE_ENUM.READER)
       expect(result).toBe(false)
     })
   })
@@ -141,9 +140,9 @@ describe('IKS Audit Business Logic', () => {
       const result = generateUserAuditsForQuarter(mockUsers)
       
       expect(result).toHaveLength(4) // 4 active non-reader users
-      expect(result.every(audit => audit.status === VERIFICATION_STATUS_ENUM.NOT_VERIFIED)).toBe(true)
+      expect(result.every(audit => audit.status === AUDIT_STATUS_ENUM.PENDING)).toBe(true)
       expect(result.every(audit => audit.caseType === CASE_TYPE_ENUM.USER_QUARTERLY)).toBe(true)
-      expect(result.every(audit => !audit.isVerified)).toBe(true)
+      expect(result.every(audit => !audit.isCompleted)).toBe(true)
     })
 
     it('should respect coverage amount limits by role', () => {
@@ -185,9 +184,9 @@ describe('IKS Audit Business Logic', () => {
       const result = generatePreviousQuarterRandomAudits(2)
       
       expect(result).toHaveLength(2)
-      expect(result.every(audit => audit.status === VERIFICATION_STATUS_ENUM.NOT_VERIFIED)).toBe(true)
+      expect(result.every(audit => audit.status === AUDIT_STATUS_ENUM.PENDING)).toBe(true)
       expect(result.every(audit => audit.caseType === CASE_TYPE_ENUM.PREVIOUS_QUARTER_RANDOM)).toBe(true)
-      expect(result.every(audit => !audit.isVerified)).toBe(true)
+      expect(result.every(audit => !audit.isCompleted)).toBe(true)
     })
 
     it('should generate audits with random coverage amounts', () => {
@@ -234,27 +233,27 @@ describe('IKS Audit Business Logic', () => {
       const totalAudits = [...userAudits, ...randomAudits]
       expect(totalAudits).toHaveLength(6)
       
-      // All audits should be unverified initially
-      expect(totalAudits.every(audit => !audit.isVerified)).toBe(true)
-      expect(totalAudits.every(audit => audit.status === VERIFICATION_STATUS_ENUM.NOT_VERIFIED)).toBe(true)
+      // All audits should be pending initially
+      expect(totalAudits.every(audit => !audit.isCompleted)).toBe(true)
+      expect(totalAudits.every(audit => audit.status === AUDIT_STATUS_ENUM.PENDING)).toBe(true)
     })
 
-    it('should respect IKS verification rules', () => {
+    it('should respect IKS completion rules', () => {
       const userAudits = generateUserAuditsForQuarter(mockUsers)
       const teamLeaderUserId = '1'
       
-      // Team leader should not be able to verify their own audit
+      // Team leader should not be able to complete their own audit
       const teamLeaderAudit = userAudits.find(audit => audit.userId === teamLeaderUserId)
       if (teamLeaderAudit) {
-        const canVerifyOwn = canUserVerifyAudit(teamLeaderAudit.userId, teamLeaderUserId, USER_ROLE_ENUM.TEAM_LEADER)
-        expect(canVerifyOwn).toBe(false)
+        const canCompleteOwn = canUserCompleteAudit(teamLeaderAudit.userId, teamLeaderUserId, USER_ROLE_ENUM.TEAM_LEADER)
+        expect(canCompleteOwn).toBe(false)
       }
       
-      // Team leader should be able to verify other users' audits
+      // Team leader should be able to complete other users' audits
       const otherUserAudit = userAudits.find(audit => audit.userId !== teamLeaderUserId)
       if (otherUserAudit) {
-        const canVerifyOther = canUserVerifyAudit(otherUserAudit.userId, teamLeaderUserId, USER_ROLE_ENUM.TEAM_LEADER)
-        expect(canVerifyOther).toBe(true)
+        const canCompleteOther = canUserCompleteAudit(otherUserAudit.userId, teamLeaderUserId, USER_ROLE_ENUM.TEAM_LEADER)
+        expect(canCompleteOther).toBe(true)
       }
     })
   })

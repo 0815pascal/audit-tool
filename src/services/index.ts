@@ -13,6 +13,13 @@ export type {
   FindingId
 } from './apiUtils';
 
+// Re-export completion types from auditService
+export type {
+  CompletionData,
+  CompletionResponse,
+  UpdateCompletionRequest
+} from './auditService';
+
 // Re-export all API functions for centralized access
 export {
   getAuditsByQuarter,
@@ -25,16 +32,9 @@ export {
   exportAuditsForQuarter,
   getRandomAuditForUser,
   selectQuarterlyDossiers,
-  saveAuditVerification,
-  verifyAuditAPI,
-  getAuditVerification
-} from './auditService';
-
-// Re-export verification types
-export type {
-  VerificationData,
-  VerificationResponse,
-  UpdateVerificationRequest
+  saveAuditCompletion,
+  completeAuditAPI,
+  getAuditCompletion
 } from './auditService';
 
 // Re-export helper functions

@@ -1,25 +1,21 @@
-import { 
-  ClaimsStatus, 
+import {
   QuarterPeriod,
   QuarterNumber
 } from '../types/types';
 import {
-  isQuarterPeriod,
   createCaseId,
-  createUserId
+  createValidYear
 } from '../types/typeHelpers';
 import { 
   CLAIMS_STATUS, 
-  CASE_STATUS, 
-  FINDING_TYPES,
+  CASE_STATUS_MAPPING,
+  DETAILED_FINDING_TYPES,
+  SPECIAL_FINDING_TYPES,
   QUARTER_CALCULATIONS
 } from '../constants';
-import { USER_ROLE_ENUM, DEFAULT_VALUE_ENUM } from '../enums';
-import {
-  ApiCaseResponse,
-  ApiAuditResponse,
-  ApiFindingResponse
-} from './mockTypes';
+import { Finding, createFindingId } from '../services/apiUtils';
+import { USER_ROLE_ENUM } from '../enums';
+import {ApiAuditResponse, ApiCaseResponse} from './mockTypes';
 
 // In-memory storage for created audits
 export const auditStore = new Map<number, ApiAuditResponse>();
@@ -81,84 +77,67 @@ export const getQuarterFromDate = (dateString: string): { quarterNum: number; ye
 };
 
 // Utility to convert our case data to the API case format
-export const caseToCaseObj = (caseData: Record<string, unknown>): ApiCaseResponse | null => {
-  if (!caseData) return null;
+export const caseToCaseObj = (caseItem: Record<string, unknown>): ApiCaseResponse => {
+  const numericId = getNumericId(caseItem.id as string | number | undefined);
   
-  // Use the notificationDate from mock data, or create a realistic fallback
-  const notificationDate = (caseData.notificationDate as string) || new Date().toISOString().split('T')[0];
+  // Use the notificationDate from case data or create a realistic fallback
+  const notificationDate = (caseItem.notificationDate as string) || new Date(
+    createValidYear(2025),
+    Math.floor(Math.random() * 12),
+    Math.floor(Math.random() * 28) + 1
+  ).toISOString().split('T')[0];
   
   return {
-    caseNumber: createCaseId(safeParseInt(caseData.caseNumber as string | number, 0)),
+    caseNumber: createCaseId(numericId),
     claimOwner: {
-      userId: typeof caseData.userId === 'string' 
-        ? createUserId(caseData.userId) 
-        : safeParseInt(caseData.userId as string, 1),
-      role: USER_ROLE_ENUM.TEAM_LEADER
+      userId: numericId,
+      role: USER_ROLE_ENUM.SPECIALIST
     },
-    claimsStatus: caseData.claimsStatus as ClaimsStatus || CLAIMS_STATUS.FULL_COVER,
-    coverageAmount: caseData.coverageAmount as number || (caseData.totalAmount as number) || 0,
-    caseStatus: CASE_STATUS.COMPENSATED,
-    notificationDate: notificationDate,
-    notifiedCurrency: (caseData.notifiedCurrency as string) || 'CHF'
+    claimsStatus: (caseItem.claimsStatus as typeof CLAIMS_STATUS.FULL_COVER) || CLAIMS_STATUS.FULL_COVER,
+    coverageAmount: (caseItem.coverageAmount as number) || 10000.00,
+    caseStatus: CASE_STATUS_MAPPING.COMPENSATED,
+    notificationDate,
+    notifiedCurrency: (caseItem.notifiedCurrency as string) || 'CHF'
   };
 };
 
 // Convert our case to API audit format
-export const caseToAudit = (caseData: Record<string, unknown>, quarter: string): ApiAuditResponse | null => {
-  if (!caseData) return null;
-  
-  let formattedQuarter = quarter || "Q1-2023";
-  // Ensure quarter is in the right format
-  if (!isQuarterPeriod(formattedQuarter)) {
-    const currentDate = new Date();
-    const currentQuarter = Math.floor(currentDate.getMonth() / QUARTER_CALCULATIONS.MONTHS_PER_QUARTER) + QUARTER_CALCULATIONS.QUARTER_OFFSET as QuarterNumber;
-    formattedQuarter = `Q${currentQuarter}-${currentDate.getFullYear()}`;
-  }
-  
-  // Use the notificationDate from case data or create a realistic fallback
-  const notificationDate = (caseData.notificationDate as string) || new Date().toISOString().split('T')[0];
-  
+export const caseToAudit = (caseObj: ApiCaseResponse, quarter: QuarterPeriod): ApiAuditResponse => {
+  const numericId = getNumericId(caseObj.caseNumber);
   return {
-    auditId: getNumericId(caseData.id as string),
-    quarter: formattedQuarter as QuarterPeriod,
-    caseObj: caseToCaseObj(caseData) || {
-      caseNumber: createCaseId(Math.floor(DEFAULT_VALUE_ENUM.DEFAULT_CASE_NUMBER + Math.random() * DEFAULT_VALUE_ENUM.CASE_NUMBER_RANGE)),
-      claimOwner: {
-        userId: 1,
-        role: USER_ROLE_ENUM.TEAM_LEADER
-      },
-      claimsStatus: CLAIMS_STATUS.FULL_COVER,
-      coverageAmount: 0,
-      caseStatus: CASE_STATUS.COMPENSATED,
-      notificationDate: notificationDate,
-      notifiedCurrency: 'CHF'
+    auditId: numericId,
+    quarter,
+    caseObj: {
+      ...caseObj,
+      caseStatus: CASE_STATUS_MAPPING.COMPENSATED,
+      claimsStatus: caseObj.claimsStatus || CLAIMS_STATUS.FULL_COVER,
+      coverageAmount: caseObj.coverageAmount || 10000.00,
+      notificationDate: caseObj.notificationDate,
+      notifiedCurrency: caseObj.notifiedCurrency || 'CHF'
     },
     auditor: {
-      userId: 1,
-      role: USER_ROLE_ENUM.SPECIALIST
+      userId: typeof caseObj.claimOwner?.userId === 'number' ? caseObj.claimOwner.userId : 2,
+      role: caseObj.claimOwner?.role || USER_ROLE_ENUM.SPECIALIST
     },
     isAkoReviewed: false
   };
 };
 
-// Generate findings for an audit
-export const generateFindings = (auditId: string | number): ApiFindingResponse[] => {
-  const numericId = getNumericId(auditId);
-  const count = Math.floor(Math.random() * 3); // 0-2 findings per audit
-  const findings: ApiFindingResponse[] = [];
+// Generate realistic findings for an audit
+export const generateFindings = (numericId: number): Finding[] => {
+  const numFindings = Math.floor(Math.random() * 3) + 1; // 1-3 findings
+  const findingTypes = [...Object.keys(DETAILED_FINDING_TYPES), ...Object.keys(SPECIAL_FINDING_TYPES)];
   
-  for (let i = 0; i < count; i++) {
-    const findingTypes = Object.keys(FINDING_TYPES);
+  return Array.from({ length: numFindings }, (_, i) => {
     const randomType = findingTypes[Math.floor(Math.random() * findingTypes.length)];
+    const allFindingTypes = { ...DETAILED_FINDING_TYPES, ...SPECIAL_FINDING_TYPES };
     
-    findings.push({
-      findingId: numericId * 10 + i + 1,
-      type: randomType,
-      description: `Sample finding ${i + 1} for audit ${numericId}: ${FINDING_TYPES[randomType]}`
-    });
-  }
-  
-  return findings;
+    return {
+      findingId: createFindingId(i + 1),
+      type: randomType as keyof typeof allFindingTypes,
+      description: `Sample finding ${i + 1} for audit ${numericId}: ${allFindingTypes[randomType as keyof typeof allFindingTypes]}`
+    };
+  });
 };
 
 // Calculate previous quarter info

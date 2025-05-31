@@ -7,10 +7,9 @@ import {
   createEmptySpecialFindings
 } from '../types/typeHelpers';
 import { 
-  CLAIMS_STATUS, 
   CASE_TYPES
 } from '../constants';
-import { USER_ROLE_ENUM, Department } from '../enums';
+import { USER_ROLE_ENUM, Department, CLAIMS_STATUS_ENUM } from '../enums';
 import { MockCaseData } from './mockTypes';
 
 // Mock users data
@@ -37,10 +36,10 @@ export const mockCases: MockCaseData[] = [
     dossierRisk: 123456,
     dossierName: 'Matrix Incorporated',
     totalAmount: 525,
-    isVerified: false,
-    claimsStatus: CLAIMS_STATUS.FULL_COVER,
+    isCompleted: false,
+    claimsStatus: CLAIMS_STATUS_ENUM.FULL_COVER,
     coverageAmount: 525,
-    verifier: '',
+    auditor: '',
     comment: '',
     rating: '',
     specialFindings: createEmptySpecialFindings(),
@@ -62,10 +61,10 @@ export const mockCases: MockCaseData[] = [
     dossierRisk: 234567,
     dossierName: 'Wonderland Holdings',
     totalAmount: 360,
-    isVerified: false,
-    claimsStatus: CLAIMS_STATUS.FULL_COVER,
+    isCompleted: false,
+    claimsStatus: CLAIMS_STATUS_ENUM.FULL_COVER,
     coverageAmount: 360,
-    verifier: '',
+    auditor: '',
     comment: '',
     rating: '',
     specialFindings: createEmptySpecialFindings(),
@@ -87,10 +86,10 @@ export const mockCases: MockCaseData[] = [
     dossierRisk: 345678,
     dossierName: 'Wilson Family Trust',
     totalAmount: 440,
-    isVerified: false,
-    claimsStatus: CLAIMS_STATUS.PARTIAL_COVER,
+    isCompleted: false,
+    claimsStatus: CLAIMS_STATUS_ENUM.PARTIAL_COVER,
     coverageAmount: 440,
-    verifier: '',
+    auditor: '',
     comment: '',
     rating: '',
     specialFindings: createEmptySpecialFindings(),
@@ -112,10 +111,10 @@ export const mockCases: MockCaseData[] = [
     dossierRisk: 456789,
     dossierName: 'Miller Automotive Group',
     totalAmount: 875,
-    isVerified: false,
-    claimsStatus: CLAIMS_STATUS.FULL_COVER,
+    isCompleted: false,
+    claimsStatus: CLAIMS_STATUS_ENUM.FULL_COVER,
     coverageAmount: 875,
-    verifier: '',
+    auditor: '',
     comment: '',
     rating: '',
     specialFindings: createEmptySpecialFindings(),
@@ -137,10 +136,10 @@ export const mockCases: MockCaseData[] = [
     dossierRisk: 567890,
     dossierName: 'Brown Medical Associates',
     totalAmount: 970,
-    isVerified: false,
-    claimsStatus: CLAIMS_STATUS.FULL_COVER,
+    isCompleted: false,
+    claimsStatus: CLAIMS_STATUS_ENUM.FULL_COVER,
     coverageAmount: 970,
-    verifier: '',
+    auditor: '',
     comment: '',
     rating: '',
     specialFindings: createEmptySpecialFindings(),
@@ -162,10 +161,10 @@ export const mockCases: MockCaseData[] = [
     dossierRisk: 678901,
     dossierName: 'Wilson Tech Solutions',
     totalAmount: 1250,
-    isVerified: false,
-    claimsStatus: CLAIMS_STATUS.PARTIAL_COVER,
+    isCompleted: false,
+    claimsStatus: CLAIMS_STATUS_ENUM.PARTIAL_COVER,
     coverageAmount: 1250,
-    verifier: '',
+    auditor: '',
     comment: '',
     rating: '',
     specialFindings: createEmptySpecialFindings(),
@@ -187,10 +186,10 @@ export const mockCases: MockCaseData[] = [
     dossierRisk: 789012,
     dossierName: 'Thompson Industries',
     totalAmount: 800,
-    isVerified: false,
-    claimsStatus: CLAIMS_STATUS.FULL_COVER,
+    isCompleted: false,
+    claimsStatus: CLAIMS_STATUS_ENUM.FULL_COVER,
     coverageAmount: 800,
-    verifier: '',
+    auditor: '',
     comment: '',
     rating: '',
     specialFindings: createEmptySpecialFindings(),
@@ -205,26 +204,29 @@ export const mockCases: MockCaseData[] = [
   {
     id: '8',
     userId: '8',
-    notificationDate: '2024-10-05', // Q4 2024 (older quarter for variety)
+    notificationDate: '2025-03-25', // Q1 2025 (previous quarter)
     clientName: 'Lisa Garcia',
-    policyNumber: 34567,
+    policyNumber: 56789,
     caseNumber: 30052567,
     dossierRisk: 890123,
     dossierName: 'Garcia Consulting',
     totalAmount: 650,
-    isVerified: false,
-    claimsStatus: CLAIMS_STATUS.FULL_COVER,
+    isCompleted: false,
+    claimsStatus: CLAIMS_STATUS_ENUM.FULL_COVER,
     coverageAmount: 650,
-    verifier: '',
+    auditor: '',
     comment: '',
     rating: '',
     specialFindings: createEmptySpecialFindings(),
     detailedFindings: createEmptyDetailedFindings(),
-    quarter: '4',
-    year: 2024,
+    quarter: '1',
+    year: 2025,
     isAkoReviewed: false,
-    isSpecialist: true,
+    isSpecialist: false,
     caseType: CASE_TYPES.USER_QUARTERLY,
     notifiedCurrency: 'EUR'
   }
-]; 
+];
+
+// Export the existing array as the main case audits data
+export const MOCK_CASE_AUDITS = mockCases; 

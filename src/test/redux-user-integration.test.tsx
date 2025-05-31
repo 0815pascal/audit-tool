@@ -43,9 +43,8 @@ describe('Redux User Integration Tests', () => {
         },
         caseAudit: {
           currentUserId: createUserId('1'),
-          verifiedAudits: {},
+          auditData: {},
           userQuarterlyStatus: {},
-          quarterlySelection: {},
           userRoles: {
             '1': { role: USER_ROLE_ENUM.SPECIALIST, department: 'Claims' },
             '2': { role: USER_ROLE_ENUM.STAFF, department: 'Claims' }
@@ -95,11 +94,10 @@ describe('Redux User Integration Tests', () => {
         },
         caseAudit: {
           currentUserId: createUserId('99'),
-          verifiedAudits: {},
+          auditData: {},
           userQuarterlyStatus: {},
-          quarterlySelection: {},
           userRoles: {
-            '99': { role: USER_ROLE_ENUM.SPECIALIST, department: 'Claims' }
+            '99': { role: USER_ROLE_ENUM.TEAM_LEADER, department: 'Claims' }
           },
           loading: false,
           error: null
@@ -141,9 +139,8 @@ describe('Redux User Integration Tests', () => {
         },
         caseAudit: {
           currentUserId: createUserId(''),
-          verifiedAudits: {},
+          auditData: {},
           userQuarterlyStatus: {},
-          quarterlySelection: {},
           userRoles: {},
           loading: false,
           error: null

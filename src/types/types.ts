@@ -4,12 +4,12 @@ import {
   ACTION_STATUS_ENUM,
   CASE_STATUS_ENUM,
   CLAIMS_STATUS_ENUM,
-  VERIFICATION_STATUS_ENUM,
   USER_ROLE_ENUM,
   CASE_TYPE_ENUM,
   RATING_VALUE_ENUM,
   DETAILED_FINDING_ENUM,
   SPECIAL_FINDING_ENUM,
+  AUDIT_STATUS_ENUM,
   type Department} from '../enums';
 
 // Import branded types from separate file
@@ -25,15 +25,15 @@ import type {
 
 // Enum for CaseAuditStatus
 export enum CaseAuditStatus {
-  NOT_VERIFIED = 'not_verified',
+  PENDING = 'pending',
   IN_PROGRESS = 'in_progress',
-  VERIFIED = 'verified'
+  COMPLETED = 'completed'
 }
 
 // Core audit step interface
 export interface CaseAuditStep {
   id: string;
-  isVerified: boolean;
+  isCompleted: boolean;
   isIncorrect: boolean;
   comment: string;
 }
@@ -49,9 +49,9 @@ export interface CaseAuditData {
 // Extended storage version with additional metadata
 export interface StoredCaseAuditData extends CaseAuditData {
   userId: UserId;
-  verificationDate: ISODateString | null;
-  verifier: UserId;
-  isVerified: boolean;
+  completionDate: ISODateString | null;
+  auditor: UserId;
+  isCompleted: boolean;
   isIncorrect: boolean;
   status: CaseAuditStatus;
   steps: Record<string, CaseAuditStep>;
@@ -68,7 +68,7 @@ export interface StoredCaseAuditData extends CaseAuditData {
 
 // Action payload for case audit operations
 export interface CaseAuditActionPayload extends BaseAuditActionPayload, CaseAuditData {
-  verifier: UserId;
+  auditor: UserId;
 }
 
 // Summary version of CaseAudit with only essential fields
@@ -83,7 +83,7 @@ export interface CaseAuditCore extends BaseEntity<CaseAuditId> {
   dossierName: string;
   totalAmount: number;
   coverageAmount: number;
-  isVerified: boolean;
+  isCompleted: boolean;
   isAkoReviewed: boolean;
   isSpecialist: boolean;
   claimsStatus: ClaimsStatus;
@@ -94,7 +94,7 @@ export interface CaseAuditCore extends BaseEntity<CaseAuditId> {
 
 // Complete case audit entity with full data
 export interface CaseAudit extends CaseAuditCore, CaseAuditData {
-  verifier: UserId;
+  auditor: UserId;
   status?: CaseAuditStatus;
   notificationDate?: string; // Date when the case was notified, used for quarter calculation
   notifiedCurrency?: string; // Currency code for the case (e.g., CHF, EUR, USD)
@@ -103,21 +103,15 @@ export interface CaseAudit extends CaseAuditCore, CaseAuditData {
 // Redux state for case audits
 export interface CaseAuditState {
   currentUserId: UserId;
-  verifiedAudits: Dictionary<StoredCaseAuditData>;
+  auditData: Dictionary<StoredCaseAuditData>;
   userQuarterlyStatus: {
     [userId: string]: {
       [quarterKey: string]: {
-        verified: boolean;
-        lastVerified?: string;
+        completed: boolean;
+        lastCompleted?: string;
       }
     }
   };
-  quarterlySelection: Dictionary<{
-    quarterKey: string;
-    lastSelectionDate?: string;
-    userQuarterlyAudits: CaseAuditId[];
-    previousQuarterRandomAudits: CaseAuditId[];
-  }>;
   userRoles: Dictionary<{
     role: string;
     department: string;
@@ -133,7 +127,7 @@ export type CaseType = CASE_TYPE_ENUM;
 // Types using enums for stronger typing
 export type ClaimsStatus = CLAIMS_STATUS_ENUM;
 export type CaseStatus = CASE_STATUS_ENUM;
-export type VerificationStatus = VERIFICATION_STATUS_ENUM;
+export type AuditStatus = AUDIT_STATUS_ENUM;
 export type ActionStatus = ACTION_STATUS_ENUM;
 export type FindingCategory = FINDING_CATEGORY;
 export type ToastType = TOAST_TYPE;
@@ -145,7 +139,7 @@ export type FindingType = DetailedFindingType | SpecialFindingType;
 export type DetailedFindingsRecord = Record<DetailedFindingType, boolean>;
 export type SpecialFindingsRecord = Record<SpecialFindingType, boolean>;
 
-// Define common type for verification findings as union of specific finding types
+// Define common type for audit findings as union of specific finding types
 export type FindingsRecord = {
   [K in DetailedFindingType | SpecialFindingType]: boolean;
 };
@@ -217,18 +211,17 @@ export interface Quarter {
 export interface AuditForSelection extends BaseEntity<CaseAuditId> {
   auditId: CaseAuditId; // Explicitly include auditId for selection operations
   userId: string;
-  status?: VERIFICATION_STATUS_ENUM;
+  status?: AUDIT_STATUS_ENUM;
   coverageAmount: number;
   claimsStatus?: string;
-  verifier?: string;
+  auditor?: string;
   comment?: string;
   rating?: string;
   specialFindings?: FindingsRecord;
   detailedFindings?: FindingsRecord;
-  isVerified?: boolean;
+  isCompleted?: boolean;
   isAkoReviewed?: boolean;
   quarter?: string; // Quarter calculated from notification date
-  year?: number; // Year calculated from notification date
   notifiedCurrency?: string; // Currency code for the case (e.g., CHF, EUR, USD)
 }
 

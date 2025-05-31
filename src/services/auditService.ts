@@ -1,6 +1,6 @@
-import { QuarterPeriod, CaseAuditData, UserAuditForSelection, AuditForSelection, ISODateString, ApiResponse } from '../types/types';
+import { QuarterPeriod, CaseAuditData, UserAuditForSelection, AuditForSelection, ISODateString } from '../types/types';
 import { UserId, CaseAuditId } from '../types/brandedTypes';
-import { createCaseId, createEmptyFindings } from '../types/typeHelpers';
+import { createCaseId } from '../types/typeHelpers';
 import axios from 'axios';
 import {
   ApiCache,
@@ -188,8 +188,8 @@ export const getFindingsByAudit = async (caseAuditId: CaseAuditId): Promise<Find
 };
 
 // Select cases for audit in a given quarter (8 current + 2 previous quarter)
-export const selectCasesForAudit = async (quarter: QuarterPeriod): Promise<CaseObj[]> => {
-  const cacheKey = createCacheKey('select-cases', quarter);
+export const selectCasesForAudit = async (quarterPeriod: QuarterPeriod): Promise<CaseObj[]> => {
+  const cacheKey = createCacheKey('select-cases', quarterPeriod);
   
   // Check cache first
   if (isCacheValid(caseCache, cacheKey)) {
@@ -197,8 +197,8 @@ export const selectCasesForAudit = async (quarter: QuarterPeriod): Promise<CaseO
   }
   
   try {
-    console.log(`[API] Selecting cases for audit in quarter ${quarter}`);
-    const response = await api.get<CaseObj[]>(`/audits/select-cases/${quarter}`);
+    console.log(`[API] Selecting cases for audit in quarter ${quarterPeriod}`);
+    const response = await api.get<CaseObj[]>(`/audit-completion/select-quarterly/${quarterPeriod}`);
     
     if (response.status >= 400) {
       console.warn(`[API] Error ${response.status} selecting cases for audit`);
@@ -277,7 +277,7 @@ export async function getRandomAuditForUser(
 }
 
 /**
- * Select quarterly dossiers for verification
+ * Select quarterly dossiers for auditing
  */
 export async function selectQuarterlyDossiers(
     quarterKey: string,
@@ -289,7 +289,7 @@ export async function selectQuarterlyDossiers(
   lastSelectionDate: ISODateString;
 }> {
   // Make the API request
-  const response = await fetch(`${API_BASE_PATH}/verification/select-quarterly`, {
+  const response = await fetch(`${API_BASE_PATH}/audit-completion/select-quarterly`, {
     method: HTTP_METHOD.POST,
     headers: {
       'Content-Type': 'application/json'
@@ -313,123 +313,123 @@ export async function selectQuarterlyDossiers(
   return data.data;
 }
 
-// ===== VERIFICATION FUNCTIONS (merged from auditVerificationService.ts) =====
+// ===== AUDIT COMPLETION FUNCTIONS (merged from auditCompletionService.ts) =====
 
-// Backend API types for verification data
-export interface VerificationData {
-  verifierId: number;
-  status: 'verified' | 'in_progress' | 'not_verified';
+export interface CompletionData {
+  auditorId: number;
+  status: 'completed' | 'in_progress' | 'pending';
   rating?: string;
   comment?: string;
   findings?: Finding[];
-  isVerified?: boolean;
+  isCompleted?: boolean;
 }
 
-// Request payload for updating verification data
-export interface UpdateVerificationRequest {
-  status: VerificationData['status'];
-  verifierId: number;
+export interface UpdateCompletionRequest {
+  status: CompletionData['status'];
+  auditorId: number;
   rating?: string;
   comment?: string;
-  findings?: VerificationData['findings'];
+  findings?: CompletionData['findings'];
 }
 
-// Response from backend verification API
-export interface VerificationResponse {
+export interface CompletionResponse {
   success: boolean;
-  data?: VerificationData;
+  data?: CompletionData;
   error?: string;
 }
 
-/**
- * Save audit verification data (in-progress state)
- */
-export const saveAuditVerification = async (
+export const saveAuditCompletion = async (
     auditId: CaseAuditId | string,
-    verifierId: UserId,
+    auditorId: UserId,
     caseAuditData: CaseAuditData
-): Promise<VerificationResponse> => {
-  const numericAuditId = parseInt(typeof auditId === 'string' ? auditId.replace(/\D/g, '') : String(auditId).replace(/\D/g, ''));
-  const numericVerifierId = parseInt(String(verifierId));
-
-  const requestData: UpdateVerificationRequest = {
-    status: 'in_progress',
-    verifierId: numericVerifierId,
-    rating: caseAuditData.rating,
-    comment: caseAuditData.comment
-  };
-
-  console.log(`[API] Saving verification data for audit ${auditId}:`, requestData);
-
-  const response = await api.put<VerificationResponse>(
-      `/audit-verification/${numericAuditId}`,
-      requestData
-  );
-
-  if (!response.data.success) {
-    throw new Error(response.data.error ?? 'Failed to save verification data');
-  }
-
-  return response.data;
-};
-
-/**
- * Verify audit
- */
-export const verifyAuditAPI = async (
-  caseAuditId: CaseAuditId | string,
-  verifier: UserId | string,
-  caseAuditData: CaseAuditData
-): Promise<VerificationResponse> => {
-  const numericAuditId = parseInt(typeof caseAuditId === 'string' ? caseAuditId.replace(/\D/g, '') : String(caseAuditId).replace(/\D/g, ''));
-  const numericVerifierId = parseInt(typeof verifier === 'string' ? verifier.replace(/\D/g, '') : String(verifier).replace(/\D/g, ''));
-
-  const requestData = {
-    verifier: numericVerifierId,
-    comment: caseAuditData.comment || '',
-    rating: caseAuditData.rating || '',
-    specialFindings: caseAuditData.specialFindings || createEmptyFindings(),
-    detailedFindings: caseAuditData.detailedFindings || createEmptyFindings(),
-    status: 'verified' as const,
-    isVerified: true
-  };
-
+): Promise<CompletionResponse> => {
   try {
-    console.log(`[API] Verifying audit ${caseAuditId}:`, requestData);
+    console.log(`[API] Saving audit completion for ${auditId}:`, caseAuditData);
 
-    const response = await api.put<ApiResponse<VerificationData>>(`/audit-verification/${numericAuditId}`, requestData);
+    const response = await fetch(`${API_BASE_PATH}/audit/${auditId}/complete`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        auditorId,
+        status: 'completed' as const,
+        rating: caseAuditData.rating,
+        comment: caseAuditData.comment,
+        specialFindings: caseAuditData.specialFindings,
+        detailedFindings: caseAuditData.detailedFindings,
+        isCompleted: true
+      })
+    });
 
-    if (!response.data.success) {
-      console.error(`Failed to verify audit: ${response.data.error}`);
-      throw new Error(response.data.error ?? 'Failed to verify audit');
+    const data = await response.json();
+    if (!response.ok) {
+      console.error(`Failed to save audit completion: ${data.error}`);
+      throw new Error(data.error ?? 'Failed to save audit completion');
     }
 
-    return response.data;
+    return data;
   } catch (error) {
-    console.error('[API] Error verifying audit:', error);
+    console.error('[API] Error saving audit completion:', error);
     throw error;
   }
 };
 
-/**
- * Get verification data for an audit
- */
-export const getAuditVerification = async (caseAuditId: CaseAuditId | string): Promise<VerificationData | null> => {
+export const completeAuditAPI = async (
+  caseAuditId: CaseAuditId | string,
+  auditor: UserId | string,
+  caseAuditData: CaseAuditData
+): Promise<CompletionResponse> => {
   try {
-    const numericAuditId = parseInt(typeof caseAuditId === 'string' ? caseAuditId.replace(/\D/g, '') : String(caseAuditId).replace(/\D/g, ''));
+    const response = await fetch(`${API_BASE_PATH}/audit/${caseAuditId}/complete`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        auditor,
+        rating: caseAuditData.rating,
+        comment: caseAuditData.comment,
+        specialFindings: caseAuditData.specialFindings,
+        detailedFindings: caseAuditData.detailedFindings,
+        status: 'completed' as const,
+        isCompleted: true
+      })
+    });
 
-    console.log(`[API] Fetching verification data for audit ${caseAuditId}`);
+    console.log(`[API] Completing audit ${caseAuditId}:`, caseAuditData);
 
-    const response = await api.get<VerificationResponse>(`/audit-verification/${numericAuditId}`);
-
-    if (!response.data.success) {
-      console.warn(`Failed to fetch verification data: ${response.data.error}`);
-      return null;
+    const data = await response.json();
+    if (!response.ok) {
+      console.error(`Failed to complete audit: ${data.error}`);
+      throw new Error(data.error ?? 'Failed to complete audit');
     }
 
-    return response.data.data || null;
+    return data;
   } catch (error) {
-    console.error('[API] Error fetching verification data:', error);
+    console.error('[API] Error completing audit:', error);
+    throw error;
+  }
+};
+
+export const getAuditCompletion = async (caseAuditId: CaseAuditId | string): Promise<CompletionData | null> => {
+  try {
+    console.log(`[API] Getting audit completion data for ${caseAuditId}`);
+    
+    const response = await fetch(`${API_BASE_PATH}/audit/${caseAuditId}/completion`);
+    
+    if (!response.ok) {
+      if (response.status === 404) {
+        console.log(`[API] No completion data found for audit ${caseAuditId}`);
+        return null;
+      }
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error(`[API] Error getting audit completion for ${caseAuditId}:`, error);
     return null;
   }
 }; 

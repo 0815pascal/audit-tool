@@ -86,18 +86,18 @@ export enum ACTION_STATUS_ENUM {
   FAILED = 'failed'
 }
 
-// Verification status enum
-export enum VERIFICATION_STATUS_ENUM {
+// Audit status enum
+export enum AUDIT_STATUS_ENUM {
   IN_PROGRESS = 'in_progress',
-  NOT_VERIFIED = 'not_verified',
-  VERIFIED = 'verified'
+  PENDING = 'pending',
+  COMPLETED = 'completed'
 }
 
 // Quarterly status enum
 export enum QUARTERLY_STATUS_ENUM {
-  VERIFIED = 'verified',
-  NOT_VERIFIED = 'not_verified',
-  PENDING = 'pending'
+  COMPLETED = 'completed',
+  PENDING = 'pending',
+  IN_PROGRESS = 'in_progress'
 }
 
 // Button color enum for form controls

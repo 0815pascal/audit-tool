@@ -62,7 +62,7 @@ test.describe('IKS Audit Tool - Auto-Select and Verification', () => {
     // Check table headers
     await expect(page.locator('th:has-text("CaseID")')).toBeVisible();
     await expect(page.locator('th:has-text("Verantwortlicher Fallbearbeiter")')).toBeVisible();
-    await expect(page.getByTestId('verification-result-header')).toBeVisible();
+    await expect(page.getByTestId('completion-result-header')).toBeVisible();
     await expect(page.getByTestId('verifier-header')).toBeVisible();
     await expect(page.locator('th:has-text("Aktionen")')).toBeVisible();
     
@@ -318,8 +318,15 @@ test.describe('IKS Audit Tool - Auto-Select and Verification', () => {
     await autoSelectButton.click();
     await page.waitForTimeout(2000);
     
+    // Wait for the audit table to be populated with enabled Prüfen buttons
+    await page.waitForSelector('tr:has(button:has-text("Prüfen"):not([disabled]))', { timeout: 10000 });
+    
     // Get the first enabled Prüfen button and its corresponding case ID
     const firstEnabledRow = page.locator('tr:has(button:has-text("Prüfen"):not([disabled]))').first();
+    
+    // Wait for the row to be visible and stable
+    await expect(firstEnabledRow).toBeVisible();
+    
     const caseId = await firstEnabledRow.locator('td').first().textContent();
     console.log('Emily will work on case:', caseId);
     
@@ -331,12 +338,18 @@ test.describe('IKS Audit Tool - Auto-Select and Verification', () => {
     const pruefenButton = firstEnabledRow.locator('button:has-text("Prüfen")');
     await pruefenButton.click();
     
+    // Wait for modal to be visible
+    await page.waitForSelector('.modal', { state: 'visible' });
+    
     // Fill some data to make it "in progress"
     await page.fill('textarea[placeholder*="Kommentar"]', 'Emily started this verification');
     await page.selectOption('#pruefenster-rating', 'MOSTLY_FULFILLED');
     
     // Close modal without submitting (this should save as in-progress and set the verifier)
     await page.click('button:has-text("Abbrechen")');
+    
+    // Wait for modal to close
+    await page.waitForSelector('.modal', { state: 'hidden' });
     await page.waitForTimeout(1000);
     
     // After Emily starts verification, the Prüfer column should show her initials 'ED', not her user ID '4'

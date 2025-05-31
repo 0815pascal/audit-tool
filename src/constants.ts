@@ -11,7 +11,6 @@ import {
 
 import {
   CaseType,
-  FindingType,
   DetailedFindingType,
   SpecialFindingType,
   ActionStatus
@@ -35,9 +34,6 @@ export const CASE_STATUS_MAPPING = {
   [CASE_STATUS_ENUM.COMPENSATED]: CASE_STATUS_ENUM.COMPENSATED,
   [CASE_STATUS_ENUM.CLOSED]: CASE_STATUS_ENUM.CLOSED
 };
-
-// Export as CASE_STATUS for backward compatibility
-export const CASE_STATUS = CASE_STATUS_MAPPING;
 
 // Case types
 export const CASE_TYPES: Record<CaseType, CaseType> = {
@@ -66,8 +62,7 @@ export const ACTION_STATUS: Record<ActionStatus, ActionStatus> = {
   [ACTION_STATUS_ENUM.SUCCEEDED]: ACTION_STATUS_ENUM.SUCCEEDED,
   [ACTION_STATUS_ENUM.FAILED]: ACTION_STATUS_ENUM.FAILED
 };
-// Error messages - Centralizing for consistency
-// Default values for various operations
+
 // Finding types - Split into detailed and special findings
 export const DETAILED_FINDING_TYPES: Record<DetailedFindingType, string> = {
   facts_incorrect: "Facts incorrect",
@@ -89,18 +84,6 @@ export const SPECIAL_FINDING_TYPES: Record<SpecialFindingType, string> = {
   negotiation: "Negotiation",
   perfect_timing: "Perfect timing"
 };
-
-// Combined finding types for backwards compatibility
-export const FINDING_TYPES: Record<FindingType | string, string> = {
-  // Legacy keys that don't match the typed FindingType
-  INCORRECT_FACT_ASSESSMENT: "Incorrect fact assessment",
-  PROCEDURAL_ERROR: "Procedural error",
-  DOCUMENTATION_ISSUE: "Documentation issue",
-  // Typed finding keys
-  ...DETAILED_FINDING_TYPES,
-  ...SPECIAL_FINDING_TYPES
-};
-
 
 // Coverage amount limits by user role
 export const COVERAGE_LIMITS = {

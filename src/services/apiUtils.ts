@@ -80,7 +80,7 @@ export interface Auditor {
  * 
  * In the application flow:
  * - AuditRecords are fetched from the API
- * - They are transformed into Dossiers for verification workflow
+ * - They are transformed into Dossiers for audit workflow
  * - Dossiers are then stored in the application state
  */
 export interface AuditRecord {
