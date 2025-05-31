@@ -101,7 +101,7 @@ export const useCaseAuditHandlers = () => {
     return usersNeedingAudits.length;
   }, [usersNeedingAudits]);
   
-  const loading = loadingStatus === ACTION_STATUS.loading || usersLoading;
+  const loading: boolean = loadingStatus === ACTION_STATUS.loading || Boolean(usersLoading);
   
   // Initialize Redux state and fetch current user
   useEffect(() => {
@@ -169,7 +169,7 @@ export const useCaseAuditHandlers = () => {
       const auditIdTyped = typeof auditId === 'string' ? createCaseAuditId(auditId) : auditId;
       const auditorTyped = ensureUserId(auditor);
       
-      // Dispatch complete audit action
+      // Dispatch complete audit action (this should update the status to COMPLETED)
       dispatch(completeAudit({
         auditId: auditIdTyped,
         userId: currentUserId,
@@ -178,13 +178,6 @@ export const useCaseAuditHandlers = () => {
         rating: caseAuditData.rating,
         specialFindings: caseAuditData.specialFindings,
         detailedFindings: caseAuditData.detailedFindings
-      }));
-
-      // Update status to completed
-      dispatch(updateAuditStatus({
-        auditId: auditIdTyped,
-        userId: currentUserId,
-        status: AUDIT_STATUS_ENUM.COMPLETED
       }));
 
       console.log(`Audit ${auditId} completed by ${auditor}`);

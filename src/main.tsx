@@ -7,15 +7,6 @@ import './index.css';
 import { store } from './store';
 import { ToastProvider } from './context/ToastContext';
 
-// Log Redux store creation for debugging
-console.log('Creating Redux store...');
-try {
-  // Do store setup/validation here
-  console.log('Redux store created successfully');
-} catch (e) {
-  console.error('Failed to create Redux store:', e);
-}
-
 // Initialize MSW in development environment BEFORE React rendering
 const setupMocks = async () => {
   // Only run in development environment

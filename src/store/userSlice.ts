@@ -1,196 +1,225 @@
-import { createSlice, PayloadAction, createSelector, createAsyncThunk } from '@reduxjs/toolkit';
-import { User, UserRole, AsyncState, ApiResponse, ApiSuccessResponse } from '../types/types';
+import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+import { createSlice, PayloadAction, createSelector } from '@reduxjs/toolkit';
+import { User, UserRole, ApiResponse, ApiSuccessResponse } from '../types/types';
 import { UserId } from '../types/brandedTypes';
 import { RootState } from './index';
-import { ACTION_STATUS_ENUM, USER_ROLE_ENUM } from '../enums';
+import { USER_ROLE_ENUM, Department } from '../enums';
 import { API_BASE_PATH } from '../constants';
 
-// User state structure using AsyncState pattern
-export interface UserState extends Omit<AsyncState<User[]>, 'data'> {
-  users: User[];
+// RTK Query API slice for user operations
+export const userApi = createApi({
+  reducerPath: 'userApi',
+  baseQuery: fetchBaseQuery({
+    baseUrl: `${API_BASE_PATH}/users`,
+    prepareHeaders: (headers) => {
+      headers.set('Content-Type', 'application/json');
+      return headers;
+    },
+  }),
+  tagTypes: ['User'],
+  endpoints: (builder) => ({
+    // Fetch all users
+    getUsers: builder.query<User[], void>({
+      query: () => '',
+      transformResponse: (response: ApiResponse<User[]>) => {
+        if (!response.success) {
+          throw new Error((response as ApiResponse<User[]> & { error?: string }).error || 'Failed to fetch users');
+        }
+        return (response as ApiSuccessResponse<User[]>).data;
+      },
+      providesTags: (result) =>
+        result
+          ? [
+              ...result.map(({ id }) => ({ type: 'User' as const, id })),
+              { type: 'User', id: 'LIST' },
+            ]
+          : [{ type: 'User', id: 'LIST' }],
+    }),
+
+    // Get user by ID
+    getUserById: builder.query<User, UserId>({
+      query: (id) => `/${id}`,
+      transformResponse: (response: ApiResponse<User>) => {
+        if (!response.success) {
+          throw new Error((response as ApiResponse<User> & { error?: string }).error || 'Failed to fetch user');
+        }
+        return (response as ApiSuccessResponse<User>).data;
+      },
+      providesTags: (_, __, id) => [{ type: 'User', id }],
+    }),
+
+    // Create new user
+    createUser: builder.mutation<User, Omit<User, 'id'>>({
+      query: (newUser) => ({
+        url: '',
+        method: 'POST',
+        body: newUser,
+      }),
+      transformResponse: (response: ApiResponse<User>) => {
+        if (!response.success) {
+          throw new Error((response as ApiResponse<User> & { error?: string }).error || 'Failed to create user');
+        }
+        return (response as ApiSuccessResponse<User>).data;
+      },
+      invalidatesTags: [{ type: 'User', id: 'LIST' }],
+    }),
+
+    // Update existing user
+    updateUser: builder.mutation<User, User>({
+      query: ({ id, ...patch }) => ({
+        url: `/${id}`,
+        method: 'PUT',
+        body: patch,
+      }),
+      transformResponse: (response: ApiResponse<User>) => {
+        if (!response.success) {
+          throw new Error((response as ApiResponse<User> & { error?: string }).error || 'Failed to update user');
+        }
+        return (response as ApiSuccessResponse<User>).data;
+      },
+      invalidatesTags: (_, __, { id }) => [
+        { type: 'User', id },
+        { type: 'User', id: 'LIST' },
+      ],
+    }),
+
+    // Delete user
+    deleteUser: builder.mutation<{ success: boolean; id: UserId }, UserId>({
+      query: (id) => ({
+        url: `/${id}`,
+        method: 'DELETE',
+      }),
+      transformResponse: (response: ApiResponse<{ success: boolean }>, _, id) => {
+        if (!response.success) {
+          throw new Error((response as ApiResponse<{ success: boolean }> & { error?: string }).error || 'Failed to delete user');
+        }
+        return { success: true, id };
+      },
+      invalidatesTags: (_, __, id) => [
+        { type: 'User', id },
+        { type: 'User', id: 'LIST' },
+      ],
+    }),
+
+    // Update user active status
+    updateUserStatus: builder.mutation<User, { userId: UserId; isActive: boolean }>({
+      query: ({ userId, isActive }) => ({
+        url: `/${userId}/status`,
+        method: 'PATCH',
+        body: { enabled: isActive },
+      }),
+      transformResponse: (response: ApiResponse<User>) => {
+        if (!response.success) {
+          throw new Error((response as ApiResponse<User> & { error?: string }).error || 'Failed to update user status');
+        }
+        return (response as ApiSuccessResponse<User>).data;
+      },
+      invalidatesTags: (_, __, { userId }) => [
+        { type: 'User', id: userId },
+        { type: 'User', id: 'LIST' },
+      ],
+    }),
+
+    // Update user role
+    updateUserRole: builder.mutation<User, { userId: UserId; role: UserRole }>({
+      query: ({ userId, role }) => ({
+        url: `/${userId}/role`,
+        method: 'PATCH',
+        body: { authorities: role },
+      }),
+      transformResponse: (response: ApiResponse<User>) => {
+        if (!response.success) {
+          throw new Error((response as ApiResponse<User> & { error?: string }).error || 'Failed to update user role');
+        }
+        return (response as ApiSuccessResponse<User>).data;
+      },
+      invalidatesTags: (_, __, { userId }) => [
+        { type: 'User', id: userId },
+        { type: 'User', id: 'LIST' },
+      ],
+    }),
+  }),
+});
+
+// Export hooks for use in components
+export const {
+  useGetUsersQuery,
+  useGetUserByIdQuery,
+  useCreateUserMutation,
+  useUpdateUserMutation,
+  useDeleteUserMutation,
+  useUpdateUserStatusMutation,
+  useUpdateUserRoleMutation,
+} = userApi;
+
+// Separate slice for UI state (like selected user)
+interface UserUIState {
   selectedUserId: UserId | null;
 }
 
-// Create async thunk for fetching users
-export const fetchUsers = createAsyncThunk<
-  User[],
-  void,
-  { rejectValue: string }
->(
-  'user/fetchUsers',
-  async (_, { rejectWithValue }) => {
-    try {
-      const response = await fetch(`${API_BASE_PATH}/users`);
-      const data = await response.json() as ApiResponse<User[]>;
-      
-      if (!data.success) {
-        return rejectWithValue(data.error || 'Failed to fetch users');
-      }
-      
-      return (data as ApiSuccessResponse<User[]>).data;
-    } catch (error) {
-      return rejectWithValue(error instanceof Error ? error.message : 'Failed to fetch users');
-    }
-  }
-);
-
-const initialState: UserState = {
-  users: [],
+const initialUIState: UserUIState = {
   selectedUserId: null,
-  status: ACTION_STATUS_ENUM.IDLE,
-  error: null,
-  isLoading: false,
-  isError: false,
-  isSuccess: false
 };
 
-const userSlice = createSlice({
-  name: 'user',
-  initialState,
+const userUISlice = createSlice({
+  name: 'userUI',
+  initialState: initialUIState,
   reducers: {
-    // Select a user
-    selectUser(state, action: PayloadAction<UserId>) {
+    selectUser(state, action: PayloadAction<UserId | null>) {
       state.selectedUserId = action.payload;
     },
-    
-    // Add a new user
-    addUser(state, action: PayloadAction<User>) {
-      state.users.push(action.payload);
-      state.status = ACTION_STATUS_ENUM.SUCCEEDED;
-      state.isSuccess = true;
+    clearSelectedUser(state) {
+      state.selectedUserId = null;
     },
-    
-    // Update an existing user
-    updateUser(state, action: PayloadAction<User>) {
-      const index = state.users.findIndex(user => user.id === action.payload.id);
-      if (index !== -1) {
-        state.users[index] = action.payload;
-        state.status = ACTION_STATUS_ENUM.SUCCEEDED;
-        state.isSuccess = true;
-      }
-    },
-    
-    // Delete a user
-    deleteUser(state, action: PayloadAction<UserId>) {
-      state.users = state.users.filter(user => user.id !== action.payload);
-      
-      // If the selected user is deleted, clear the selection
-      if (state.selectedUserId === action.payload) {
-        state.selectedUserId = null;
-      }
-      
-      state.status = ACTION_STATUS_ENUM.SUCCEEDED;
-      state.isSuccess = true;
-    },
-    
-    // Set user active status
-    setUserActiveStatus(state, action: PayloadAction<{ userId: UserId, isActive: boolean }>) {
-      const { userId, isActive } = action.payload;
-      const user = state.users.find(user => user.id === userId);
-      if (user) {
-        user.enabled = isActive;
-        state.status = ACTION_STATUS_ENUM.SUCCEEDED;
-        state.isSuccess = true;
-      }
-    },
-    
-    // Update user role
-    updateUserRole(state, action: PayloadAction<{ userId: UserId, role: UserRole }>) {
-      const { userId, role } = action.payload;
-      const user = state.users.find(user => user.id === userId);
-      if (user) {
-        user.authorities = role;
-        state.status = ACTION_STATUS_ENUM.SUCCEEDED;
-        state.isSuccess = true;
-      }
-    },
-    
-    // Loading state handlers
-    setLoadingState(state, action: PayloadAction<boolean>) {
-      state.isLoading = action.payload;
-      state.status = action.payload ? ACTION_STATUS_ENUM.LOADING : state.status;
-    },
-    
-    // Error state handlers
-    setError(state, action: PayloadAction<string | null>) {
-      state.error = action.payload;
-      state.status = action.payload ? ACTION_STATUS_ENUM.FAILED : state.status;
-      state.isError = !!action.payload;
-    },
-    
-    // Reset state handler
-    resetStatus(state) {
-      state.status = ACTION_STATUS_ENUM.IDLE;
-      state.isSuccess = false;
-      state.isError = false;
-    }
   },
-  extraReducers: (builder) => {
-    builder
-      // Handle fetchUsers lifecycle
-      .addCase(fetchUsers.pending, (state) => {
-        state.status = ACTION_STATUS_ENUM.LOADING;
-        state.isLoading = true;
-        state.error = null;
-        state.isError = false;
-      })
-      .addCase(fetchUsers.fulfilled, (state, action: PayloadAction<User[]>) => {
-        state.status = ACTION_STATUS_ENUM.SUCCEEDED;
-        state.isLoading = false;
-        state.isSuccess = true;
-        state.users = action.payload;
-      })
-      .addCase(fetchUsers.rejected, (state, action) => {
-        state.status = ACTION_STATUS_ENUM.FAILED;
-        state.isLoading = false;
-        state.isError = true;
-        state.error = action.payload || 'Failed to fetch users';
-      });
-  }
 });
 
-// Export actions
-export const { 
-  selectUser,
-  addUser,
-  updateUser,
-  deleteUser,
-  setUserActiveStatus,
-  updateUserRole,
-  setLoadingState,
-  setError,
-  resetStatus
-} = userSlice.actions;
+// Export UI actions
+export const { selectUser, clearSelectedUser } = userUISlice.actions;
 
-// Selectors
-export const selectAllUsers = (state: RootState) => state.user.users;
+// Enhanced selectors that work with RTK Query cache
+// Use RTK Query's built-in memoized selectors directly to avoid reference issues
+const getUsersQuerySelector = userApi.endpoints.getUsers.select();
 
+export const selectAllUsers = createSelector(
+  [getUsersQuerySelector],
+  (usersResult) => usersResult.data || []
+);
 
-// Memoized selectors to prevent unnecessary rerenders
 export const selectActiveUsers = createSelector(
   [selectAllUsers],
   (users) => users.filter(user => user.enabled)
 );
-
-export const selectUserById = (state: RootState, userId: UserId) => 
-  state.user.users.find(user => user.id === userId);
 
 export const selectUsersByRole = createSelector(
   [selectAllUsers, (_state: RootState, role: UserRole) => role],
   (users, role) => users.filter(user => user.authorities === role)
 );
 
-export const selectSelectedUser = (state: RootState) => {
-  const selectedId = state.user.selectedUserId;
-  return selectedId ? state.user.users.find(user => user.id === selectedId) : null;
-};
-export const selectIsLoading = (state: RootState) => state.user.isLoading;
-export const selectError = (state: RootState) => state.user.error;
-export const selectStatus = (state: RootState) => state.user.status;
-export const selectIsSuccess = (state: RootState) => state.user.isSuccess;
-export const selectIsError = (state: RootState) => state.user.isError;
+export const selectSelectedUserId = (state: RootState) => state.userUI.selectedUserId;
 
-// Role-specific memoized selectors
+export const selectSelectedUser = createSelector(
+  [selectAllUsers, selectSelectedUserId],
+  (users, selectedId) => selectedId ? users.find(user => user.id === selectedId) || null : null
+);
+
+// Loading and error selectors for the users query
+export const selectUsersLoading = createSelector(
+  [getUsersQuerySelector],
+  (usersResult) => usersResult.isLoading
+);
+
+export const selectUsersError = createSelector(
+  [getUsersQuerySelector],
+  (usersResult) => usersResult.error || null
+);
+
+export const selectUsersFetching = createSelector(
+  [getUsersQuerySelector],
+  (usersResult) => usersResult.isLoading
+);
+
+// Role-specific selectors
 export const selectTeamLeaders = createSelector(
   [selectAllUsers],
   (users) => users.filter(user => user.authorities === USER_ROLE_ENUM.TEAM_LEADER)
@@ -211,7 +240,7 @@ export const selectReaderUsers = createSelector(
   (users) => users.filter(user => user.authorities === USER_ROLE_ENUM.READER)
 );
 
-// Memoized selectors
+// Count selectors
 export const selectUserCount = createSelector(
   [selectAllUsers],
   (users) => users.length
@@ -223,9 +252,15 @@ export const selectUserCountByRole = createSelector(
 );
 
 export const selectUserCountByDepartment = createSelector(
-  [selectAllUsers, (_state: RootState, department: string) => department],
+  [selectAllUsers, (_state: RootState, department: Department) => department],
   (users, department) => users.filter(user => user.department === department).length
 );
 
-// Export reducer
-export default userSlice.reducer; 
+// Utility selector to get user by ID from cache
+export const selectUserById = createSelector(
+  [selectAllUsers, (_state: RootState, userId: UserId) => userId],
+  (users, userId) => users.find(user => user.id === userId)
+);
+
+// Export the UI reducer
+export default userUISlice.reducer; 

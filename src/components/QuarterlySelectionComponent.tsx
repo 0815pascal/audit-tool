@@ -202,7 +202,7 @@ const QuarterlySelectionComponent: React.FC = () => {
       const isAkoReviewed = typeof audit.isAkoReviewed === 'boolean' ? audit.isAkoReviewed : false;
       
       // Get the latest audit data from Redux (which may include saved form state)
-      const latestAuditData = auditData[auditId];
+      const latestAuditData = auditData[audit.id];
       
       console.log('=== DEBUG: handleOpenCompletion ===');
       console.log('auditId:', auditId);
@@ -526,4 +526,4 @@ const QuarterlySelectionComponent: React.FC = () => {
 };
 
 // Wrap with React.memo to prevent unnecessary re-renders
-export default React.memo(QuarterlySelectionComponent);
+export default QuarterlySelectionComponent;

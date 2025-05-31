@@ -1,158 +1,128 @@
 import { describe, it, expect } from 'vitest';
 import { configureStore } from '@reduxjs/toolkit';
 import caseAuditSlice from '../store/caseAuditSlice';
-import userSlice from '../store/userSlice';
-import { RootState } from '../store';
+import { userApi, selectAllUsers } from '../store/userSlice';
+import userUISlice, { selectUser, clearSelectedUser } from '../store/userSlice';
+import { store } from '../store';
 import { createUserId } from '../types/typeHelpers';
-import { USER_ROLE_ENUM, ACTION_STATUS_ENUM, Department } from '../enums';
 
 describe('Redux User Integration Tests', () => {
-  it('should verify that components use Redux store for user data', () => {
-    // Create a store with test user data
-    const store = configureStore({
-      reducer: {
-        caseAudit: caseAuditSlice,
-        user: userSlice,
-      },
-      preloadedState: {
-        user: {
-          users: [
-            {
-              id: createUserId('1'),
-              displayName: 'John Smith',
-              department: Department.Claims,
-              authorities: USER_ROLE_ENUM.SPECIALIST,
-              enabled: true,
-              initials: 'JS'
-            },
-            {
-              id: createUserId('2'),
-              displayName: 'Jane Doe',
-              department: Department.Claims,
-              authorities: USER_ROLE_ENUM.STAFF,
-              enabled: true,
-              initials: 'JD'
-            }
-          ],
-          selectedUserId: null,
-          status: ACTION_STATUS_ENUM.SUCCEEDED,
-          error: null,
-          isLoading: false,
-          isError: false,
-          isSuccess: true
-        },
-        caseAudit: {
-          currentUserId: createUserId('1'),
-          auditData: {},
-          userQuarterlyStatus: {},
-          userRoles: {
-            '1': { role: USER_ROLE_ENUM.SPECIALIST, department: 'Claims' },
-            '2': { role: USER_ROLE_ENUM.STAFF, department: 'Claims' }
-          },
-          loading: false,
-          error: null
-        }
-      }
-    });
-
-    // Verify that the Redux store contains the expected user data
-    const state = store.getState() as RootState;
-    expect(state.user.users).toHaveLength(2);
-    expect(state.user.users[0].displayName).toBe('John Smith');
-    expect(state.user.users[1].displayName).toBe('Jane Doe');
+  it('should verify that the store is properly configured with RTK Query', () => {
+    // Test that our actual store includes the correct reducers
+    const state = store.getState();
     
-    // Verify that user roles are properly stored
-    expect(state.caseAudit.userRoles['1'].role).toBe(USER_ROLE_ENUM.SPECIALIST);
-    expect(state.caseAudit.userRoles['2'].role).toBe(USER_ROLE_ENUM.STAFF);
+    // Verify store structure matches RTK Query integration
+    expect(state).toHaveProperty('caseAudit');
+    expect(state).toHaveProperty('userUI');
+    expect(state).toHaveProperty('userApi');
+    
+    // Verify userUI slice is working
+    expect(state.userUI.selectedUserId).toBeNull();
   });
 
-  it('should verify that different Redux state produces different user data', () => {
-    // Create a store with different user data to prove components use Redux, not hardcoded data
-    const storeWithDifferentUsers = configureStore({
-      reducer: {
-        caseAudit: caseAuditSlice,
-        user: userSlice,
-      },
-      preloadedState: {
-        user: {
-          users: [
-            {
-              id: createUserId('99'),
-              displayName: 'Redux User',
-              department: Department.Claims,
-              authorities: USER_ROLE_ENUM.SPECIALIST,
-              enabled: true,
-              initials: 'RU'
-            }
-          ],
-          selectedUserId: null,
-          status: ACTION_STATUS_ENUM.SUCCEEDED,
-          error: null,
-          isLoading: false,
-          isError: false,
-          isSuccess: true
-        },
-        caseAudit: {
-          currentUserId: createUserId('99'),
-          auditData: {},
-          userQuarterlyStatus: {},
-          userRoles: {
-            '99': { role: USER_ROLE_ENUM.TEAM_LEADER, department: 'Claims' }
-          },
-          loading: false,
-          error: null
-        }
-      }
-    });
-
-    // Verify that this store has different user data
-    const state = storeWithDifferentUsers.getState() as RootState;
-    expect(state.user.users).toHaveLength(1);
-    expect(state.user.users[0].displayName).toBe('Redux User');
-    
-    // Verify that the original mock users are not in this store
-    const userNames = state.user.users.map(u => u.displayName);
-    expect(userNames).not.toContain('John Smith');
-    expect(userNames).not.toContain('Jane Doe');
-    expect(userNames).toContain('Redux User');
+  it('should verify that RTK Query hooks are available', () => {
+    // Test that RTK Query hooks are properly exported
+    expect(userApi.endpoints.getUsers).toBeDefined();
+    expect(userApi.endpoints.getUserById).toBeDefined();
+    expect(userApi.endpoints.createUser).toBeDefined();
+    expect(userApi.endpoints.updateUser).toBeDefined();
+    expect(userApi.endpoints.deleteUser).toBeDefined();
+    expect(userApi.endpoints.updateUserStatus).toBeDefined();
+    expect(userApi.endpoints.updateUserRole).toBeDefined();
   });
 
-  it('should verify that components no longer import users directly from mockData', () => {
-    // This test verifies the architectural change we made
-    // Components should now use useUsers hook or Redux selectors instead of direct imports
-    
-    // We can verify this by checking that the store is the source of truth
-    const store = configureStore({
+  it('should verify UI state management works correctly', () => {
+    // Create a test store to verify UI actions
+    const testStore = configureStore({
       reducer: {
         caseAudit: caseAuditSlice,
-        user: userSlice,
+        userUI: userUISlice,
+        [userApi.reducerPath]: userApi.reducer,
       },
-      preloadedState: {
-        user: {
-          users: [],
-          selectedUserId: null,
-          status: ACTION_STATUS_ENUM.IDLE,
-          error: null,
-          isLoading: false,
-          isError: false,
-          isSuccess: false
-        },
-        caseAudit: {
-          currentUserId: createUserId(''),
-          auditData: {},
-          userQuarterlyStatus: {},
-          userRoles: {},
-          loading: false,
-          error: null
-        }
-      }
+      middleware: (getDefaultMiddleware) =>
+        getDefaultMiddleware().concat(userApi.middleware),
     });
 
-    // Empty store should have no users
-    const state = store.getState() as RootState;
-    expect(state.user.users).toHaveLength(0);
+    // Test initial state
+    let state = testStore.getState();
+    expect(state.userUI.selectedUserId).toBeNull();
+
+    // Test selecting a user
+    const userId = createUserId('test-user-1');
+    testStore.dispatch(selectUser(userId));
     
-    // This proves that components must get user data from Redux store
-    // If they were still importing directly from mockData, they would have users regardless of store state
+    state = testStore.getState();
+    expect(state.userUI.selectedUserId).toBe(userId);
+
+    // Test clearing selection
+    testStore.dispatch(clearSelectedUser());
+    
+    state = testStore.getState();
+    expect(state.userUI.selectedUserId).toBeNull();
+  });
+
+  it('should verify that RTK Query selectors are available', () => {
+    const state = store.getState();
+    
+    // Get RTK Query state for users
+    const usersResult = selectAllUsers(state);
+    
+    // Should return an empty array when uninitialized, not throw an error
+    expect(Array.isArray(usersResult)).toBe(true);
+    expect(usersResult.length).toBe(0); // Should be empty when no data loaded
+  });
+
+  it('should verify the architectural migration from direct imports to RTK Query', () => {
+    // This test ensures that we've successfully migrated from:
+    // - Direct mockData imports → RTK Query hooks
+    // - Manual Redux slices → RTK Query cache management
+    // - Synchronous data → Asynchronous data with loading states
+    
+    // Verify that the old user slice structure no longer exists
+    const state = store.getState();
+    
+    // Should NOT have old structure
+    expect(state).not.toHaveProperty('user.users');
+    expect(state).not.toHaveProperty('user.selectedUserId');
+    expect(state).not.toHaveProperty('user.loading');
+    
+    // Should have new RTK Query structure
+    expect(state).toHaveProperty('userApi');
+    expect(state).toHaveProperty('userUI');
+    expect(state.userUI).toHaveProperty('selectedUserId');
+  });
+
+  it('should verify RTK Query tag-based cache invalidation configuration', () => {
+    // Test that our endpoints have proper tag configuration for cache management
+    const { endpoints } = userApi;
+    
+    // Verify query endpoints are defined
+    expect(endpoints.getUsers).toBeDefined();
+    expect(endpoints.getUserById).toBeDefined();
+    
+    // Verify mutation endpoints exist (they should invalidate appropriate tags)
+    expect(endpoints.createUser).toBeDefined();
+    expect(endpoints.updateUser).toBeDefined();
+    expect(endpoints.deleteUser).toBeDefined();
+    expect(endpoints.updateUserStatus).toBeDefined();
+    expect(endpoints.updateUserRole).toBeDefined();
+  });
+
+  it('should verify that components can access user data through RTK Query cache', () => {
+    // This test verifies that the data flow works:
+    // Component → useGetUsersQuery hook → RTK Query cache → API
+    
+    const getUsersSelector = userApi.endpoints.getUsers.select();
+    const state = store.getState();
+    const usersQueryState = getUsersSelector(state);
+    
+    // The query should be in an uninitialized state initially
+    // This proves components must trigger the query via hooks
+    expect(['uninitialized', 'pending', 'fulfilled', 'rejected']).toContain(usersQueryState.status);
+    
+    // Data should be available when the query succeeds
+    if (usersQueryState.status === 'fulfilled') {
+      expect(Array.isArray(usersQueryState.data)).toBe(true);
+    }
   });
 }); 

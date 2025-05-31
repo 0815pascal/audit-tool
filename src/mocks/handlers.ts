@@ -812,4 +812,57 @@ export const handlers = [
       }, { status: 500 });
     }
   }),
+
+  // Complete audit - POST handler for /audit/{id}/complete
+  http.post(`${API_BASE_PATH}/audit/:auditId/complete`, async ({ params, request }) => {
+    try {
+      const { auditId } = params;
+      const numericAuditId = safeParseInt(Array.isArray(auditId) ? auditId[0] : auditId);
+      
+      // Parse request body
+      let requestData: {
+        auditor?: string;
+        rating?: string;
+        comment?: string;
+        specialFindings?: Record<string, boolean>;
+        detailedFindings?: Record<string, boolean>;
+        status?: string;
+        isCompleted?: boolean;
+      } = {};
+      
+      try {
+        const jsonData = await request.json();
+        if (jsonData && typeof jsonData === 'object') {
+          requestData = jsonData as typeof requestData;
+        }
+      } catch {
+        console.warn("[MSW] Failed to parse request body for audit completion");
+      }
+      
+      console.log(`[MSW] Completing audit ${numericAuditId}:`, requestData);
+      
+      // Create completion response
+      const completionResponse = {
+        success: true,
+        auditId: numericAuditId,
+        auditor: requestData.auditor || '',
+        rating: requestData.rating || '',
+        comment: requestData.comment || '',
+        specialFindings: requestData.specialFindings || {},
+        detailedFindings: requestData.detailedFindings || {},
+        status: requestData.status || 'completed',
+        isCompleted: requestData.isCompleted ?? true,
+        completionDate: new Date().toISOString(),
+        message: 'Audit completed successfully'
+      };
+      
+      return HttpResponse.json(completionResponse, { status: 200 });
+    } catch (error) {
+      console.error("[MSW] Error in /rest/kuk/v1/audit/:auditId/complete POST handler:", error);
+      return HttpResponse.json({
+        success: false,
+        error: 'Failed to complete audit'
+      }, { status: 500 });
+    }
+  }),
 ];

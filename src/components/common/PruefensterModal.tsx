@@ -261,57 +261,67 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
 
   // Update the saveFormState function
   const saveFormState = () => {
-    setCurrentStatus(AUDIT_STATUS_ENUM.IN_PROGRESS);
-    
-    // Convert verifier initials back to user ID
-    let auditorId = currentUserId; // Default to current user
-    
-    if (verifier) {
-      // Find user by initials
-      const userByInitials = allUsers.find(u => 
-        'initials' in u && u.initials === verifier.toUpperCase()
-      );
+    try {
+      setCurrentStatus(AUDIT_STATUS_ENUM.IN_PROGRESS);
       
-      if (userByInitials) {
-        auditorId = userByInitials.id;
-      } else {
-        // If we can't find by initials, use current user
-        console.warn(`Could not find user with initials ${verifier}, using current user`);
+      // Convert verifier initials back to user ID
+      let auditorId = currentUserId; // Default to current user
+      
+      if (verifier) {
+        try {
+          // Find user by initials - add safety check for allUsers
+          const userByInitials = allUsers && allUsers.length > 0 
+            ? allUsers.find(u => 'initials' in u && u.initials === verifier.toUpperCase())
+            : null;
+          
+          if (userByInitials) {
+            auditorId = userByInitials.id;
+          } else {
+            // If we can't find by initials, use current user
+            console.warn(`Could not find user with initials ${verifier}, using current user`);
+          }
+        } catch (error) {
+          console.error('Error finding user by initials in saveFormState:', error);
+          // Fall back to current user
+        }
       }
+      
+      const caseAuditData: CaseAuditData = {
+        comment,
+        rating,
+        specialFindings: selectedFindings,
+        detailedFindings: selectedDetailedFindings
+      };
+      
+      console.log('=== DEBUG: saveFormState ===');
+      console.log('audit.id:', audit.id);
+      console.log('audit.userId:', audit.userId);
+      console.log('auditorId:', auditorId);
+      console.log('caseAuditData:', caseAuditData);
+      console.log('rating being saved:', rating);
+      console.log('=== END DEBUG ===');
+      
+      // First update local Redux state
+      dispatch(updateAuditInProgress({
+        auditId: ensureCaseAuditId(audit.id),
+        userId: ensureUserId(audit.userId),
+        auditor: ensureUserId(auditorId || currentUserId),
+        ...caseAuditData
+      }));
+      
+      // Then persist to backend API
+      dispatch(saveAuditCompletionThunk({
+        auditId: ensureCaseAuditId(audit.id),
+        userId: ensureUserId(audit.userId),
+        auditor: ensureUserId(auditorId || currentUserId),
+        ...caseAuditData
+      }));
+      
+      showToast('Form saved', TOAST_TYPE.SUCCESS);
+    } catch (error) {
+      console.error('Error saving form state:', error);
+      showToast('Error saving form', TOAST_TYPE.ERROR);
     }
-    
-    const caseAuditData: CaseAuditData = {
-      comment,
-      rating,
-      specialFindings: selectedFindings,
-      detailedFindings: selectedDetailedFindings
-    };
-    
-    console.log('=== DEBUG: saveFormState ===');
-    console.log('audit.id:', audit.id);
-    console.log('audit.userId:', audit.userId);
-    console.log('auditorId:', auditorId);
-    console.log('caseAuditData:', caseAuditData);
-    console.log('rating being saved:', rating);
-    console.log('=== END DEBUG ===');
-    
-    // First update local Redux state
-    dispatch(updateAuditInProgress({
-      auditId: ensureCaseAuditId(audit.id),
-      userId: ensureUserId(audit.userId),
-      auditor: ensureUserId(auditorId || currentUserId),
-      ...caseAuditData
-    }));
-    
-    // Then persist to backend API
-    dispatch(saveAuditCompletionThunk({
-      auditId: ensureCaseAuditId(audit.id),
-      userId: ensureUserId(audit.userId),
-      auditor: ensureUserId(auditorId || currentUserId),
-      ...caseAuditData
-    }));
-    
-    showToast('Form saved', TOAST_TYPE.SUCCESS);
   };
 
   const handleComplete = () => {
@@ -328,16 +338,21 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
     let auditorId = currentUserId; // Default to current user
     
     if (verifier) {
-      // Find user by initials
-      const userByInitials = allUsers.find(u => 
-        'initials' in u && u.initials === verifier.toUpperCase()
-      );
-      
-      if (userByInitials) {
-        auditorId = userByInitials.id;
-      } else {
-        // If we can't find by initials, use current user
-        console.warn(`Could not find user with initials ${verifier}, using current user`);
+      try {
+        // Find user by initials - add safety check for allUsers
+        const userByInitials = allUsers && allUsers.length > 0 
+          ? allUsers.find(u => 'initials' in u && u.initials === verifier.toUpperCase())
+          : null;
+        
+        if (userByInitials) {
+          auditorId = userByInitials.id;
+        } else {
+          // If we can't find by initials, use current user
+          console.warn(`Could not find user with initials ${verifier}, using current user`);
+        }
+      } catch (error) {
+        console.error('Error finding user by initials:', error);
+        // Fall back to current user
       }
     }
     
@@ -352,13 +367,20 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
     console.log('Current form data being passed:', currentFormData);
     console.log('=== END DEBUG ===');
     
-    // Save the form state to Redux for persistence
-    saveFormState();
-    
-    // Pass the current form data directly to the completion handler
-    onVerify(audit.id, ensureUserId(auditorId || currentUserId), currentFormData);
-    
-    showToast('Audit completed', TOAST_TYPE.SUCCESS);
+    try {
+      // Save the form state to Redux for persistence
+      saveFormState();
+      
+      // Pass the current form data directly to the completion handler
+      // Convert UserId to string for the onVerify function signature
+      const auditorIdString = auditorId ? String(auditorId) : String(currentUserId || '');
+      onVerify(audit.id, auditorIdString, currentFormData);
+      
+      showToast('Audit completed', TOAST_TYPE.SUCCESS);
+    } catch (error) {
+      console.error('Error completing audit:', error);
+      showToast('Error completing audit', TOAST_TYPE.ERROR);
+    }
   };
 
   // Handle when modal is being closed

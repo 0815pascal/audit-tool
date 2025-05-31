@@ -1,25 +1,19 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback } from 'react';
 import { useAppSelector, useAppDispatch } from '../store/hooks';
 import { 
+  useGetUsersQuery,
+  useCreateUserMutation,
+  useUpdateUserMutation,
+  useDeleteUserMutation,
+  useUpdateUserStatusMutation,
+  useUpdateUserRoleMutation,
   selectAllUsers, 
   selectActiveUsers, 
   selectSelectedUser,
   selectUser,
-  addUser,
-  updateUser,
-  deleteUser,
-  setUserActiveStatus,
-  updateUserRole,
-  selectStatus,
-  selectIsSuccess,
-  selectIsError,
-  selectIsLoading,
-  resetStatus,
-  fetchUsers
 } from '../store/userSlice';
 import { User, UserRole } from '../types/types';
 import { UserId } from '../types/brandedTypes';
-import { createUserId } from '../types/typeHelpers';
 
 /**
  * Type for user creation without requiring an ID
@@ -39,26 +33,23 @@ export function generateInitials(name: string): string {
 }
 
 /**
- * Hook to interact with the user store
+ * Hook to interact with the user store using RTK Query
  */
 export const useUsers = () => {
   const dispatch = useAppDispatch();
   
-  // Selectors
+  // RTK Query hooks
+  const { error, isLoading, isFetching, refetch } = useGetUsersQuery();
+  const [createUserMutation] = useCreateUserMutation();
+  const [updateUserMutation] = useUpdateUserMutation();
+  const [deleteUserMutation] = useDeleteUserMutation();
+  const [updateUserStatusMutation] = useUpdateUserStatusMutation();
+  const [updateUserRoleMutation] = useUpdateUserRoleMutation();
+  
+  // Selectors for derived data
   const allUsers = useAppSelector(selectAllUsers);
   const activeUsers = useAppSelector(selectActiveUsers);
   const selectedUser = useAppSelector(selectSelectedUser);
-  const status = useAppSelector(selectStatus);
-  const isSuccess = useAppSelector(selectIsSuccess);
-  const isError = useAppSelector(selectIsError);
-  const isLoading = useAppSelector(selectIsLoading);
-  
-  // Fetch users when the hook is initialized or if the user list is empty
-  useEffect(() => {
-    if (status === 'idle' && allUsers.length === 0 && !isLoading) {
-      dispatch(fetchUsers());
-    }
-  }, [dispatch, status, allUsers.length, isLoading]);
   
   // Get a user by ID
   const getUserById = useCallback(
@@ -76,21 +67,6 @@ export const useUsers = () => {
     [allUsers]
   );
   
-  // Create a valid user ID that doesn't conflict with existing IDs
-  const generateUniqueUserId = useCallback(
-    (baseId: string = Date.now().toString()): UserId => {
-      // Check if the ID already exists
-      const exists = allUsers.some(user => user.id.toString() === baseId);
-      if (!exists) {
-        return createUserId(baseId);
-      }
-      
-      // If it exists, append a unique suffix
-      return createUserId(`${baseId}_${Math.floor(Math.random() * 1000)}`);
-    },
-    [allUsers]
-  );
-  
   // Dispatch actions
   const setSelectedUser = useCallback(
     (userId: UserId) => dispatch(selectUser(userId)),
@@ -98,51 +74,80 @@ export const useUsers = () => {
   );
   
   const createUser = useCallback(
-    (user: NewUser) => {
-      // Generate initials if not provided
-      const initials = user.initials ?? generateInitials(user.displayName);
-      
-      // Create a new User with a generated ID if none provided
-      const newUser: User = {
-        id: user.id ?? generateUniqueUserId(),
-        ...user,
-        initials
-      };
-      
-      dispatch(addUser(newUser));
+    async (user: NewUser) => {
+      try {
+        // Generate initials if not provided
+        const initials = user.initials ?? generateInitials(user.displayName);
+        
+        // Create a new User with a generated ID if none provided
+        const newUser: Omit<User, 'id'> = {
+          ...user,
+          initials
+        };
+        
+        await createUserMutation(newUser).unwrap();
+      } catch (error) {
+        console.error('Failed to create user:', error);
+        throw error;
+      }
     },
-    [dispatch, generateUniqueUserId]
+    [createUserMutation]
   );
   
   const modifyUser = useCallback(
-    (user: User) => dispatch(updateUser(user)),
-    [dispatch]
+    async (user: User) => {
+      try {
+        await updateUserMutation(user).unwrap();
+      } catch (error) {
+        console.error('Failed to update user:', error);
+        throw error;
+      }
+    },
+    [updateUserMutation]
   );
   
   const removeUser = useCallback(
-    (userId: UserId) => dispatch(deleteUser(userId)),
-    [dispatch]
+    async (userId: UserId) => {
+      try {
+        await deleteUserMutation(userId).unwrap();
+      } catch (error) {
+        console.error('Failed to delete user:', error);
+        throw error;
+      }
+    },
+    [deleteUserMutation]
   );
   
   const toggleUserActive = useCallback(
-    (userId: UserId, isActive: boolean) => dispatch(setUserActiveStatus({ userId, isActive })),
-    [dispatch]
+    async (userId: UserId, isActive: boolean) => {
+      try {
+        await updateUserStatusMutation({ userId, isActive }).unwrap();
+      } catch (error) {
+        console.error('Failed to update user status:', error);
+        throw error;
+      }
+    },
+    [updateUserStatusMutation]
   );
   
   const changeUserRole = useCallback(
-    (userId: UserId, role: UserRole) => dispatch(updateUserRole({ userId, role })),
-    [dispatch]
-  );
-  
-  const clearStatus = useCallback(
-    () => dispatch(resetStatus()),
-    [dispatch]
+    async (userId: UserId, role: UserRole) => {
+      try {
+        await updateUserRoleMutation({ userId, role }).unwrap();
+      } catch (error) {
+        console.error('Failed to update user role:', error);
+        throw error;
+      }
+    },
+    [updateUserRoleMutation]
   );
   
   // Function to manually refresh users
   const refreshUsers = useCallback(
-    () => dispatch(fetchUsers()),
-    [dispatch]
+    () => {
+      refetch();
+    },
+    [refetch]
   );
   
   return {
@@ -154,10 +159,9 @@ export const useUsers = () => {
     getUsersByRole,
     
     // Status
-    status,
-    isSuccess,
-    isError,
     isLoading,
+    isFetching,
+    error,
     
     // Actions
     setSelectedUser,
@@ -166,7 +170,6 @@ export const useUsers = () => {
     removeUser,
     toggleUserActive,
     changeUserRole,
-    clearStatus,
     refreshUsers
   };
 }; 

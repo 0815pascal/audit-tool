@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useUsers } from '../hooks/useUsers';
 import { UserRole } from '../types/types';
+import { UserId } from '../types/brandedTypes';
 import { USER_ROLE_ENUM, STATUS_DISPLAY_ENUM, INPUT_TYPE_ENUM, Department } from '../enums';
 import './UserListComponent.css';
 
@@ -12,9 +13,7 @@ const UserListComponent: React.FC = () => {
     createUser,
     removeUser,
     toggleUserActive,
-    changeUserRole,
-    isSuccess,
-    clearStatus
+    changeUserRole
   } = useUsers();
   
   const [newUserName, setNewUserName] = useState('');
@@ -22,19 +21,8 @@ const UserListComponent: React.FC = () => {
   const [newUserRole, setNewUserRole] = useState<UserRole>(USER_ROLE_ENUM.STAFF);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   
-  // Clear status message after 3 seconds
-  useEffect(() => {
-    if (isSuccess) {
-      setStatusMessage('Operation successful');
-      const timer = setTimeout(() => {
-        setStatusMessage(null);
-        clearStatus();
-      }, 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [isSuccess, clearStatus]);
-  
-  const handleAddUser = () => {
+  // Handle success/error messages for operations
+  const handleAddUser = async () => {
     if (!newUserName.trim()) return;
     
     const newUser = {
@@ -45,12 +33,54 @@ const UserListComponent: React.FC = () => {
       initials: newUserName.split(' ').map(part => part[0]).join('')
     };
     
-    createUser(newUser);
-    
-    // Reset form
-    setNewUserName('');
-    setNewUserDepartment(Department.Claims);
-    setNewUserRole(USER_ROLE_ENUM.STAFF);
+    try {
+      await createUser(newUser);
+      setStatusMessage('User created successfully');
+      
+      // Reset form
+      setNewUserName('');
+      setNewUserDepartment(Department.Claims);
+      setNewUserRole(USER_ROLE_ENUM.STAFF);
+      
+      // Clear status message after 3 seconds
+      setTimeout(() => setStatusMessage(null), 3000);
+    } catch {
+      setStatusMessage('Failed to create user');
+      setTimeout(() => setStatusMessage(null), 3000);
+    }
+  };
+  
+  const handleRemoveUser = async (userId: UserId) => {
+    try {
+      await removeUser(userId);
+      setStatusMessage('User removed successfully');
+      setTimeout(() => setStatusMessage(null), 3000);
+    } catch {
+      setStatusMessage('Failed to remove user');
+      setTimeout(() => setStatusMessage(null), 3000);
+    }
+  };
+  
+  const handleToggleActive = async (userId: UserId, isActive: boolean) => {
+    try {
+      await toggleUserActive(userId, isActive);
+      setStatusMessage('User status updated successfully');
+      setTimeout(() => setStatusMessage(null), 3000);
+    } catch {
+      setStatusMessage('Failed to update user status');
+      setTimeout(() => setStatusMessage(null), 3000);
+    }
+  };
+  
+  const handleRoleChange = async (userId: UserId, role: UserRole) => {
+    try {
+      await changeUserRole(userId, role);
+      setStatusMessage('User role updated successfully');
+      setTimeout(() => setStatusMessage(null), 3000);
+    } catch {
+      setStatusMessage('Failed to update user role');
+      setTimeout(() => setStatusMessage(null), 3000);
+    }
   };
   
   return (
@@ -130,7 +160,7 @@ const UserListComponent: React.FC = () => {
                 <td>
                   <select 
                     value={user.authorities}
-                    onChange={(e) => changeUserRole(user.id, e.target.value as UserRole)}
+                    onChange={(e) => handleRoleChange(user.id, e.target.value as UserRole)}
                     onClick={(e) => e.stopPropagation()}
                   >
                     <option value={USER_ROLE_ENUM.STAFF}>Staff</option>
@@ -144,7 +174,7 @@ const UserListComponent: React.FC = () => {
                     <input 
                       type={INPUT_TYPE_ENUM.CHECKBOX} 
                       checked={user.enabled}
-                      onChange={() => toggleUserActive(user.id, !user.enabled)}
+                      onChange={(e) => handleToggleActive(user.id, e.target.checked)}
                       onClick={(e) => e.stopPropagation()}
                     />
                     <span className="slider"></span>
@@ -155,7 +185,7 @@ const UserListComponent: React.FC = () => {
                     className="delete-button"
                     onClick={(e) => {
                       e.stopPropagation();
-                      removeUser(user.id);
+                      handleRemoveUser(user.id);
                     }}
                   >
                     Delete

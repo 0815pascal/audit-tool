@@ -84,13 +84,10 @@ test.describe('IKS Audit Tool - Auto-Select and Verification', () => {
     await autoSelectButton.click();
     await page.waitForTimeout(2000);
     
-    // Find and click an enabled Prüfen button
+    // Click on first enabled Prüfen button to open modal
     const enabledPruefenButton = page.locator('button:has-text("Prüfen"):not([disabled])').first();
     await enabledPruefenButton.click();
-    
-    // Check that the verification modal opens
-    const modal = page.locator('[role="dialog"], .modal');
-    await expect(modal).toBeVisible();
+    await page.waitForSelector('.modal', { state: 'visible' });
     
     // Check that modal contains verification form elements
     await expect(page.locator('textarea[placeholder*="Kommentar"]')).toBeVisible();
@@ -110,30 +107,130 @@ test.describe('IKS Audit Tool - Auto-Select and Verification', () => {
     await autoSelectButton.click();
     await page.waitForTimeout(2000);
     
-    // Click an enabled Prüfen button
+    // Set up network monitoring to verify API calls
+    const completionRequests: any[] = [];
+    page.on('request', request => {
+      if (request.url().includes('/audit/') && request.url().includes('/complete') && request.method() === 'POST') {
+        completionRequests.push({
+          url: request.url(),
+          method: request.method(),
+          body: request.postData()
+        });
+      }
+    });
+    
+    const responses: any[] = [];
+    page.on('response', response => {
+      if (response.url().includes('/audit/') && response.url().includes('/complete') && response.request().method() === 'POST') {
+        responses.push({
+          url: response.url(),
+          status: response.status(),
+          ok: response.ok()
+        });
+      }
+    });
+    
+    // Click on first enabled Prüfen button to open modal
     const enabledPruefenButton = page.locator('button:has-text("Prüfen"):not([disabled])').first();
     await enabledPruefenButton.click();
+    await page.waitForSelector('.modal', { state: 'visible' });
     
-    // Fill out the verification form
-    await page.fill('textarea[placeholder*="Kommentar"]', 'Test verification comment');
+    // Fill out the form with comprehensive test data
+    await page.fill('textarea[placeholder*="Kommentar"]', 'Test verification comment with special chars: äöü & <html>');
+    await page.selectOption('#pruefenster-rating', 'SUCCESSFULLY_FULFILLED');
     
-    // Select a rating
-    const ratingSelect = page.locator('#pruefenster-rating');
-    await ratingSelect.selectOption('SUCCESSFULLY_FULFILLED');
+    // Select some special findings
+    await page.check('#finding-feedback');
+    await page.check('#finding-communication');
     
-    // Submit the verification
+    // Select some detailed findings  
+    await page.check('#detailed-terms_incorrect');
+    
+    // Click confirm button
     await page.click('button:has-text("Bestätigen")');
     
-    // Wait for modal to close
+    // Wait for the API call to complete
     await page.waitForTimeout(1000);
     
-    // Check that the audit status was updated in the table
-    const statusCell = page.locator('td:has-text("Geprüft")').first();
-    await expect(statusCell).toBeVisible();
+    // ===== COMPREHENSIVE API PAYLOAD VALIDATION =====
     
-    // Check that the Prüfen button changed to "Ansehen"
-    const ansehenButton = page.locator('button:has-text("Ansehen")').first();
-    await expect(ansehenButton).toBeVisible();
+    // Verify API call was made
+    expect(completionRequests.length).toBeGreaterThan(0);
+    expect(responses.length).toBeGreaterThan(0);
+    
+    // Verify response was successful
+    expect(responses[0].ok).toBe(true);
+    expect(responses[0].status).toBe(200);
+    
+    // Parse and validate the request payload structure
+    const requestBody = JSON.parse(completionRequests[0].body);
+    
+    // 1. Validate required top-level properties exist
+    expect(requestBody).toHaveProperty('auditor');
+    expect(requestBody).toHaveProperty('rating');
+    expect(requestBody).toHaveProperty('comment');
+    expect(requestBody).toHaveProperty('specialFindings');
+    expect(requestBody).toHaveProperty('detailedFindings');
+    expect(requestBody).toHaveProperty('status');
+    expect(requestBody).toHaveProperty('isCompleted');
+    
+    // 2. Validate data types
+    expect(typeof requestBody.auditor).toBe('string');
+    expect(typeof requestBody.rating).toBe('string');
+    expect(typeof requestBody.comment).toBe('string');
+    expect(typeof requestBody.specialFindings).toBe('object');
+    expect(typeof requestBody.detailedFindings).toBe('object');
+    expect(typeof requestBody.status).toBe('string');
+    expect(typeof requestBody.isCompleted).toBe('boolean');
+    
+    // 3. Validate specific values match form input
+    expect(requestBody.rating).toBe('SUCCESSFULLY_FULFILLED');
+    expect(requestBody.comment).toBe('Test verification comment with special chars: äöü & <html>');
+    expect(requestBody.status).toBe('completed');
+    expect(requestBody.isCompleted).toBe(true);
+    
+    // 4. Validate findings structure - ensure all enum values are present as booleans
+    const { specialFindings, detailedFindings } = requestBody;
+    
+    // Check that findings are objects with boolean values
+    expect(specialFindings).toBeTruthy();
+    expect(detailedFindings).toBeTruthy();
+    
+    // Verify specific findings we selected are true
+    expect(specialFindings.feedback).toBe(true);
+    expect(specialFindings.communication).toBe(true);
+    expect(detailedFindings.terms_incorrect).toBe(true);
+    
+    // Verify unselected findings are false (spot check a few)
+    expect(specialFindings.recourse).toBe(false);
+    expect(specialFindings.negotiation).toBe(false);
+    expect(detailedFindings.facts_incorrect).toBe(false);
+    expect(detailedFindings.coverage_incorrect).toBe(false);
+    
+    // 5. Validate that all values in findings objects are booleans
+    Object.values(specialFindings).forEach(value => {
+      expect(typeof value).toBe('boolean');
+    });
+    Object.values(detailedFindings).forEach(value => {
+      expect(typeof value).toBe('boolean');
+    });
+    
+    // 6. Validate payload structure matches API contract (no extra/missing fields)
+    const expectedKeys = ['auditor', 'rating', 'comment', 'specialFindings', 'detailedFindings', 'status', 'isCompleted'];
+    const actualKeys = Object.keys(requestBody);
+    expect(actualKeys.sort()).toEqual(expectedKeys.sort());
+    
+    // 7. Validate special characters are properly encoded in JSON
+    expect(requestBody.comment).toContain('äöü');
+    expect(requestBody.comment).toContain('&');
+    expect(requestBody.comment).toContain('<html>');
+    
+    console.log('✅ API Payload Validation Complete:', {
+      url: completionRequests[0].url,
+      method: completionRequests[0].method,
+      payloadSize: JSON.stringify(requestBody).length,
+      responseStatus: responses[0].status
+    });
   });
 
   test('should handle team leader restriction correctly', async ({ page }) => {

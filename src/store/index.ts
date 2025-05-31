@@ -1,6 +1,6 @@
 import { configureStore } from '@reduxjs/toolkit';
 import caseAuditReducer from './caseAuditSlice';
-import userReducer from './userSlice';
+import userUIReducer, { userApi } from './userSlice';
 
 // Wrap store creation in try/catch
 let storeInstance;
@@ -10,13 +10,17 @@ try {
   storeInstance = configureStore({
     reducer: {
       caseAudit: caseAuditReducer,
-      user: userReducer
+      userUI: userUIReducer,
+      // Add the generated reducer as a specific top-level slice
+      [userApi.reducerPath]: userApi.reducer,
     },
     middleware: (getDefaultMiddleware) => 
       getDefaultMiddleware({
         // This helps with serialization issues
         serializableCheck: false,
-      }),
+      })
+      // Adding the api middleware enables caching, invalidation, polling, and other useful features of RTK Query
+      .concat(userApi.middleware),
   });
   console.log('Redux store created successfully');
 } catch (error) {
