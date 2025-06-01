@@ -127,7 +127,8 @@ export enum USER_ROLE_ENUM {
 // Case type enum
 export enum CASE_TYPE_ENUM {
   USER_QUARTERLY = 'USER_QUARTERLY',
-  PREVIOUS_QUARTER_RANDOM = 'PREVIOUS_QUARTER_RANDOM'
+  PREVIOUS_QUARTER_RANDOM = 'PREVIOUS_QUARTER_RANDOM',
+  QUARTER_DISPLAY = 'QUARTER_DISPLAY' // For displaying all cases in a quarter
 }
 
 // Rating value enum
