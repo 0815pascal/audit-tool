@@ -22,7 +22,7 @@ import {
 import {Button, Checkbox, Select, TextArea} from './FormControls';
 import {useToast} from '../../context/ToastContext';
 import {useAppDispatch, useAppSelector} from '../../store/hooks';
-import {saveAuditCompletionThunk, updateAuditInProgress} from '../../store/caseAuditSlice';
+import {useSaveAuditCompletionMutation, updateAuditInProgress} from '../../store/caseAuditSlice';
 import {
   BUTTON_COLOR,
   BUTTON_SIZE,
@@ -52,7 +52,10 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
 }) => {
   const { showToast } = useToast();
   const dispatch = useAppDispatch();
-  const currentUserId = useAppSelector(state => state.caseAudit.currentUserId);
+  const currentUserId = useAppSelector(state => state.auditUI.currentUserId);
+  
+  // RTK Query hooks
+  const [saveAuditCompletion] = useSaveAuditCompletionMutation();
   
   // Get users from Redux store via useUsers hook
   const { allUsers } = useUsers();
@@ -260,7 +263,7 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
   }, [comment, rating, selectedFindings, selectedDetailedFindings, audit.status, audit.isCompleted, hasFormData]);
 
   // Update the saveFormState function
-  const saveFormState = () => {
+  const saveFormState = async () => {
     try {
       setCurrentStatus(AUDIT_STATUS_ENUM.IN_PROGRESS);
       
@@ -310,12 +313,16 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
       }));
       
       // Then persist to backend API
-      dispatch(saveAuditCompletionThunk({
+      await saveAuditCompletion({
         auditId: ensureCaseAuditId(audit.id),
-        userId: ensureUserId(audit.userId),
         auditor: ensureUserId(auditorId || currentUserId),
-        ...caseAuditData
-      }));
+        rating,
+        comment,
+        specialFindings: selectedFindings,
+        detailedFindings: selectedDetailedFindings,
+        status: AUDIT_STATUS_ENUM.IN_PROGRESS,
+        isCompleted: false
+      });
       
       showToast('Form saved', TOAST_TYPE.SUCCESS);
     } catch (error) {

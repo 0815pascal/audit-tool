@@ -278,17 +278,24 @@ const QuarterlySelectionComponent: React.FC = () => {
   };
   
   // Handle complete audit
-  const handleCompleteAuditAction = (auditId: string, auditorId: string, caseAuditData: CaseAuditData) => {
-    // Call the audit completion handler
-    handleCompleteAudit(auditId, auditorId, caseAuditData);
-    
-    // Close the modal
-    setIsModalOpen(false);
-    setSelectedAudit(null);
-    
-    // Show success message
-    setSuccessMessage('Audit erfolgreich verifiziert!');
-    setTimeout(() => setSuccessMessage(''), 3000);
+  const handleCompleteAuditAction = async (auditId: string, auditorId: string, caseAuditData: CaseAuditData) => {
+    try {
+      // Call the audit completion handler (now async)
+      await handleCompleteAudit(auditId, auditorId, caseAuditData);
+      
+      // Close the modal
+      setIsModalOpen(false);
+      setSelectedAudit(null);
+      
+      // Show success message
+      setSuccessMessage('Audit erfolgreich verifiziert!');
+      setTimeout(() => setSuccessMessage(''), 3000);
+    } catch (error) {
+      console.error('Error completing audit:', error);
+      // Show error message
+      setErrorMessage('Fehler beim Verifizieren des Audits');
+      setTimeout(() => setErrorMessage(''), 3000);
+    }
   };
   
   const convertToAuditStatus = (status: CaseAuditStatus | AUDIT_STATUS_ENUM): AUDIT_STATUS_ENUM => {

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { configureStore } from '@reduxjs/toolkit';
-import caseAuditSlice from '../store/caseAuditSlice';
+import auditUISlice, { auditApi } from '../store/caseAuditSlice';
 import { userApi, selectAllUsers } from '../store/userSlice';
 import userUISlice, { selectUser, clearSelectedUser } from '../store/userSlice';
 import store from '../store';
@@ -12,9 +12,10 @@ describe('Redux User Integration Tests', () => {
     const state = store.getState();
     
     // Verify store structure matches RTK Query integration
-    expect(state).toHaveProperty('caseAudit');
+    expect(state).toHaveProperty('auditUI');
     expect(state).toHaveProperty('userUI');
     expect(state).toHaveProperty('userApi');
+    expect(state).toHaveProperty('auditApi');
     
     // Verify userUI slice is working
     expect(state.userUI.selectedUserId).toBeNull();
@@ -29,18 +30,27 @@ describe('Redux User Integration Tests', () => {
     expect(userApi.endpoints.deleteUser).toBeDefined();
     expect(userApi.endpoints.updateUserStatus).toBeDefined();
     expect(userApi.endpoints.updateUserRole).toBeDefined();
+    
+    // Test that audit API hooks are available
+    expect(auditApi.endpoints.getCurrentUser).toBeDefined();
+    expect(auditApi.endpoints.getAuditsByQuarter).toBeDefined();
+    expect(auditApi.endpoints.completeAudit).toBeDefined();
+    expect(auditApi.endpoints.saveAuditCompletion).toBeDefined();
   });
 
   it('should verify UI state management works correctly', () => {
     // Create a test store to verify UI actions
     const testStore = configureStore({
       reducer: {
-        caseAudit: caseAuditSlice,
+        auditUI: auditUISlice,
         userUI: userUISlice,
         [userApi.reducerPath]: userApi.reducer,
+        [auditApi.reducerPath]: auditApi.reducer,
       },
       middleware: (getDefaultMiddleware) =>
-        getDefaultMiddleware().concat(userApi.middleware),
+        getDefaultMiddleware()
+          .concat(userApi.middleware)
+          .concat(auditApi.middleware),
     });
 
     // Test initial state
@@ -85,10 +95,13 @@ describe('Redux User Integration Tests', () => {
     expect(state).not.toHaveProperty('user.users');
     expect(state).not.toHaveProperty('user.selectedUserId');
     expect(state).not.toHaveProperty('user.loading');
+    expect(state).not.toHaveProperty('caseAudit');
     
     // Should have new RTK Query structure
     expect(state).toHaveProperty('userApi');
     expect(state).toHaveProperty('userUI');
+    expect(state).toHaveProperty('auditApi');
+    expect(state).toHaveProperty('auditUI');
     expect(state.userUI).toHaveProperty('selectedUserId');
   });
 
@@ -106,6 +119,12 @@ describe('Redux User Integration Tests', () => {
     expect(endpoints.deleteUser).toBeDefined();
     expect(endpoints.updateUserStatus).toBeDefined();
     expect(endpoints.updateUserRole).toBeDefined();
+    
+    // Test audit API endpoints
+    const { endpoints: auditEndpoints } = auditApi;
+    expect(auditEndpoints.getAuditsByQuarter).toBeDefined();
+    expect(auditEndpoints.completeAudit).toBeDefined();
+    expect(auditEndpoints.selectQuarterlyAudits).toBeDefined();
   });
 
   it('should verify that components can access user data through RTK Query cache', () => {

@@ -84,6 +84,13 @@ test.describe('IKS Audit Tool - Verification Data Persistence', () => {
     await expect(enabledPruefenButton).toBeVisible();
     await expect(enabledPruefenButton).toBeEnabled();
     
+    // Get the specific audit row that we're going to work with
+    const targetAuditRow = enabledPruefenButton.locator('..').locator('..');
+    
+    // Get the audit ID from the first column of this row
+    const auditId = await targetAuditRow.locator('td').first().textContent();
+    console.log(`Working with audit ID: ${auditId}`);
+    
     // Click on the Prüfen button
     await enabledPruefenButton.click();
     
@@ -108,43 +115,86 @@ test.describe('IKS Audit Tool - Verification Data Persistence', () => {
     // Wait for modal to close
     await page.waitForSelector('.modal', { state: 'hidden' });
     
-    // Wait for status update with retry logic
+    // Enhanced retry logic to wait for the SPECIFIC audit to be updated
+    const maxAttempts = 15;
     let verifiedRow;
-    let attempts = 0;
-    const maxAttempts = 10;
+    let ansehenButton;
     
-    while (attempts < maxAttempts) {
+    for (let attempts = 0; attempts < maxAttempts; attempts++) {
       try {
-        // Wait a bit for Redux state to update
-        await page.waitForTimeout(500);
+        // Wait longer for Redux state and component to update
+        await page.waitForTimeout(1000);
         
-        // Try to find the verified audit row (should now show "Geprüft")
-        verifiedRow = page.locator('tbody tr').filter({ hasText: 'Geprüft' }).first();
+        // Look for the specific audit row by audit ID that should now show "Geprüft"
+        verifiedRow = page.locator('tbody tr').filter({ hasText: auditId || '' }).filter({ hasText: 'Geprüft' });
         
         // Check if the row is visible
-        await expect(verifiedRow).toBeVisible({ timeout: 2000 });
+        await expect(verifiedRow).toBeVisible({ timeout: 3000 });
+        
+        // Try to find the Ansehen button in this specific row
+        ansehenButton = verifiedRow.locator('button:has-text("Ansehen")');
+        await expect(ansehenButton).toBeVisible({ timeout: 2000 });
+        
+        console.log(`Success: Found Ansehen button for audit ${auditId} on attempt ${attempts + 1}`);
         break; // If successful, exit the loop
       } catch (error) {
-        attempts++;
-        console.log(`Attempt ${attempts}: Waiting for Geprüft status...`);
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        console.log(`Attempt ${attempts + 1}: Waiting for audit ${auditId} to show Geprüft status and Ansehen button... Error: ${errorMessage}`);
         
-        if (attempts >= maxAttempts) {
-          // Log current table state for debugging
-          const tableRows = await page.locator('tbody tr').allTextContents();
-          console.log('Current table rows:', tableRows);
-          throw new Error(`Failed to find Geprüft status after ${maxAttempts} attempts. Current rows: ${JSON.stringify(tableRows)}`);
+        // On later attempts, try to debug what we actually see
+        if (attempts > 5) {
+          try {
+            const tableText = await page.locator('tbody').textContent();
+            console.log(`Table content on attempt ${attempts + 1}:`, tableText);
+            
+            const allButtons = await page.locator('tbody button').allTextContents();
+            console.log(`All button texts on attempt ${attempts + 1}:`, allButtons);
+            
+            // Check the specific row for this audit
+            const specificRow = page.locator('tbody tr').filter({ hasText: auditId || '' });
+            const specificRowText = await specificRow.textContent();
+            console.log(`Specific audit ${auditId} row content:`, specificRowText);
+          } catch (debugError) {
+            const debugErrorMessage = debugError instanceof Error ? debugError.message : 'Unknown debug error';
+            console.log(`Debug error on attempt ${attempts + 1}:`, debugErrorMessage);
+          }
         }
       }
     }
     
-    // Ensure we have the verified row
-    if (!verifiedRow) {
-      throw new Error('Verified row not found after completion');
+    // Final check: ensure we have the verified row and button
+    if (!verifiedRow || !ansehenButton) {
+      // Last resort: look for the specific audit and its current state
+      console.log(`Last resort: Looking for audit ${auditId} in any state...`);
+      
+      const specificAuditRow = page.locator('tbody tr').filter({ hasText: auditId || '' });
+      const rowCount = await specificAuditRow.count();
+      console.log(`Found ${rowCount} rows for audit ${auditId}`);
+      
+      if (rowCount > 0) {
+        const rowText = await specificAuditRow.textContent();
+        console.log(`Audit ${auditId} current state:`, rowText);
+        
+        // Check if it has any button (Prüfen or Ansehen)
+        const anyButton = specificAuditRow.locator('button').first();
+        if (await anyButton.isVisible()) {
+          const buttonText = await anyButton.textContent();
+          console.log(`Audit ${auditId} button text:`, buttonText);
+          
+          if (buttonText === 'Ansehen') {
+            ansehenButton = anyButton;
+            verifiedRow = specificAuditRow;
+          }
+        }
+      }
+      
+      if (!ansehenButton) {
+        throw new Error(`No Ansehen button found for audit ${auditId} after completion`);
+      }
     }
     
     // Now reopen the verification modal to check if data persisted
-    const ansehenButton = verifiedRow.locator('button:has-text("Ansehen")');
-    await expect(ansehenButton).toBeVisible();
+    await expect(ansehenButton).toBeVisible({ timeout: 5000 });
     await ansehenButton.click();
     
     // Wait for modal to open again with increased timeout

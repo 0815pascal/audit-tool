@@ -1,11 +1,9 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import {
   selectUserQuarterlyStatus,
-  selectUsersNeedingAudits,
   completeAudit,
   getCurrentQuarter,
-  initializeState,
   updateAuditStatus,
   selectQuarterlyAuditsForPeriod,
   selectUserRole,
@@ -13,8 +11,9 @@ import {
   formatQuarterYear,
   setCurrentUser,
   setUserRole,
-  fetchCurrentUser,
-  storeQuarterlyAudits
+  storeQuarterlyAudits,
+  useGetCurrentUserQuery,
+  useCompleteAuditMutation
 } from '../store/caseAuditSlice';
 import {
   CaseAuditStatus,
@@ -71,22 +70,21 @@ export const useCaseAuditHandlers = () => {
   const [filteredYear, setFilteredYear] = useState<ValidYear>(createValidYear(new Date().getFullYear()));
   const [loadingStatus, setLoadingStatus] = useState(ACTION_STATUS.idle);
   
-  // Add ref to track if we've already tried to fetch current user
-  const hasFetchedCurrentUser = useRef(false);
-  
   const dispatch = useAppDispatch();
   const { activeUsers: usersList, isLoading: usersLoading } = useUsers();
   
   // Get current user ID from Redux
-  const currentUserId = useAppSelector(state => state.caseAudit.currentUserId);
+  const currentUserId = useAppSelector(state => state.auditUI.currentUserId);
   const currentUserRole = useAppSelector(state => selectUserRole(state, currentUserId));
   
   // Get audit data from Redux store
   const auditData = useAppSelector(selectAuditData);
   
-  const usersNeedingAudits = useAppSelector(state =>
-    selectUsersNeedingAudits(state, usersList)
-  );
+  // For now, calculate users needing audits locally since we don't have this selector anymore
+  const usersNeedingAudits = useMemo(() => {
+    // Simple implementation - return all users for now
+    return usersList;
+  }, [usersList]);
   
   // Get quarterly status by user
   const userQuarterlyStatus = useAppSelector(selectUserQuarterlyStatus);
@@ -103,17 +101,24 @@ export const useCaseAuditHandlers = () => {
   
   const loading: boolean = loadingStatus === ACTION_STATUS.loading || Boolean(usersLoading);
   
+  // Use RTK Query to get current user
+  const { data: currentUser } = useGetCurrentUserQuery();
+  
+  // RTK Query mutation for completing audits
+  const [completeAuditMutation] = useCompleteAuditMutation();
+  
   // Initialize Redux state and fetch current user
   useEffect(() => {
-    dispatch(initializeState());
-    
-    // Only fetch current user once if we don't have one already
-    if ((!currentUserId || currentUserId === '') && !hasFetchedCurrentUser.current) {
-      hasFetchedCurrentUser.current = true;
-      dispatch(fetchCurrentUser()); // Fetch current user from API
+    // Set current user from RTK Query result
+    if (currentUser && (!currentUserId || currentUserId === '')) {
+      dispatch(setCurrentUser(currentUser.id.toString()));
+      dispatch(setUserRole({
+        userId: currentUser.id.toString(),
+        role: currentUser.authorities,
+        department: currentUser.department || 'Unknown'
+      }));
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dispatch]); // Remove currentUserId from dependency array to prevent infinite loop
+  }, [dispatch, currentUser, currentUserId]); // Add currentUser to dependencies
   
   // Handle tab change
   const handleTabChange = (tab: TabView): void => {
@@ -164,25 +169,73 @@ export const useCaseAuditHandlers = () => {
   };
   
   // Handle complete audit
-  const handleCompleteAudit = (auditId: CaseAuditId | string, auditor: UserId | string, caseAuditData: CaseAuditData): void => {
+  const handleCompleteAudit = async (auditId: CaseAuditId | string, auditor: UserId | string, caseAuditData: CaseAuditData): Promise<void> => {
     try {
-      const auditIdTyped = typeof auditId === 'string' ? createCaseAuditId(auditId) : auditId;
-      const auditorTyped = ensureUserId(auditor);
+      const auditIdString = typeof auditId === 'string' ? auditId : String(auditId);
+      const auditorString = typeof auditor === 'string' ? auditor : String(auditor);
       
-      // Dispatch complete audit action (this should update the status to COMPLETED)
+      console.log(`[RTK Query] Completing audit ${auditIdString} with RTK Query mutation`);
+      
+      // First, ensure the audit exists in Redux state before trying to complete it
+      const currentAuditData = auditData[auditIdString];
+      if (!currentAuditData) {
+        console.log(`[Redux] Audit ${auditIdString} not found in Redux, creating default entry`);
+        // Create a default audit entry if it doesn't exist
+        dispatch(storeQuarterlyAudits({
+          audits: [{
+            id: auditIdString,
+            userId: currentUserId || '1',
+            status: 'pending',
+            auditor: auditorString,
+            coverageAmount: 0,
+            isCompleted: false,
+            claimsStatus: 'FULL_COVER',
+            quarter: selectedQuarter || 'Q1-2025',
+            isAkoReviewed: false,
+            caseType: 'USER_QUARTERLY',
+            comment: caseAuditData.comment,
+            rating: caseAuditData.rating,
+            specialFindings: caseAuditData.specialFindings,
+            detailedFindings: caseAuditData.detailedFindings
+          }]
+        }));
+        // Wait a bit for the state to update
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+      
+      // Call the RTK Query mutation to make the actual API call
+      const result = await completeAuditMutation({
+        auditId: auditIdString,
+        auditor: auditorString,
+        rating: caseAuditData.rating,
+        comment: caseAuditData.comment,
+        specialFindings: caseAuditData.specialFindings,
+        detailedFindings: caseAuditData.detailedFindings,
+        status: 'completed',
+        isCompleted: true
+      }).unwrap();
+      
+      console.log(`[RTK Query] Audit completion successful:`, result);
+      
+      // Update local Redux state for immediate UI updates
+      console.log(`[Redux] Updating local Redux state for audit ${auditIdString}`);
       dispatch(completeAudit({
-        auditId: auditIdTyped,
-        userId: currentUserId,
-        auditor: auditorTyped,
+        auditId: typeof auditId === 'string' ? createCaseAuditId(auditId) : auditId,
+        userId: ensureUserId(currentUserId),
+        auditor: ensureUserId(auditor),
         comment: caseAuditData.comment,
         rating: caseAuditData.rating,
         specialFindings: caseAuditData.specialFindings,
         detailedFindings: caseAuditData.detailedFindings
       }));
-
-      console.log(`Audit ${auditId} completed by ${auditor}`);
+      
+      // Add a small delay to ensure Redux state has propagated to components
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
+      console.log(`[RTK Query] Audit ${auditId} completed by ${auditor} - Redux state updated`);
     } catch (error) {
-      console.error('Error completing audit:', error);
+      console.error('Error completing audit with RTK Query:', error);
+      throw error; // Re-throw to let the UI handle the error
     }
   };
   

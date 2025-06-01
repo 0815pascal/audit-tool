@@ -1,14 +1,13 @@
-import {createAsyncThunk, createSelector, createSlice, PayloadAction} from '@reduxjs/toolkit';
+import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+import { createSlice, PayloadAction, createSelector } from '@reduxjs/toolkit';
 import {
-  ApiResponse,
+  CaseAudit,
   CaseAuditActionPayload,
-  CaseAuditState,
-  CaseAuditStep,
+  FindingsRecord,
   Quarter,
   QuarterNumber,
   QuarterPeriod,
   RatingValue,
-  StatusUpdatePayload,
   StoredCaseAuditData,
   User,
   UserRole
@@ -21,13 +20,10 @@ import {
   createEmptyFindings,
   createISODateString,
 } from '../types/typeHelpers';
-import {CASE_TYPE_ENUM, CLAIMS_STATUS_ENUM, USER_ROLE_ENUM, AUDIT_STATUS_ENUM} from '../enums';
-import {QUARTER_CALCULATIONS, API_BASE_PATH} from '../constants';
-import {mapAuditStatusToCaseAuditStatus} from '../utils/statusUtils';
-import {
-  completeAuditAPI,
-  CompletionResponse
-} from '../services/auditService';
+import { RootState } from './index';
+import { CASE_TYPE_ENUM, CLAIMS_STATUS_ENUM, USER_ROLE_ENUM, AUDIT_STATUS_ENUM } from '../enums';
+import { QUARTER_CALCULATIONS, API_BASE_PATH } from '../constants';
+import { mapAuditStatusToCaseAuditStatus } from '../utils/statusUtils';
 
 // Memoize the getCurrentQuarter function to avoid creating new objects on each call
 let cachedQuarter: Quarter | null = null;
@@ -61,20 +57,278 @@ export const formatQuarterYear = (quarter: QuarterNumber, year: number): Quarter
   return `Q${quarter}-${year}`;
 };
 
-// Using utility function for status mapping from utils/statusUtils.ts
-
-// Extended version of StoredCaseAuditData with additional fields
-interface ExtendedStoredCaseAuditData extends StoredCaseAuditData {
-  lastUpdated?: string;
+// Types for API responses
+interface AuditCompletionResponse {
+  success: boolean;
+  auditId: string;
+  status: string;
+  completionDate?: string;
+  message?: string;
 }
 
-// Initialize a proper version of CaseAuditState
-const initialState: CaseAuditState = {
-  auditData: {},
-  userQuarterlyStatus: {},
-  userRoles: {}, // Remove mock data - this should be populated from API
-  currentUserId: createUserId(''), // No default user - should be fetched from API
-};
+interface QuarterlyAuditsResponse {
+  success: boolean;
+  data: {
+    quarterKey: string;
+    userQuarterlyAudits: Array<{
+      id: string;
+      userId: string;
+      status: string;
+      auditor: string;
+      coverageAmount: number;
+      isCompleted: boolean;
+      claimsStatus: string;
+      quarter: string;
+      isAkoReviewed: boolean;
+      notifiedCurrency?: string;
+      caseType: string;
+      comment?: string;
+      rating?: string;
+      specialFindings?: Record<string, boolean>;
+      detailedFindings?: Record<string, boolean>;
+    }>;
+    previousQuarterRandomAudits: Array<{
+      id: string;
+      userId: string;
+      status: string;
+      auditor: string;
+      coverageAmount: number;
+      isCompleted: boolean;
+      claimsStatus: string;
+      quarter: string;
+      isAkoReviewed: boolean;
+      notifiedCurrency?: string;
+      caseType: string;
+      comment?: string;
+      rating?: string;
+      specialFindings?: Record<string, boolean>;
+      detailedFindings?: Record<string, boolean>;
+    }>;
+    lastSelectionDate: string;
+  };
+}
+
+interface CurrentUserResponse {
+  success: boolean;
+  data: User;
+}
+
+// RTK Query API slice for audit operations
+export const auditApi = createApi({
+  reducerPath: 'auditApi',
+  baseQuery: fetchBaseQuery({
+    baseUrl: API_BASE_PATH,
+    prepareHeaders: (headers) => {
+      headers.set('Content-Type', 'application/json');
+      return headers;
+    },
+  }),
+  tagTypes: ['Audit', 'QuarterlyAudits', 'CurrentUser'],
+  endpoints: (builder) => ({
+    // Get current user
+    getCurrentUser: builder.query<User, void>({
+      query: () => '/auth/current-user',
+      transformResponse: (response: CurrentUserResponse) => {
+        if (!response.success) {
+          throw new Error('Failed to fetch current user');
+        }
+        return response.data;
+      },
+      providesTags: [{ type: 'CurrentUser', id: 'current' }],
+    }),
+
+    // Get audits by quarter
+    getAuditsByQuarter: builder.query<CaseAudit[], QuarterPeriod>({
+      query: (quarter) => `/audits/quarter/${quarter}`,
+      transformResponse: (response: CaseAudit[]) => response || [],
+      providesTags: (result, _, quarter) =>
+        result
+          ? [
+              ...result.map(({ id }) => ({ type: 'Audit' as const, id })),
+              { type: 'Audit', id: `QUARTER-${quarter}` },
+            ]
+          : [{ type: 'Audit', id: `QUARTER-${quarter}` }],
+    }),
+
+    // Get audits by auditor
+    getAuditsByAuditor: builder.query<CaseAudit[], string>({
+      query: (auditorId) => `/audits/auditor/${auditorId}`,
+      transformResponse: (response: CaseAudit[]) => response || [],
+      providesTags: (result, _, auditorId) =>
+        result
+          ? [
+              ...result.map(({ id }) => ({ type: 'Audit' as const, id })),
+              { type: 'Audit', id: `AUDITOR-${auditorId}` },
+            ]
+          : [{ type: 'Audit', id: `AUDITOR-${auditorId}` }],
+    }),
+
+    // Select quarterly audits
+    selectQuarterlyAudits: builder.mutation<QuarterlyAuditsResponse['data'], QuarterPeriod>({
+      query: (quarterPeriod) => ({
+        url: '/audit-completion/select-quarterly',
+        method: 'POST',
+        body: { quarterKey: quarterPeriod, userIds: [] },
+      }),
+      transformResponse: (response: QuarterlyAuditsResponse) => {
+        if (!response.success) {
+          throw new Error('Failed to select quarterly audits');
+        }
+        return response.data;
+      },
+      invalidatesTags: (_, __, quarterPeriod) => [
+        { type: 'QuarterlyAudits', id: quarterPeriod },
+        { type: 'Audit', id: `QUARTER-${quarterPeriod}` },
+      ],
+    }),
+
+    // Get quarterly audits for a specific period
+    getQuarterlyAudits: builder.query<QuarterlyAuditsResponse['data'], QuarterPeriod>({
+      query: (quarterPeriod) => `/audit-completion/select-quarterly/${quarterPeriod}`,
+      transformResponse: (response: QuarterlyAuditsResponse) => {
+        if (!response.success) {
+          throw new Error('Failed to get quarterly audits');
+        }
+        return response.data;
+      },
+      providesTags: (_, __, quarterPeriod) => [
+        { type: 'QuarterlyAudits', id: quarterPeriod },
+      ],
+    }),
+
+    // Complete audit
+    completeAudit: builder.mutation<AuditCompletionResponse, {
+      auditId: string;
+      auditor: string;
+      rating: string;
+      comment: string;
+      specialFindings: Record<string, boolean>;
+      detailedFindings: Record<string, boolean>;
+      status: string;
+      isCompleted: boolean;
+    }>({
+      query: ({ auditId, ...completionData }) => ({
+        url: `/audit/${auditId}/complete`,
+        method: 'POST',
+        body: completionData,
+      }),
+      transformResponse: (response: AuditCompletionResponse) => {
+        if (!response.success) {
+          throw new Error(response.message || 'Failed to complete audit');
+        }
+        return response;
+      },
+      invalidatesTags: (_, __, { auditId }) => [
+        { type: 'Audit', id: auditId },
+        { type: 'Audit', id: 'LIST' },
+      ],
+    }),
+
+    // Save audit completion (in-progress)
+    saveAuditCompletion: builder.mutation<AuditCompletionResponse, {
+      auditId: string;
+      auditor: string;
+      rating: string;
+      comment: string;
+      specialFindings: Record<string, boolean>;
+      detailedFindings: Record<string, boolean>;
+      status: string;
+      isCompleted: boolean;
+    }>({
+      query: ({ auditId, ...completionData }) => ({
+        url: `/audit-completion/${auditId}`,
+        method: 'PUT',
+        body: completionData,
+      }),
+      transformResponse: (response: AuditCompletionResponse) => {
+        if (!response.success) {
+          throw new Error(response.message || 'Failed to save audit completion');
+        }
+        return response;
+      },
+      invalidatesTags: (_, __, { auditId }) => [
+        { type: 'Audit', id: auditId },
+      ],
+    }),
+
+    // Create audit
+    createAudit: builder.mutation<CaseAudit, Partial<CaseAudit>>({
+      query: (auditData) => ({
+        url: '/audits',
+        method: 'POST',
+        body: auditData,
+      }),
+      transformResponse: (response: CaseAudit) => response,
+      invalidatesTags: [{ type: 'Audit', id: 'LIST' }],
+    }),
+
+    // Update audit
+    updateAudit: builder.mutation<CaseAudit, CaseAudit>({
+      query: ({ id, ...patch }) => ({
+        url: `/audits/${id}`,
+        method: 'PUT',
+        body: patch,
+      }),
+      transformResponse: (response: CaseAudit) => response,
+      invalidatesTags: (_, __, { id }) => [
+        { type: 'Audit', id },
+        { type: 'Audit', id: 'LIST' },
+      ],
+    }),
+
+    // Get audit findings
+    getAuditFindings: builder.query<FindingsRecord[], string>({
+      query: (auditId) => `/audits/${auditId}/findings`,
+      transformResponse: (response: FindingsRecord[]) => response || [],
+      providesTags: (_, __, auditId) => [
+        { type: 'Audit', id: `${auditId}-findings` },
+      ],
+    }),
+
+    // Add finding to audit
+    addAuditFinding: builder.mutation<FindingsRecord, {
+      auditId: string;
+      type: string;
+      description: string;
+    }>({
+      query: ({ auditId, ...findingData }) => ({
+        url: `/audits/${auditId}/findings`,
+        method: 'POST',
+        body: findingData,
+      }),
+      invalidatesTags: (_, __, { auditId }) => [
+        { type: 'Audit', id: `${auditId}-findings` },
+      ],
+    }),
+  }),
+});
+
+// Export hooks for use in components
+export const {
+  useGetCurrentUserQuery,
+  useGetAuditsByQuarterQuery,
+  useGetAuditsByAuditorQuery,
+  useSelectQuarterlyAuditsMutation,
+  useGetQuarterlyAuditsQuery,
+  useCompleteAuditMutation,
+  useSaveAuditCompletionMutation,
+  useCreateAuditMutation,
+  useUpdateAuditMutation,
+  useGetAuditFindingsQuery,
+  useAddAuditFindingMutation,
+} = auditApi;
+
+// UI State interface for local state management
+interface AuditUIState {
+  currentUserId: string;
+  selectedQuarter: QuarterPeriod | null;
+  filteredYear: number;
+  auditData: Record<string, StoredCaseAuditData>;
+  userQuarterlyStatus: Record<string, Record<string, { completed: boolean; lastCompleted?: string }>>;
+  userRoles: Record<string, { role: UserRole; department: string }>;
+  loading: boolean;
+  error: string | null;
+}
 
 // Create a default StoredCaseAuditData object with standard values
 const createDefaultCaseAuditData = (userId: string): StoredCaseAuditData => {
@@ -82,7 +336,7 @@ const createDefaultCaseAuditData = (userId: string): StoredCaseAuditData => {
 
   return {
     isCompleted: false,
-    isIncorrect: false, // Required by StoredCaseAuditData
+    isIncorrect: false,
     completionDate: null,
     userId: createUserId(userId),
     quarter: formatQuarterPeriod(quarter, year),
@@ -93,7 +347,7 @@ const createDefaultCaseAuditData = (userId: string): StoredCaseAuditData => {
     rating: '' as RatingValue,
     specialFindings: createEmptyFindings(),
     detailedFindings: createEmptyFindings(),
-    status: mapAuditStatusToCaseAuditStatus(AUDIT_STATUS_ENUM.COMPLETED),
+    status: mapAuditStatusToCaseAuditStatus(AUDIT_STATUS_ENUM.PENDING),
     caseType: CASE_TYPE_ENUM.USER_QUARTERLY,
     coverageAmount: 0,
     claimsStatus: CLAIMS_STATUS_ENUM.FULL_COVER,
@@ -102,196 +356,76 @@ const createDefaultCaseAuditData = (userId: string): StoredCaseAuditData => {
   };
 };
 
-// Create step object with proper id
-const createStepWithId = (stepId: string, isCompleted: boolean = false, isIncorrect: boolean = false, comment: string = ''): CaseAuditStep => {
-  return {
-    id: stepId,
-    isCompleted,
-    isIncorrect,
-    comment
-  };
+// Initialize UI state
+const initialUIState: AuditUIState = {
+  currentUserId: '',
+  selectedQuarter: null,
+  filteredYear: new Date().getFullYear(),
+  auditData: {},
+  userQuarterlyStatus: {},
+  userRoles: {},
+  loading: false,
+  error: null,
 };
 
-// Create async thunk for fetching current user
-export const fetchCurrentUser = createAsyncThunk<
-  User,
-  void,
-  { rejectValue: string }
->(
-  'caseAudit/fetchCurrentUser',
-  async (_, { rejectWithValue }) => {
-    try {
-      const response = await fetch(`${API_BASE_PATH}/auth/current-user`);
-      const data = await response.json() as ApiResponse<User>;
-      
-      if (!data.success) {
-        return rejectWithValue(data.error || 'Failed to fetch current user');
-      }
-      
-      return (data).data;
-    } catch (error) {
-      return rejectWithValue(error instanceof Error ? error.message : 'Failed to fetch current user');
-    }
-  }
-);
-
-// Async thunk for saving audit completion data (in-progress)
-export const saveAuditCompletionThunk = createAsyncThunk<
-  CompletionResponse,
-  CaseAuditActionPayload,
-  { rejectValue: string }
->(
-  'caseAudit/saveAuditCompletion',
-  async (payload, { rejectWithValue }) => {
-    try {
-      return await completeAuditAPI(
-        payload.auditId,
-        payload.auditor,
-        payload
-      );
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      console.error('[Redux] Error saving audit completion:', errorMessage);
-      return rejectWithValue(errorMessage);
-    }
-  }
-);
-
-// Async thunk for completing audit
-export const completeAuditThunk = createAsyncThunk<
-  CompletionResponse,
-  CaseAuditActionPayload,
-  { rejectValue: string }
->(
-  'caseAudit/completeAudit',
-  async (payload, { rejectWithValue }) => {
-    try {
-      return await completeAuditAPI(
-        payload.auditId,
-        payload.auditor,
-        payload
-      );
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      console.error('[Redux] Error completing audit:', errorMessage);
-      return rejectWithValue(errorMessage);
-    }
-  }
-);
-
-const caseAuditSlice = createSlice({
-  name: 'caseAudit',
-  initialState,
+// UI slice for local state management
+const auditUISlice = createSlice({
+  name: 'auditUI',
+  initialState: initialUIState,
   reducers: {
-    // Initialize the state with sample data if needed
-    initializeState: (state) => {
-      // Create some sample data for past quarters if none exists
-      if (Object.keys(state.auditData).length === 0) {
-        // Sample data for a past quarter
-        const { quarter, year } = getCurrentQuarter();
-        let pastQuarterValue = quarter - 1;
-        let pastYear = year;
-        
-        if (pastQuarterValue < 1) {
-          pastQuarterValue = 4;
-          pastYear = createValidYear(year.valueOf() - 1);
-        }
-        
-        // Cast to QuarterNumber type
-        const pastQuarter = pastQuarterValue as QuarterNumber;
-        
-        // Add a sample past dossier completion for U001
-        state.auditData['INV001-PAST'] = {
-          isCompleted: true,
-          isIncorrect: false,
-          completionDate: createISODateString(new Date(pastYear, (pastQuarter - 1) * 3 + 2, 15)),
-          userId: createUserId('1'),
-          quarter: formatQuarterPeriod(pastQuarter, pastYear),
-          year: pastYear,
-          steps: {
-            'S1': createStepWithId('S1', true, false, ''),
-            'S2': createStepWithId('S2', true, false, '')
-          },
-          auditor: createUserId(''),
-          comment: '',
-          rating: '',
-          specialFindings: createEmptyFindings(),
-          detailedFindings: createEmptyFindings(),
-          status: mapAuditStatusToCaseAuditStatus(AUDIT_STATUS_ENUM.COMPLETED),
-          caseType: CASE_TYPE_ENUM.USER_QUARTERLY,
-          coverageAmount: 0,
-          claimsStatus: CLAIMS_STATUS_ENUM.FULL_COVER,
-          dossierName: 'Sample Past Dossier 1'
-        };
-        
-        // Add sample for a second past quarter (two quarters ago)
-        let pastQuarter2Value = pastQuarterValue - 1;
-        let pastYear2 = pastYear;
-        
-        if (pastQuarter2Value < 1) {
-          pastQuarter2Value = 4;
-          pastYear2 = createValidYear(pastYear.valueOf() - 1);
-        }
-        
-        // Cast to QuarterNumber type
-        const pastQuarter2 = pastQuarter2Value as QuarterNumber;
-
-        state.auditData['INV002-PAST'] = {
-          isCompleted: true,
-          isIncorrect: false,
-          completionDate: createISODateString(new Date(pastYear2.valueOf(), (pastQuarter2 - 1) * 3 + 2, 10)),
-          userId: createUserId('2'),
-          quarter: formatQuarterPeriod(pastQuarter2, pastYear2),
-          year: pastYear2,
-          steps: {
-            'S1': createStepWithId('S1', true, false, ''),
-            'S2': createStepWithId('S2', true, false, '')
-          },
-          auditor: createUserId(''),
-          comment: '',
-          rating: '',
-          specialFindings: createEmptyFindings(),
-          detailedFindings: createEmptyFindings(),
-          status: mapAuditStatusToCaseAuditStatus(AUDIT_STATUS_ENUM.COMPLETED),
-          caseType: CASE_TYPE_ENUM.USER_QUARTERLY,
-          coverageAmount: 0,
-          claimsStatus: CLAIMS_STATUS_ENUM.FULL_COVER,
-          dossierName: 'Sample Past Dossier 2'
-        };
-        
-        // Update the quarterly status for these users
-        const quarterKey1 = formatQuarterYear(pastQuarter, pastYear);
-        const quarterKey2 = formatQuarterYear(pastQuarter2, pastYear2);
-        
-        // Initialize if needed
-        if (!state.userQuarterlyStatus['1']) {
-          state.userQuarterlyStatus['1'] = {};
-        }
-        if (!state.userQuarterlyStatus['2']) {
-          state.userQuarterlyStatus['2'] = {};
-        }
-        
-        // Set as verified
-        state.userQuarterlyStatus['1'][quarterKey1] = {
-          completed: true,
-          lastCompleted: createISODateString(new Date(pastYear.valueOf(), (pastQuarter - 1) * 3 + 2, 15))
-        };
-        
-        state.userQuarterlyStatus['2'][quarterKey2] = {
-          completed: true,
-          lastCompleted: createISODateString(new Date(pastYear2.valueOf(), (pastQuarter2 - 1) * 3 + 2, 10))
-        };
-      }
+    // Set current user
+    setCurrentUser: (state, action: PayloadAction<string>) => {
+      state.currentUserId = ensureUserId(action.payload);
     },
-    completeAudit: (
-      state,
-      action: PayloadAction<CaseAuditActionPayload>
-    ) => {
+
+    // Set selected quarter
+    setSelectedQuarter: (state, action: PayloadAction<QuarterPeriod | null>) => {
+      state.selectedQuarter = action.payload;
+    },
+
+    // Set filtered year
+    setFilteredYear: (state, action: PayloadAction<number>) => {
+      state.filteredYear = action.payload;
+    },
+
+    // Update audit status locally
+    updateAuditStatus: (state, action: PayloadAction<{
+      auditId: string;
+      status: AUDIT_STATUS_ENUM;
+      userId: string;
+    }>) => {
+      const { auditId, status, userId } = action.payload;
+      
+      if (!state.auditData[auditId]) {
+        state.auditData[auditId] = createDefaultCaseAuditData(userId);
+      }
+      
+      state.auditData[auditId].status = mapAuditStatusToCaseAuditStatus(status);
+      state.auditData[auditId].isCompleted = status === AUDIT_STATUS_ENUM.COMPLETED;
+    },
+
+    // Update audit in progress
+    updateAuditInProgress: (state, action: PayloadAction<CaseAuditActionPayload>) => {
+      const { auditId, userId, auditor, comment, rating, specialFindings, detailedFindings } = action.payload;
+      
+      if (!state.auditData[auditId]) {
+        state.auditData[auditId] = createDefaultCaseAuditData(userId);
+      }
+      
+      state.auditData[auditId].auditor = auditor;
+      state.auditData[auditId].comment = comment;
+      state.auditData[auditId].rating = rating;
+      state.auditData[auditId].specialFindings = specialFindings || createEmptyFindings();
+      state.auditData[auditId].detailedFindings = detailedFindings || createEmptyFindings();
+      state.auditData[auditId].status = mapAuditStatusToCaseAuditStatus(AUDIT_STATUS_ENUM.IN_PROGRESS);
+    },
+
+    // Complete audit locally
+    completeAudit: (state, action: PayloadAction<CaseAuditActionPayload>) => {
       const { auditId, auditor, comment, rating, specialFindings, detailedFindings } = action.payload;
       const auditData = state.auditData[auditId];
       
       if (auditData) {
-        // Set as completed
         auditData.isCompleted = true;
         auditData.status = mapAuditStatusToCaseAuditStatus(AUDIT_STATUS_ENUM.COMPLETED);
         auditData.auditor = ensureUserId(auditor.toString());
@@ -299,9 +433,8 @@ const caseAuditSlice = createSlice({
         auditData.rating = rating || '';
         auditData.specialFindings = specialFindings || createEmptyFindings();
         auditData.detailedFindings = detailedFindings || createEmptyFindings();
-        auditData.lastUpdated = createISODateString(new Date());
+        auditData.completionDate = createISODateString(new Date());
         
-        // Update user quarterly status
         const quarterKey = auditData.quarter;
         const userId = auditData.userId.toString();
         
@@ -310,92 +443,25 @@ const caseAuditSlice = createSlice({
         }
         
         if (!state.userQuarterlyStatus[userId][quarterKey]) {
-          state.userQuarterlyStatus[userId][quarterKey] = {
-            completed: false
-          };
+          state.userQuarterlyStatus[userId][quarterKey] = { completed: false };
         }
         
-        // Update completion date and auditor when completed
-        if (auditData.isCompleted) {
-          auditData.completionDate = createISODateString(new Date());
-          state.userQuarterlyStatus[userId][quarterKey].completed = true;
-          state.userQuarterlyStatus[userId][quarterKey].lastCompleted = createISODateString(new Date());
-        }
+        state.userQuarterlyStatus[userId][quarterKey].completed = true;
+        state.userQuarterlyStatus[userId][quarterKey].lastCompleted = createISODateString(new Date());
       }
     },
-    updateAuditStatus: (
-      state,
-      action: PayloadAction<StatusUpdatePayload>
-    ) => {
-      const { auditId, status, userId } = action.payload;
-      
-      // Initialize audit data if it doesn't exist
-      if (!state.auditData[auditId]) {
-        state.auditData[auditId] = createDefaultCaseAuditData(userId);
-      }
-      
-      // Update audit status - directly set status since both enums have the same string values
-      state.auditData[auditId].status = status;
-      
-      // Update isCompleted based on the status value
-      state.auditData[auditId].isCompleted = status === AUDIT_STATUS_ENUM.COMPLETED;
-    },
-    // Update user roles
-    updateUserRole: (
-      state,
-      action: PayloadAction<{
-        userId: string;
-        role: UserRole;
-        department: string;
-      }>
-    ) => {
-      const { userId, role, department } = action.payload;
-      
-      // Update or create the user role
-      state.userRoles[userId] = {
-        role,
-        department
-      };
-    },
-    // Add new action to handle in-progress completion state
-    updateAuditInProgress: (
-      state,
-      action: PayloadAction<CaseAuditActionPayload>
-    ) => {
-      const { auditId, userId, auditor, comment, rating, specialFindings, detailedFindings } = action.payload;
-      
-      // Initialize audit data if it doesn't exist
-      if (!state.auditData[auditId]) {
-        state.auditData[auditId] = createDefaultCaseAuditData(userId);
-      }
-      
-      // Update audit with in-progress data
-      state.auditData[auditId].auditor = auditor;
-      state.auditData[auditId].comment = comment;
-      state.auditData[auditId].rating = rating;
-      state.auditData[auditId].specialFindings = specialFindings;
-      state.auditData[auditId].detailedFindings = detailedFindings;
-      
-      // Set status to in-progress
-      state.auditData[auditId].status = mapAuditStatusToCaseAuditStatus(AUDIT_STATUS_ENUM.IN_PROGRESS);
-      
-      // Mark when the form was last updated
-      // We don't use completionDate as that's only for completed audits
-      (state.auditData[auditId] as ExtendedStoredCaseAuditData).lastUpdated = createISODateString(new Date());
-    },
-    // Set current user
-    setCurrentUser: (state, action: PayloadAction<string>) => {
-      state.currentUserId = ensureUserId(action.payload);
-      // User roles should be populated separately from API/MSW through setUserRoles action
-    },
-// Action to populate user roles from API response
-// Action to update a single user's role
-    setUserRole: (state, action: PayloadAction<{ userId: string; role: UserRole; department: string }>) => {
+
+    // Set user role
+    setUserRole: (state, action: PayloadAction<{
+      userId: string;
+      role: UserRole;
+      department: string;
+    }>) => {
       const { userId, role, department } = action.payload;
       state.userRoles[userId] = { role, department };
     },
-    
-    // Action to store selected quarterly audits
+
+    // Store quarterly audits
     storeQuarterlyAudits: (state, action: PayloadAction<{
       audits: Array<{
         id: string;
@@ -409,11 +475,14 @@ const caseAuditSlice = createSlice({
         isAkoReviewed: boolean;
         notifiedCurrency?: string;
         caseType: string;
+        comment?: string;
+        rating?: string;
+        specialFindings?: FindingsRecord;
+        detailedFindings?: FindingsRecord;
       }>;
     }>) => {
       const { audits } = action.payload;
       
-      // Store each audit in the auditData dictionary
       audits.forEach(audit => {
         state.auditData[audit.id] = {
           isCompleted: audit.isCompleted,
@@ -424,10 +493,10 @@ const caseAuditSlice = createSlice({
           year: parseInt(audit.quarter.split('-')[1]),
           steps: {},
           auditor: ensureUserId(audit.auditor),
-          comment: '',
-          rating: '' as RatingValue,
-          specialFindings: createEmptyFindings(),
-          detailedFindings: createEmptyFindings(),
+          comment: audit.comment || '',
+          rating: (audit.rating || '') as RatingValue,
+          specialFindings: audit.specialFindings || createEmptyFindings(),
+          detailedFindings: audit.detailedFindings || createEmptyFindings(),
           status: mapAuditStatusToCaseAuditStatus(audit.status as AUDIT_STATUS_ENUM),
           caseType: audit.caseType as CASE_TYPE_ENUM,
           coverageAmount: audit.coverageAmount,
@@ -437,209 +506,60 @@ const caseAuditSlice = createSlice({
           notifiedCurrency: audit.notifiedCurrency || 'CHF'
         };
       });
-    }
+    },
+
+    // Set loading state
+    setLoading: (state, action: PayloadAction<boolean>) => {
+      state.loading = action.payload;
+    },
+
+    // Set error state
+    setError: (state, action: PayloadAction<string | null>) => {
+      state.error = action.payload;
+    },
+
+    // Clear error
+    clearError: (state) => {
+      state.error = null;
+    },
   },
-  extraReducers: (builder) => {
-    builder
-      // Handle fetchCurrentUser lifecycle
-      .addCase(fetchCurrentUser.pending, () => {
-        // Could add loading state here if needed
-      })
-      .addCase(fetchCurrentUser.fulfilled, (state, action: PayloadAction<User>) => {
-        const user = action.payload;
-        state.currentUserId = ensureUserId(user.id.toString());
-        // Also set the user role
-        state.userRoles[user.id.toString()] = {
-          role: user.authorities,
-          department: user.department || 'Unknown'
-        };
-      })
-      .addCase(fetchCurrentUser.rejected, (_, action) => {
-        console.error('Failed to fetch current user:', action.payload);
-        // Could add error handling here if needed
-      })
-      
-      // Handle saveAuditCompletionThunk lifecycle
-      .addCase(saveAuditCompletionThunk.pending, (state) => {
-        state.loading = true;
-      })
-      .addCase(saveAuditCompletionThunk.fulfilled, (state) => {
-        state.loading = false;
-      })
-      .addCase(saveAuditCompletionThunk.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload || 'Failed to save audit completion';
-      })
-      
-      // Handle completeAuditThunk lifecycle
-      .addCase(completeAuditThunk.pending, (state) => {
-        state.loading = true;
-      })
-      .addCase(completeAuditThunk.fulfilled, (state) => {
-        state.loading = false;
-      })
-      .addCase(completeAuditThunk.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload || 'Failed to complete audit';
-      });
-  }
 });
 
-export const { 
-  initializeState,
-  completeAudit,
+// Export UI actions
+export const {
+  setCurrentUser,
+  setSelectedQuarter,
+  setFilteredYear,
   updateAuditStatus,
   updateAuditInProgress,
-  setCurrentUser,
+  completeAudit,
   setUserRole,
-  storeQuarterlyAudits
-} = caseAuditSlice.actions;
+  storeQuarterlyAudits,
+  setLoading,
+  setError,
+  clearError,
+} = auditUISlice.actions;
 
-// Selectors
-export const selectAuditData = (state: { caseAudit: CaseAuditState }) => 
-  state.caseAudit.auditData;
+// Enhanced selectors that work with RTK Query cache
+const getCurrentUserQuerySelector = auditApi.endpoints.getCurrentUser.select();
 
-export const selectUserQuarterlyStatus = (state: { caseAudit: CaseAuditState }) =>
-  state.caseAudit.userQuarterlyStatus;
-
-// Selector to get all user roles
-// Define the interface used by selectors - inherits from User type
-
-// Ensure consistency with User interface
-type UserForSelector = Pick<User, 'id' | 'displayName' | 'department' | 'authorities' | 'enabled'>;
-
-// Memoized selector for users needing audits
-export const selectUsersNeedingAudits = createSelector(
-  [
-    (_state, users: UserForSelector[]) => users
-  ],
-  (users) => {
-    // Add transformation logic to modify the input in some way
-    // Here we're adding isAuditNeeded: false to each user to make it a modified result
-    return users.map(user => ({
-      ...user,
-      // Add a derived field to ensure we're not returning the exact input
-      isAuditNeeded: true
-    }));
-  }
+export const selectCurrentUser = createSelector(
+  [getCurrentUserQuerySelector],
+  (currentUserResult) => currentUserResult.data || null
 );
 
-// Memoized selector for counting users that need audits
-createSelector(
-    [
-      (state: { caseAudit: CaseAuditState }) => state.caseAudit.auditData,
-      (_state, users: UserForSelector[]) => users
-    ],
-    (auditData, users) => {
-      // Get current quarter and year
-      const { quarter, year } = getCurrentQuarter();
-
-      // Get all audits for current quarter
-      const currentQuarterAudits = Object.values(auditData).filter(
-          audit => audit.quarter === formatQuarterPeriod(quarter, year) && audit.year === year
-      );
-
-      // If there are no audits for the current quarter, all users need audits
-      if (currentQuarterAudits.length === 0) {
-        return users.length;
-      }
-
-      // Group audits by user
-      const auditsByUser = currentQuarterAudits.reduce((acc, audit) => {
-        if (!acc[audit.userId as string]) {
-          acc[audit.userId as string] = [];
-        }
-        acc[audit.userId as string].push(audit);
-        return acc;
-      }, {} as Record<string, typeof currentQuarterAudits>);
-
-      // Count users that either:
-      // 1. Have no audits in the current quarter, OR
-      // 2. Have no completed audits in the current quarter
-      const usersNeeding = users.filter(user => {
-        const userAudits = auditsByUser[user.id] || [];
-
-        // If no audits for this quarter, they need audits
-        if (userAudits.length === 0) {
-          return true;
-        }
-
-        // Check if the user has any completed audits
-        const hasCompletedAudit = userAudits.some(audit =>
-            audit.isCompleted && audit.status === mapAuditStatusToCaseAuditStatus(AUDIT_STATUS_ENUM.COMPLETED)
-        );
-
-        // If they have no completed audits, they need audits
-        return !hasCompletedAudit;
-      });
-
-      return usersNeeding.length;
-    }
-);
-// Apply completion data to an audit
-// New selector to get quarterly selected audits
-export const selectQuarterlyAuditsForPeriod = createSelector(
-  [
-    (state: { caseAudit: CaseAuditState }) => state.caseAudit.auditData,
-    (_state, quarterKey: string) => quarterKey
-  ],
-  (auditData, quarterKey) => {
-    // Guard against invalid quarterKey
-    if (!quarterKey?.includes('-')) {
-      return {
-        userQuarterlyAudits: [],
-        previousQuarterRandomAudits: [],
-        lastSelectionDate: null
-      };
-    }
-
-    // Parse quarter and year from quarterKey
-    const [quarterStr, yearStr] = quarterKey.split('-');
-    const quarterNum = parseInt(quarterStr.replace('Q', ''));
-    const yearNum = parseInt(yearStr);
-    
-    // Validate parsed values
-    if (isNaN(quarterNum) || isNaN(yearNum) || quarterNum < 1 || quarterNum > 4) {
-      return {
-        userQuarterlyAudits: [],
-        previousQuarterRandomAudits: [],
-        lastSelectionDate: null
-      };
-    }
-
-    // Find all audits for this quarter and year
-    const auditsForPeriod = Object.entries(auditData)
-      .filter(([, audit]) => {
-        if (!audit) return false;
-        const auditQuarterStr = audit.quarter.split('-')[0].substring(1);
-        const auditYearStr = audit.quarter.split('-')[1];
-        const auditQuarter = parseInt(auditQuarterStr);
-        const auditYear = parseInt(auditYearStr);
-        return auditQuarter === quarterNum && auditYear === yearNum;
-      })
-      .map(([id, audit]) => ({ id, ...audit }));
-    
-    // Split into user quarterly and previous quarter random based on caseType
-    const userQuarterlyAudits = auditsForPeriod
-      .filter(audit => audit.caseType === CASE_TYPE_ENUM.USER_QUARTERLY);
-    
-    const previousQuarterRandomAudits = auditsForPeriod
-      .filter(audit => audit.caseType === CASE_TYPE_ENUM.PREVIOUS_QUARTER_RANDOM);
-    
-    return {
-      userQuarterlyAudits,
-      previousQuarterRandomAudits,
-      lastSelectionDate: null
-    };
-  }
-);
+export const selectCurrentUserId = (state: RootState) => state.auditUI.currentUserId;
+export const selectSelectedQuarter = (state: RootState) => state.auditUI.selectedQuarter;
+export const selectFilteredYear = (state: RootState) => state.auditUI.filteredYear;
+export const selectAuditData = (state: RootState) => state.auditUI.auditData;
+export const selectUserQuarterlyStatus = (state: RootState) => state.auditUI.userQuarterlyStatus;
+export const selectUserRoles = (state: RootState) => state.auditUI.userRoles;
+export const selectAuditUILoading = (state: RootState) => state.auditUI.loading;
+export const selectAuditUIError = (state: RootState) => state.auditUI.error;
 
 // Selector to get user role
 export const selectUserRole = createSelector(
-  [
-    (state: { caseAudit: CaseAuditState }) => state.caseAudit.userRoles,
-    (_state, userId: string) => userId
-  ],
+  [selectUserRoles, (_state: RootState, userId: string) => userId],
   (userRoles, userId) => {
     return userRoles[userId] || { role: USER_ROLE_ENUM.STAFF, department: '' };
   }
@@ -647,13 +567,13 @@ export const selectUserRole = createSelector(
 
 // Check if a user can complete a specific audit
 export const canUserCompleteAudit = (
-  state: { caseAudit: CaseAuditState },
+  state: RootState,
   auditId: string
 ): boolean => {
   try {
-    const currentUserId = state.caseAudit.currentUserId.toString();
-    const currentUserRole = state.caseAudit.userRoles[currentUserId]?.role;
-    const auditData = state.caseAudit.auditData[auditId];
+    const currentUserId = state.auditUI.currentUserId.toString();
+    const currentUserRole = state.auditUI.userRoles[currentUserId]?.role;
+    const auditData = state.auditUI.auditData[auditId];
     
     if (!auditData || !currentUserRole) {
       return false;
@@ -672,5 +592,54 @@ export const canUserCompleteAudit = (
   }
 };
 
-// Helper function to get audits that meet coverage requirements for a user's role
-export default caseAuditSlice.reducer;
+// Quarterly audits selector
+export const selectQuarterlyAuditsForPeriod = createSelector(
+  [selectAuditData, (_state: RootState, quarterKey: string) => quarterKey],
+  (auditData, quarterKey) => {
+    if (!quarterKey?.includes('-')) {
+      return {
+        userQuarterlyAudits: [],
+        previousQuarterRandomAudits: [],
+        lastSelectionDate: null
+      };
+    }
+
+    const [quarterStr, yearStr] = quarterKey.split('-');
+    const quarterNum = parseInt(quarterStr.replace('Q', ''));
+    const yearNum = parseInt(yearStr);
+    
+    if (isNaN(quarterNum) || isNaN(yearNum) || quarterNum < 1 || quarterNum > 4) {
+      return {
+        userQuarterlyAudits: [],
+        previousQuarterRandomAudits: [],
+        lastSelectionDate: null
+      };
+    }
+
+    const auditsForPeriod = Object.entries(auditData)
+      .filter(([, audit]) => {
+        if (!audit) return false;
+        const auditQuarterStr = audit.quarter.split('-')[0].substring(1);
+        const auditYearStr = audit.quarter.split('-')[1];
+        const auditQuarter = parseInt(auditQuarterStr);
+        const auditYear = parseInt(auditYearStr);
+        return auditQuarter === quarterNum && auditYear === yearNum;
+      })
+      .map(([id, audit]) => ({ id, ...audit }));
+    
+    const userQuarterlyAudits = auditsForPeriod
+      .filter(audit => audit.caseType === CASE_TYPE_ENUM.USER_QUARTERLY);
+    
+    const previousQuarterRandomAudits = auditsForPeriod
+      .filter(audit => audit.caseType === CASE_TYPE_ENUM.PREVIOUS_QUARTER_RANDOM);
+    
+    return {
+      userQuarterlyAudits,
+      previousQuarterRandomAudits,
+      lastSelectionDate: null
+    };
+  }
+);
+
+// Export the UI reducer as default
+export default auditUISlice.reducer;
