@@ -119,6 +119,52 @@ export const handlers = [
     }
   }),
 
+  // Get ALL cases by quarter (not just selected for audit)
+  http.get(`${API_BASE_PATH}/cases/quarter/:quarter`, ({ params }) => {
+    try {
+      const { quarter } = params;
+      
+      const quarterValue = Array.isArray(quarter) ? quarter[0] : quarter ?? '';
+      const parsedQuarter = parseQuarter(quarterValue);
+      
+      console.log(`[MSW] Requested ALL cases for quarter: ${quarterValue}`, parsedQuarter);
+      
+      if (!parsedQuarter) {
+        console.log(`[MSW] Failed to parse quarter: ${quarterValue}`);
+        return HttpResponse.json([], { status: 200 });
+      }
+      
+      // Filter ALL cases for the requested quarter
+      const quarterCases = mockCases.filter(caseItem => {
+        try {
+          const { quarterNum, year } = getQuarterFromDate(caseItem.notificationDate);
+          return quarterNum === parsedQuarter.quarterNum && 
+                year === parsedQuarter.year;
+        } catch {
+          return false;
+        }
+      });
+      
+      console.log(`[MSW] Found ${quarterCases.length} cases for quarter Q${parsedQuarter.quarterNum}-${parsedQuarter.year}`);
+      
+      // Convert to case object format
+      const cases = quarterCases
+        .map(caseItem => {
+          try {
+            return caseToCaseObj(caseItem);
+          } catch {
+            return null;
+          }
+        })
+        .filter(caseObj => caseObj !== null);
+      
+      return HttpResponse.json(cases, { status: 200 });
+    } catch (error) {
+      console.error("[MSW] Error in /rest/kuk/v1/cases/quarter/:quarter handler:", error);
+      return HttpResponse.json([], { status: 200 });
+    }
+  }),
+
   // Get audits by auditor
   http.get(`${API_BASE_PATH}/audits/auditor/:auditorId`, ({ params }) => {
     try {

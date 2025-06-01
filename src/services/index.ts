@@ -33,6 +33,7 @@ export {
   addAuditFinding,
   getAuditFindings,
   selectCasesForAudit,
+  getAllCasesByQuarter,
   exportAuditsForQuarter,
   completeAuditAPI,
   getAuditCompletion

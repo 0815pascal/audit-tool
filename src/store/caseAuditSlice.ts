@@ -530,6 +530,60 @@ const auditUISlice = createSlice({
       });
     },
 
+    // Store all cases for a quarter (when quarter dropdown changes)
+    storeAllCasesForQuarter: (state, action: PayloadAction<{
+      quarter: string;
+      cases: Array<{
+        id: string;
+        userId: string;
+        coverageAmount: number;
+        claimsStatus: string;
+        quarter: string;
+        notifiedCurrency?: string;
+      }>;
+    }>) => {
+      const { quarter, cases } = action.payload;
+      
+      // Clear ALL existing audit cases (auto-selected and quarter display)
+      // This ensures when user selects a quarter from dropdown, 
+      // any previously auto-selected cases are completely replaced
+      Object.keys(state.auditData).forEach(auditId => {
+        const existingAudit = state.auditData[auditId];
+        if (existingAudit && (
+          existingAudit.caseType === CASE_TYPE_ENUM.QUARTER_DISPLAY ||
+          existingAudit.caseType === CASE_TYPE_ENUM.USER_QUARTERLY ||
+          existingAudit.caseType === CASE_TYPE_ENUM.PREVIOUS_QUARTER_RANDOM
+        )) {
+          delete state.auditData[auditId];
+        }
+      });
+      
+      // Add the new cases as display-only audits
+      cases.forEach(caseData => {
+        state.auditData[caseData.id] = {
+          isCompleted: false,
+          isIncorrect: false,
+          completionDate: null,
+          userId: ensureUserId(caseData.userId),
+          quarter: caseData.quarter,
+          year: parseInt(caseData.quarter.split('-')[1]),
+          steps: {},
+          auditor: ensureUserId(''),
+          comment: '',
+          rating: '' as RatingValue,
+          specialFindings: createEmptyFindings(),
+          detailedFindings: createEmptyFindings(),
+          status: mapAuditStatusToCaseAuditStatus(AUDIT_STATUS_ENUM.PENDING),
+          caseType: CASE_TYPE_ENUM.QUARTER_DISPLAY, // New case type for quarter display
+          coverageAmount: caseData.coverageAmount,
+          claimsStatus: caseData.claimsStatus as CLAIMS_STATUS_ENUM,
+          isAkoReviewed: false,
+          dossierName: `Case ${caseData.id}`,
+          notifiedCurrency: caseData.notifiedCurrency || 'CHF'
+        };
+      });
+    },
+
     // Set loading state
     setLoading: (state, action: PayloadAction<boolean>) => {
       state.loading = action.payload;
@@ -557,6 +611,7 @@ export const {
   completeAudit,
   setUserRole,
   storeQuarterlyAudits,
+  storeAllCasesForQuarter,
   setLoading,
   setError,
   clearError,
@@ -622,27 +677,31 @@ export const selectQuarterlyAuditsForPeriod = createSelector(
       return {
         userQuarterlyAudits: [],
         previousQuarterRandomAudits: [],
+        quarterDisplayCases: [],
         lastSelectionDate: null
       };
     }
 
     // Get all audits stored for this quarter selection
-    // Note: These audits may have different individual quarters (current vs previous)
-    // but they're all part of the same audit selection for the quarterKey
     const auditsForPeriod = Object.entries(auditData)
       .map(([id, audit]) => ({ id, ...audit }))
       .filter(audit => audit); // Only keep valid audits
     
-    // Separate by case type, not by individual quarter
+    // Separate by case type
     const userQuarterlyAudits = auditsForPeriod
       .filter(audit => audit.caseType === CASE_TYPE_ENUM.USER_QUARTERLY);
     
     const previousQuarterRandomAudits = auditsForPeriod
       .filter(audit => audit.caseType === CASE_TYPE_ENUM.PREVIOUS_QUARTER_RANDOM);
     
+    // Include cases that are just for display (these should be for any quarter since we clear all when switching)
+    const quarterDisplayCases = auditsForPeriod
+      .filter(audit => audit.caseType === CASE_TYPE_ENUM.QUARTER_DISPLAY);
+    
     return {
       userQuarterlyAudits,
       previousQuarterRandomAudits,
+      quarterDisplayCases,
       lastSelectionDate: null
     };
   }

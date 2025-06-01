@@ -12,6 +12,7 @@ import {
   setCurrentUser,
   setUserRole,
   storeQuarterlyAudits,
+  storeAllCasesForQuarter,
   useGetCurrentUserQuery,
   useCompleteAuditMutation
 } from '../store/caseAuditSlice';
@@ -48,7 +49,7 @@ import {
 } from '../constants';
 import { CLAIMS_STATUS_ENUM, CASE_TYPE_ENUM, DEFAULT_VALUE_ENUM, USER_ROLE_ENUM, AUDIT_STATUS_ENUM, TAB_VIEW_ENUM } from '../enums';
 import { mapAuditStatusToCaseAuditStatus } from '../utils/statusUtils';
-import { selectCasesForAudit } from '../services';
+import { selectCasesForAudit, getAllCasesByQuarter } from '../services';
 
 // Tab view type alias
 type TabView = TAB_VIEW_ENUM;
@@ -159,8 +160,43 @@ export const useCaseAuditHandlers = () => {
   };
   
   // Handle quarter change
-  const handleQuarterChange = (quarterKey: QuarterPeriod) => {
+  const handleQuarterChange = async (quarterKey: QuarterPeriod) => {
     setSelectedQuarter(quarterKey);
+    
+    // Automatically load all cases for this quarter
+    try {
+      setLoadingStatus(ACTION_STATUS.loading);
+      
+      const cases = await getAllCasesByQuarter(quarterKey);
+      
+      // Convert cases to the format expected by Redux
+      const casesForStore = cases.map((caseObj) => {
+        // Calculate the actual quarter from the notification date for display purposes
+        const actualQuarter = caseObj.notificationDate ? 
+          getQuarterFromNotificationDate(caseObj.notificationDate) : 
+          quarterKey; // fallback to requested quarter if no notification date
+        
+        return {
+          id: String(caseObj.caseNumber),
+          userId: String(caseObj.claimOwner.userId),
+          coverageAmount: caseObj.coverageAmount,
+          claimsStatus: String(caseObj.claimsStatus),
+          quarter: actualQuarter,
+          notifiedCurrency: caseObj.notifiedCurrency || 'CHF'
+        };
+      });
+      
+      // Store all cases for this quarter
+      dispatch(storeAllCasesForQuarter({
+        quarter: quarterKey,
+        cases: casesForStore
+      }));
+      
+      setLoadingStatus(ACTION_STATUS.idle);
+    } catch (error) {
+      console.error('Error loading cases for quarter:', error);
+      setLoadingStatus(ACTION_STATUS.idle);
+    }
   };
   
   // Handle year change

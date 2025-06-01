@@ -826,4 +826,111 @@ test.describe('IKS Audit Tool - Auto-Select and Verification', () => {
     
     console.log(`✅ Multiple clicks test passed: Always 8 total cases, always 2 Q1-2025 cases`);
   });
+
+  test('should auto-load all cases when quarter is selected from dropdown', async ({ page }) => {
+    // This test verifies that selecting a quarter from dropdown automatically shows all cases
+    
+    // Ensure we're logged in
+    const userSelect = page.locator('#user-select');
+    await userSelect.selectOption('4'); // Select Emily Davis (team leader)
+    
+    // Initially, there should be no audits selected message
+    await expect(page.locator('text=Keine Audits für dieses Quartal ausgewählt')).toBeVisible();
+    
+    // Select Q2-2025 from quarter dropdown
+    const quarterSelect = page.locator('#quarter-select');
+    await quarterSelect.selectOption('Q2-2025');
+    
+    // Wait for cases to load
+    await page.waitForTimeout(3000);
+    
+    // Should now see a table with all cases for Q2-2025
+    await expect(page.locator('h3:has-text("All Cases for Q2-2025")')).toBeVisible();
+    
+    // Verify the table has cases
+    const auditTable = page.locator('.audit-table tbody');
+    const rows = auditTable.locator('tr');
+    const rowCount = await rows.count();
+    
+    expect(rowCount).toBeGreaterThan(0); // Should have at least some cases
+    
+    // Verify all displayed cases are from Q2-2025
+    for (let i = 0; i < rowCount; i++) {
+      const row = rows.nth(i);
+      const quarterCell = row.locator('td').nth(1); // Quarter is column index 1
+      const quarterText = await quarterCell.textContent();
+      expect(quarterText).toContain('Q2-2025');
+    }
+    
+    // Verify the info message is shown
+    await expect(page.locator('text=Use "Auto-Select Audits" to select cases for audit review')).toBeVisible();
+    
+    console.log(`✅ Quarter auto-load test passed: ${rowCount} cases loaded for Q2-2025`);
+  });
+
+  test('should replace auto-selected cases when quarter dropdown changes', async ({ page }) => {
+    // This test verifies the specific bug: Auto-Select first, then change quarter, should show correct quarter cases
+    
+    // Ensure we're logged in as a team leader
+    const userSelect = page.locator('#user-select');
+    await userSelect.selectOption('4'); // Select Emily Davis (team leader)
+    
+    // First, click Auto-Select to get Q2-2025 cases (6 current + 2 previous = 8 total)
+    const autoSelectButton = page.locator('button:has-text("Auto-Select Audits")');
+    await autoSelectButton.click();
+    await page.waitForTimeout(3000);
+    
+    // Verify we have 8 auto-selected cases
+    let auditTable = page.locator('.audit-table tbody');
+    let rows = auditTable.locator('tr');
+    let rowCount = await rows.count();
+    expect(rowCount).toBe(8);
+    
+    // Count Q2-2025 cases (should be 6)
+    let q2Count = 0;
+    for (let i = 0; i < rowCount; i++) {
+      const row = rows.nth(i);
+      const quarterCell = row.locator('td').nth(1);
+      const quarterText = await quarterCell.textContent();
+      if (quarterText?.includes('Q2-2025')) {
+        q2Count++;
+      }
+    }
+    expect(q2Count).toBe(6); // 6 current quarter cases
+    
+    // Now change quarter dropdown to Q1-2025
+    const quarterSelect = page.locator('#quarter-select');
+    await quarterSelect.selectOption('Q1-2025');
+    await page.waitForTimeout(3000);
+    
+    // Should now see all cases for Q1-2025 (not the previous auto-selected Q2-2025 cases)
+    await expect(page.locator('h3:has-text("All Cases for Q1-2025")')).toBeVisible();
+    
+    // Verify the table shows Q1-2025 cases only
+    rows = auditTable.locator('tr');
+    rowCount = await rows.count();
+    expect(rowCount).toBeGreaterThan(0); // Should have at least some cases
+    
+    // Verify ALL displayed cases are from Q1-2025 (no Q2-2025 cases should remain)
+    let q1Count = 0;
+    let q2CountAfter = 0;
+    for (let i = 0; i < rowCount; i++) {
+      const row = rows.nth(i);
+      const quarterCell = row.locator('td').nth(1);
+      const quarterText = await quarterCell.textContent();
+      if (quarterText?.includes('Q1-2025')) {
+        q1Count++;
+      } else if (quarterText?.includes('Q2-2025')) {
+        q2CountAfter++;
+      }
+    }
+    
+    expect(q1Count).toBe(rowCount); // ALL cases should be Q1-2025
+    expect(q2CountAfter).toBe(0); // NO Q2-2025 cases should remain
+    
+    // Verify the info message is shown
+    await expect(page.locator('text=Use "Auto-Select Audits" to select cases for audit review')).toBeVisible();
+    
+    console.log(`✅ Quarter replacement test passed: ${q1Count} Q1-2025 cases, ${q2CountAfter} Q2-2025 cases after quarter change`);
+  });
 }); 

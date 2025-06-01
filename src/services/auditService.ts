@@ -39,6 +39,38 @@ export const getAuditsByQuarter = async (quarter: QuarterPeriod): Promise<UserAu
 };
 
 /**
+ * Fetch ALL cases for a specific quarter (not just selected for audit)
+ * This is used when user selects a quarter from dropdown to show all cases
+ */
+export const getAllCasesByQuarter = async (quarter: QuarterPeriod): Promise<CaseObj[]> => {
+  try {
+    const url = `${API_BASE_PATH}/cases/quarter/${quarter}`;
+    
+    const response = await axios.get(url);
+    
+    if (response.status !== 200) {
+      throw new Error(`Failed to fetch all cases: ${response.status}`);
+    }
+    
+    // The response should be an array of case objects
+    return response.data.map((caseData: any) => ({
+      caseNumber: String(caseData.caseNumber),
+      claimOwner: {
+        userId: String((caseData.claimOwner && caseData.claimOwner.userId) || caseData.userId || 'unknown') as UserId,
+        displayName: String((caseData.claimOwner && caseData.claimOwner.displayName) || caseData.displayName || 'Unknown')
+      },
+      coverageAmount: Number(caseData.coverageAmount) || 0,
+      claimsStatus: String(caseData.claimsStatus) || 'FULL_COVER',
+      notificationDate: String(caseData.notificationDate),
+      notifiedCurrency: String(caseData.notifiedCurrency) || 'CHF'
+    }));
+  } catch (error) {
+    console.error(`Error fetching all cases for quarter ${quarter}:`, error);
+    throw error;
+  }
+};
+
+/**
  * Fetch audits by auditor
  */
 export const getAuditsByAuditor = async (auditorId: UserId): Promise<UserAuditForSelection[]> => {

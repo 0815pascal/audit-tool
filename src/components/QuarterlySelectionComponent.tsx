@@ -343,14 +343,15 @@ const QuarterlySelectionComponent: React.FC = () => {
           <select
             id="quarter-select"
             value={selectedQuarter || ''}
-            onChange={e => {
+            onChange={async (e) => {
               const value = e.target.value;
               if (isQuarterPeriod(value)) {
-                handleQuarterChange(value);
+                await handleQuarterChange(value);
               } else {
                 console.warn('Invalid quarter period format:', value);
               }
-            }}            disabled={loading}
+            }}
+            disabled={loading}
           >
             <option value="" disabled>Quarter</option>
             {quarterOptions.map(option => (
@@ -426,7 +427,42 @@ const QuarterlySelectionComponent: React.FC = () => {
       <div className="audit-tables">
         <div className="audit-table">
           {quarterlyDossiers.userQuarterlyAudits.length === 0 && quarterlyDossiers.previousQuarterRandomAudits.length === 0 ? (
-            <p className="no-data">Keine Audits für dieses Quartal ausgewählt.</p>
+            // Show quarter display cases if no audits are selected
+            quarterlyDossiers.quarterDisplayCases && quarterlyDossiers.quarterDisplayCases.length > 0 ? (
+              <div>
+                <h3>All Cases for {selectedQuarter}</h3>
+                <table>
+                  <thead>
+                    <tr>
+                      <th data-testid="case-id-header">CaseID</th>
+                      <th data-testid="quarter-header">Quartal</th>
+                      <th data-testid="responsible-user-header">Verantwortlicher Fallbearbeiter</th>
+                      <th data-testid="coverage-amount-header">Schadenssumme</th>
+                      <th data-testid="claims-status-header">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {quarterlyDossiers.quarterDisplayCases.map((caseItem: AuditItem) => {
+                      const user = findUserById(caseItem.userId);
+                      return (
+                        <tr key={caseItem.id}>
+                          <td>{caseItem.id}</td>
+                          <td>{caseItem.quarter}</td>
+                          <td>{user ? user.displayName : 'Unknown'}</td>
+                          <td>{caseItem.coverageAmount?.toLocaleString()} {caseItem.notifiedCurrency || 'CHF'}</td>
+                          <td>{caseItem.claimsStatus}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+                <p className="info-message">
+                  Use "Auto-Select Audits" to select cases for audit review.
+                </p>
+              </div>
+            ) : (
+              <p className="no-data">Keine Audits für dieses Quartal ausgewählt.</p>
+            )
           ) : (
             <table>
               <thead>
