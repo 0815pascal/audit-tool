@@ -144,8 +144,6 @@ export const saveAuditCompletionThunk = createAsyncThunk<
   'caseAudit/saveAuditCompletion',
   async (payload, { rejectWithValue }) => {
     try {
-      console.log('[Redux] Saving audit completion:', payload);
-      
       return await completeAuditAPI(
         payload.auditId,
         payload.auditor,
@@ -168,8 +166,6 @@ export const completeAuditThunk = createAsyncThunk<
   'caseAudit/completeAudit',
   async (payload, { rejectWithValue }) => {
     try {
-      console.log('[Redux] Completing audit:', payload);
-      
       return await completeAuditAPI(
         payload.auditId,
         payload.auditor,
@@ -467,28 +463,24 @@ const caseAuditSlice = createSlice({
       .addCase(saveAuditCompletionThunk.pending, (state) => {
         state.loading = true;
       })
-      .addCase(saveAuditCompletionThunk.fulfilled, (state, action) => {
+      .addCase(saveAuditCompletionThunk.fulfilled, (state) => {
         state.loading = false;
-        console.log('Successfully saved audit data to backend:', action.payload);
       })
       .addCase(saveAuditCompletionThunk.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload ?? 'Failed to save audit data';
-        console.error('Failed to save audit data to backend:', action.payload);
+        state.error = action.payload || 'Failed to save audit completion';
       })
       
       // Handle completeAuditThunk lifecycle
       .addCase(completeAuditThunk.pending, (state) => {
         state.loading = true;
       })
-      .addCase(completeAuditThunk.fulfilled, (state, action) => {
+      .addCase(completeAuditThunk.fulfilled, (state) => {
         state.loading = false;
-        console.log('Successfully completed audit on backend:', action.payload);
       })
       .addCase(completeAuditThunk.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload ?? 'Failed to complete audit';
-        console.error('Failed to complete audit on backend:', action.payload);
+        state.error = action.payload || 'Failed to complete audit';
       });
   }
 });

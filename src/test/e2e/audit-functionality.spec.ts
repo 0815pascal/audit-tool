@@ -84,10 +84,22 @@ test.describe('IKS Audit Tool - Auto-Select and Verification', () => {
     await autoSelectButton.click();
     await page.waitForTimeout(2000);
     
-    // Click on first enabled Prüfen button to open modal
+    // Wait for enabled Prüfen buttons to be available and stable
     const enabledPruefenButton = page.locator('button:has-text("Prüfen"):not([disabled])').first();
+    await expect(enabledPruefenButton).toBeVisible();
+    await expect(enabledPruefenButton).toBeEnabled();
+    
+    // Click on first enabled Prüfen button to open modal
     await enabledPruefenButton.click();
-    await page.waitForSelector('.modal', { state: 'visible' });
+    
+    // Wait for modal with increased timeout and better error handling
+    await page.waitForSelector('.modal', { 
+      state: 'visible', 
+      timeout: 10000 // Increased timeout for parallel test runs
+    });
+    
+    // Wait for modal content to be fully loaded
+    await page.waitForSelector('.pruefenster-content', { state: 'visible' });
     
     // Check that modal contains verification form elements
     await expect(page.locator('textarea[placeholder*="Kommentar"]')).toBeVisible();
@@ -108,7 +120,19 @@ test.describe('IKS Audit Tool - Auto-Select and Verification', () => {
     await page.waitForTimeout(2000);
     
     // Set up network monitoring to verify API calls
-    const completionRequests: any[] = [];
+    interface CompletionRequest {
+      url: string;
+      method: string;
+      body: string | null;
+    }
+    
+    interface CompletionResponse {
+      url: string;
+      status: number;
+      ok: boolean;
+    }
+    
+    const completionRequests: CompletionRequest[] = [];
     page.on('request', request => {
       if (request.url().includes('/audit/') && request.url().includes('/complete') && request.method() === 'POST') {
         completionRequests.push({
@@ -119,7 +143,7 @@ test.describe('IKS Audit Tool - Auto-Select and Verification', () => {
       }
     });
     
-    const responses: any[] = [];
+    const responses: CompletionResponse[] = [];
     page.on('response', response => {
       if (response.url().includes('/audit/') && response.url().includes('/complete') && response.request().method() === 'POST') {
         responses.push({
@@ -130,10 +154,22 @@ test.describe('IKS Audit Tool - Auto-Select and Verification', () => {
       }
     });
     
-    // Click on first enabled Prüfen button to open modal
+    // Wait for enabled Prüfen buttons to be available and stable
     const enabledPruefenButton = page.locator('button:has-text("Prüfen"):not([disabled])').first();
+    await expect(enabledPruefenButton).toBeVisible();
+    await expect(enabledPruefenButton).toBeEnabled();
+    
+    // Click on first enabled Prüfen button to open modal
     await enabledPruefenButton.click();
-    await page.waitForSelector('.modal', { state: 'visible' });
+    
+    // Wait for modal with increased timeout and better error handling
+    await page.waitForSelector('.modal', { 
+      state: 'visible', 
+      timeout: 10000 // Increased timeout for parallel test runs
+    });
+    
+    // Wait for modal content to be fully loaded
+    await page.waitForSelector('.pruefenster-content', { state: 'visible' });
     
     // Fill out the form with comprehensive test data
     await page.fill('textarea[placeholder*="Kommentar"]', 'Test verification comment with special chars: äöü & <html>');
@@ -163,7 +199,7 @@ test.describe('IKS Audit Tool - Auto-Select and Verification', () => {
     expect(responses[0].status).toBe(200);
     
     // Parse and validate the request payload structure
-    const requestBody = JSON.parse(completionRequests[0].body);
+    const requestBody = JSON.parse(completionRequests[0].body || '{}');
     
     // 1. Validate required top-level properties exist
     expect(requestBody).toHaveProperty('auditor');

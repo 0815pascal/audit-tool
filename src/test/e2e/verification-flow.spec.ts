@@ -79,12 +79,22 @@ test.describe('IKS Audit Tool - Verification Data Persistence', () => {
     await page.click('button:has-text("Auto-Select Audits")');
     await page.waitForTimeout(2000);
 
-    // Find any enabled Prüfen button (Emily can verify other users' audits)
+    // Wait for enabled Prüfen buttons to be available and stable
     const enabledPruefenButton = page.locator('button:has-text("Prüfen"):not([disabled])').first();
+    await expect(enabledPruefenButton).toBeVisible();
+    await expect(enabledPruefenButton).toBeEnabled();
+    
+    // Click on the Prüfen button
     await enabledPruefenButton.click();
     
-    // Wait for modal to open
-    await page.waitForSelector('.modal', { state: 'visible' });
+    // Wait for modal to open with increased timeout
+    await page.waitForSelector('.modal', { 
+      state: 'visible', 
+      timeout: 10000 
+    });
+    
+    // Wait for modal content to be fully loaded
+    await page.waitForSelector('.pruefenster-content', { state: 'visible' });
     
     // Select a Prüfergebnis value
     await page.selectOption('select[id="pruefenster-rating"]', 'EXCELLENTLY_FULFILLED');
@@ -98,15 +108,53 @@ test.describe('IKS Audit Tool - Verification Data Persistence', () => {
     // Wait for modal to close
     await page.waitForSelector('.modal', { state: 'hidden' });
     
-    // Find the verified audit row (should now show "Geprüft")
-    const verifiedRow = page.locator('tbody tr').filter({ hasText: 'Geprüft' }).first();
-    await expect(verifiedRow).toBeVisible();
+    // Wait for status update with retry logic
+    let verifiedRow;
+    let attempts = 0;
+    const maxAttempts = 10;
+    
+    while (attempts < maxAttempts) {
+      try {
+        // Wait a bit for Redux state to update
+        await page.waitForTimeout(500);
+        
+        // Try to find the verified audit row (should now show "Geprüft")
+        verifiedRow = page.locator('tbody tr').filter({ hasText: 'Geprüft' }).first();
+        
+        // Check if the row is visible
+        await expect(verifiedRow).toBeVisible({ timeout: 2000 });
+        break; // If successful, exit the loop
+      } catch (error) {
+        attempts++;
+        console.log(`Attempt ${attempts}: Waiting for Geprüft status...`);
+        
+        if (attempts >= maxAttempts) {
+          // Log current table state for debugging
+          const tableRows = await page.locator('tbody tr').allTextContents();
+          console.log('Current table rows:', tableRows);
+          throw new Error(`Failed to find Geprüft status after ${maxAttempts} attempts. Current rows: ${JSON.stringify(tableRows)}`);
+        }
+      }
+    }
+    
+    // Ensure we have the verified row
+    if (!verifiedRow) {
+      throw new Error('Verified row not found after completion');
+    }
     
     // Now reopen the verification modal to check if data persisted
-    await verifiedRow.locator('button:has-text("Ansehen")').click();
+    const ansehenButton = verifiedRow.locator('button:has-text("Ansehen")');
+    await expect(ansehenButton).toBeVisible();
+    await ansehenButton.click();
     
-    // Wait for modal to open again
-    await page.waitForSelector('.modal', { state: 'visible' });
+    // Wait for modal to open again with increased timeout
+    await page.waitForSelector('.modal', { 
+      state: 'visible', 
+      timeout: 10000 
+    });
+    
+    // Wait for modal content to be fully loaded
+    await page.waitForSelector('.pruefenster-content', { state: 'visible' });
     
     // Check that the Prüfergebnis is still selected
     const ratingSelect = page.locator('select[id="pruefenster-rating"]');

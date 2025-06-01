@@ -15,9 +15,6 @@ describe('Currency Functionality Test', () => {
     const currencies = cases.map((caseObj: CaseAudit) => caseObj.notifiedCurrency);
     const uniqueCurrencies = [...new Set(currencies)];
     
-    console.log('All currencies found:', currencies);
-    console.log('Unique currencies:', uniqueCurrencies);
-    
     // We should have at least 2 different currencies
     expect(uniqueCurrencies.length).toBeGreaterThanOrEqual(2);
     
@@ -41,7 +38,6 @@ describe('Currency Functionality Test', () => {
         currency: currency 
       }).format(amount);
       
-      console.log(`Currency ${currency}, Amount ${amount}, Formatted: ${formatted}`);
       expect(formatted).toContain(expected);
     });
   });

@@ -31,32 +31,26 @@ export const handlers = [
   http.get(`${API_BASE_PATH}/audits/quarter/:quarter`, ({ params }) => {
     try {
       const { quarter } = params;
-      console.log(`[MSW] Handling request for quarter: ${quarter}`);
       
       const quarterValue = Array.isArray(quarter) ? quarter[0] : quarter ?? '';
       const parsedQuarter = parseQuarter(quarterValue);
       
       if (!parsedQuarter) {
-        console.warn(`[MSW] Could not parse quarter string: ${quarter}`);
         return HttpResponse.json([], { status: 200 });
       }
-      
-      console.log(`[MSW] Parsed quarter: ${parsedQuarter.quarterNum}, year: ${parsedQuarter.year}`);
       
       // Filter cases for the requested quarter
       const filteredCases = mockCases.filter(caseItem => {
         try {
+          // Use the notificationDate property to deduce quarter
           const { quarterNum, year } = getQuarterFromDate(caseItem.notificationDate);
           
           return quarterNum === parsedQuarter.quarterNum && 
                 year === parsedQuarter.year;
-        } catch (_e) {
-          console.warn(`[MSW] Error filtering case ${caseItem.id}:`, _e);
+        } catch {
           return false;
         }
       });
-      
-      console.log(`[MSW] Filtered ${filteredCases.length} cases`);
       
       // Convert to API format
       const audits = filteredCases
@@ -64,23 +58,18 @@ export const handlers = [
           try {
             const caseObj = caseToCaseObj(caseItem);
             return caseToAudit(caseObj, quarterValue);
-          } catch (e) {
-            console.warn(`[MSW] Error converting case ${caseItem.id} to audit:`, e);
+          } catch {
             return null;
           }
         })
         .filter(audit => audit !== null);
       
       // Add any audits from our store that match this quarter
-      let storeAudits = 0;
       for (const [, audit] of Array.from(auditStore.entries())) {
         if (audit.quarter === quarter) {
           audits.push(audit);
-          storeAudits++;
         }
       }
-      
-      console.log(`[MSW] Returning ${audits.length} audits (${storeAudits} from store)`);
       
       return HttpResponse.json(audits || [], { status: 200 });
     } catch (error) {
@@ -95,7 +84,6 @@ export const handlers = [
       const { auditorId } = params;
       const auditorIdValue = Array.isArray(auditorId) ? auditorId[0] : auditorId;
       const numericAuditorId = safeParseInt(auditorIdValue);
-      console.log(`[MSW] Handling request for auditor: ${auditorId}`);
       
       // Filter cases to create mock audits for the given auditor
       // In this mock, we'll use modulo operation to assign audits to auditors
@@ -110,8 +98,7 @@ export const handlers = [
           try {
             const caseObj = caseToCaseObj(caseItem);
             return caseToAudit(caseObj, currentQuarter);
-          } catch (e) {
-            console.warn(`[MSW] Error converting case to audit:`, e);
+          } catch {
             return null;
           }
         })
@@ -123,8 +110,6 @@ export const handlers = [
           audits.push(audit);
         }
       }
-      
-      console.log(`[MSW] Returning ${audits.length} audits for auditor ${auditorId}`);
       
       return HttpResponse.json(audits, { status: 200 });
     } catch (error) {
@@ -190,8 +175,6 @@ export const handlers = [
       
       // Store the audit
       auditStore.set(auditId, newAudit);
-      
-      console.log(`[MSW] Created new audit with ID ${auditId}`);
       
       return HttpResponse.json(newAudit, { status: 201 });
     } catch (error) {
@@ -347,8 +330,6 @@ export const handlers = [
       // Store the updated audit
       auditStore.set(numericAuditorId, updatedAudit);
       
-      console.log(`[MSW] Updated audit with ID ${numericAuditorId}`);
-      
       return HttpResponse.json(updatedAudit, { status: 200 });
     } catch (error) {
       console.error("[MSW] Error in /rest/kuk/v1/audits/:auditId PUT handler:", error);
@@ -384,7 +365,6 @@ export const handlers = [
   http.get(`${API_BASE_PATH}/audits/:auditId/findings`, ({ params }) => {
     try {
       const { auditId } = params;
-      console.log(`[MSW] Getting findings for audit ${auditId}`);
       
       // Generate mock findings for this audit
       const auditIdValue = Array.isArray(auditId) ? auditId[0] : auditId;
@@ -400,7 +380,8 @@ export const handlers = [
   // Add finding to audit
   http.post(`${API_BASE_PATH}/audits/:auditId/findings`, async ({ params, request }) => {
     try {
-      const { auditId } = params;
+      // We don't need auditId for this mock implementation, but it's part of the URL structure
+      void params.auditId;
       
       // Clone the request to avoid "Body is unusable" errors
       const clonedRequest = request.clone();
@@ -430,8 +411,6 @@ export const handlers = [
         description: requestData.description || "No description provided"
       };
       
-      console.log(`[MSW] Added finding to audit ${auditId}:`, newFinding);
-      
       return HttpResponse.json(newFinding, { status: 201 });
     } catch (error) {
       console.error("[MSW] Error in /rest/kuk/v1/audits/:auditId/findings POST handler:", error);
@@ -447,13 +426,11 @@ export const handlers = [
   http.get(`${API_BASE_PATH}/audits/select-cases/:quarter`, ({ params }) => {
     try {
       const { quarter } = params;
-      console.log(`[MSW] Selecting cases for quarter ${quarter}`);
       
       const quarterValue = Array.isArray(quarter) ? quarter[0] : quarter ?? '';
       const parsedQuarter = parseQuarter(quarterValue);
       
       if (!parsedQuarter) {
-        console.warn(`[MSW] Could not parse quarter string: ${quarter}`);
         return HttpResponse.json([], { status: 200 });
       }
       
@@ -462,16 +439,11 @@ export const handlers = [
         .filter(caseItem => {
           try {
             // Use the notificationDate property to deduce quarter
-            const notificationDate = caseItem.notificationDate;
-            const { quarterNum, year } = getQuarterFromDate(notificationDate);
+            const { quarterNum, year } = getQuarterFromDate(caseItem.notificationDate);
             
-            const isMatch = quarterNum === parsedQuarter.quarterNum && year === parsedQuarter.year;
-            if (isMatch) {
-              console.log(`[MSW] Found current quarter case: ${caseItem.id} with notificationDate ${notificationDate} (Q${quarterNum}-${year})`);
-            }
-            return isMatch;
-          } catch (_e) {
-            console.warn(`[MSW] Error filtering case ${caseItem.id}:`, _e);
+            return quarterNum === parsedQuarter.quarterNum && 
+                  year === parsedQuarter.year;
+          } catch {
             return false;
           }
         })
@@ -481,7 +453,6 @@ export const handlers = [
       
       // Get 2 random cases from previous quarter - using notificationDate to deduce quarter
       const { quarter: prevQuarterNum, year: prevYear } = getPreviousQuarterInfo(parsedQuarter.quarterNum, parsedQuarter.year);
-      console.log(`[MSW] Looking for previous quarter cases: Q${prevQuarterNum}-${prevYear}`);
       
       const previousQuarterCases = mockCases
         .filter(caseItem => {
@@ -496,9 +467,6 @@ export const handlers = [
       // If we don't have enough cases, generate some mock ones
       const totalCurrentCases = currentQuarterCases.length;
       const totalPreviousCases = previousQuarterCases.length;
-      
-      console.log(`[MSW] Found ${totalCurrentCases} current quarter cases, need 8`);
-      console.log(`[MSW] Found ${totalPreviousCases} previous quarter cases, need 2`);
       
       // Generate additional current quarter cases if needed
       for (let i = totalCurrentCases; i < 8; i++) {
@@ -521,7 +489,6 @@ export const handlers = [
           notificationDate: currentQuarterDate.toISOString().split('T')[0],
           notifiedCurrency: randomCurrency
         };
-        console.log(`[MSW] Generated additional current quarter case with notificationDate: ${mockCase.notificationDate}`);
         currentQuarterCases.push(mockCase);
       }
       
@@ -547,21 +514,11 @@ export const handlers = [
           notificationDate: previousQuarterDate.toISOString().split('T')[0],
           notifiedCurrency: randomCurrency
         };
-        console.log(`[MSW] Generated additional previous quarter case with notificationDate: ${mockCase.notificationDate}`);
         previousQuarterCases.push(mockCase);
       }
       
       // Combine all cases (8 current + 2 previous = 10 total)
       const allCases = [...currentQuarterCases, ...previousQuarterCases];
-      
-      console.log(`[MSW] Returning ${allCases.length} cases (${currentQuarterCases.length} current quarter + ${previousQuarterCases.length} previous quarter)`);
-      console.log(`[MSW] Cases now include notificationDate for quarter deduction`);
-      
-      // Log the notification dates of all returned cases for auditing
-      allCases.forEach((caseObj, index) => {
-        const { quarterNum, year } = getQuarterFromDate(caseObj.notificationDate);
-        console.log(`[MSW] Case ${index + 1}: notificationDate ${caseObj.notificationDate} → Q${quarterNum}-${year}, currency: ${caseObj.notifiedCurrency}`);
-      });
       
       return HttpResponse.json(allCases, { status: 200 });
     } catch (error) {
@@ -652,8 +609,6 @@ export const handlers = [
           };
         });
       
-      console.log(`[MSW] Generated ${cases.length} cases for quarter ${quarterPeriod}`);
-      
       return HttpResponse.json(cases);
     } catch (error) {
       console.error('Error in quarterly case selection handler:', error);
@@ -677,9 +632,6 @@ export const handlers = [
       
       // Calculate previous quarter (use the function)
       const { quarter: prevQuarterNum, year: prevYear } = getPreviousQuarterInfo(quarterNum, year);
-      
-      // Use these values
-      console.log(`[MSW] Previous quarter: Q${prevQuarterNum}-${prevYear}`);
       
       // Generate mock user audits (would be one per eligible user)
       const userQuarterlyAudits = users
@@ -801,8 +753,6 @@ export const handlers = [
         console.warn("[MSW] Failed to parse request body for completion update");
       }
       
-      console.log(`[MSW] Updating completion data for audit ${numericAuditId}:`, requestData);
-      
       // In a real implementation, this would save to the database
       // For now, just return a success response with the data
       const completionResponse = {
@@ -856,8 +806,6 @@ export const handlers = [
       } catch {
         console.warn("[MSW] Failed to parse request body for audit completion");
       }
-      
-      console.log(`[MSW] Completing audit ${numericAuditId}:`, requestData);
       
       // Create completion response
       const completionResponse = {

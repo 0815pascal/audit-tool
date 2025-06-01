@@ -3,7 +3,7 @@ import { configureStore } from '@reduxjs/toolkit';
 import caseAuditSlice from '../store/caseAuditSlice';
 import { userApi, selectAllUsers } from '../store/userSlice';
 import userUISlice, { selectUser, clearSelectedUser } from '../store/userSlice';
-import { store } from '../store';
+import store from '../store';
 import { createUserId } from '../types/typeHelpers';
 
 describe('Redux User Integration Tests', () => {

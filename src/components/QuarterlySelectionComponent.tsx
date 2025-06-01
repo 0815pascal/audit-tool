@@ -193,23 +193,43 @@ const QuarterlySelectionComponent: React.FC = () => {
   
   // Handle opening the completion modal
   const handleOpenCompletion = (auditId: string) => {
-    // Find the audit in the quarterlyDossiers
-    const audit = [...quarterlyDossiers.userQuarterlyAudits, ...quarterlyDossiers.previousQuarterRandomAudits]
-      .find(a => a.id === auditId) as AuditItem | undefined;
-    
-    if (audit) {
+    try {
+      // Find the audit in the quarterlyDossiers
+      const audit = [...quarterlyDossiers.userQuarterlyAudits, ...quarterlyDossiers.previousQuarterRandomAudits]
+        .find(a => a.id === auditId) as AuditItem | undefined;
+      
+      if (!audit) {
+        console.error('Audit not found for ID:', auditId);
+        setErrorMessage('Audit nicht gefunden.');
+        return;
+      }
+
       // Check if isAkoReviewed exists in the audit and ensure it's a boolean
       const isAkoReviewed = typeof audit.isAkoReviewed === 'boolean' ? audit.isAkoReviewed : false;
       
       // Get the latest audit data from Redux (which may include saved form state)
       const latestAuditData = auditData[audit.id];
       
-      console.log('=== DEBUG: handleOpenCompletion ===');
-      console.log('auditId:', auditId);
-      console.log('audit from quarterlyDossiers:', audit);
-      console.log('latestAuditData from Redux:', latestAuditData);
-      console.log('audit.rating:', audit.rating);
-      console.log('latestAuditData?.rating:', latestAuditData?.rating);
+      // Safely calculate notification date with error handling
+      let notificationDate: string;
+      try {
+        const quarterToUse = (audit.quarter as string) || selectedQuarter;
+        const [quarterStr, yearStr] = quarterToUse.split('-');
+        const quarterNum = parseInt(quarterStr.replace('Q', '')) || 1;
+        const year = parseInt(yearStr) || new Date().getFullYear();
+        
+        // Generate a realistic date within the quarter
+        // Q1: Jan-Mar, Q2: Apr-Jun, Q3: Jul-Sep, Q4: Oct-Dec
+        const startMonth = Math.max(0, Math.min(11, (quarterNum - 1) * QUARTER_CALCULATIONS.MONTHS_PER_QUARTER)); // 0-indexed month
+        const randomDay = Math.floor(Math.random() * QUARTER_CALCULATIONS.RANDOM_DAY_LIMIT) + 1; // 1-28 to avoid month-end issues
+        const randomMonth = startMonth + Math.floor(Math.random() * QUARTER_CALCULATIONS.MONTHS_PER_QUARTER); // Random month within quarter
+        
+        const calculatedDate = new Date(year, Math.min(11, randomMonth), Math.min(28, randomDay));
+        notificationDate = calculatedDate.toISOString().split('T')[0]; // Return YYYY-MM-DD format
+      } catch (error) {
+        console.warn('Error calculating notification date, using fallback:', error);
+        notificationDate = new Date().toISOString().split('T')[0];
+      }
       
       // Convert to full CaseAudit object, merging with latest data from Redux
       const auditObject: CaseAudit = {
@@ -222,13 +242,13 @@ const QuarterlySelectionComponent: React.FC = () => {
         caseNumber: createCaseId(parseInt(audit.id.replace(/\D/g, '')) || DEFAULT_VALUE_ENUM.DEFAULT_CASE_NUMBER),
         dossierRisk: 0,
         dossierName: `Case ${audit.id}`,
-        totalAmount: audit.coverageAmount,
-        coverageAmount: audit.coverageAmount,
-        isCompleted: audit.isCompleted,
+        totalAmount: audit.coverageAmount || 0,
+        coverageAmount: audit.coverageAmount || 0,
+        isCompleted: Boolean(audit.isCompleted),
         isAkoReviewed,
         isSpecialist: false,
         quarter: (audit.quarter as QuarterPeriod) || (selectedQuarter), // Use audit's quarter or fallback
-        year: audit.year ?? parseInt(selectedQuarter.split('-')[1]),
+        year: audit.year ?? parseInt(selectedQuarter?.split('-')[1] || String(new Date().getFullYear())),
         claimsStatus: (audit.claimsStatus as ClaimsStatus) || CLAIMS_STATUS_ENUM.FULL_COVER,
         auditor: audit.auditor ? ensureUserId(audit.auditor) : ensureUserId(currentUserId),
         status: audit.status ? (audit.status as CaseAuditStatus) : (audit.isCompleted ? AUDIT_STATUS_ENUM.COMPLETED : AUDIT_STATUS_ENUM.PENDING),
@@ -238,43 +258,27 @@ const QuarterlySelectionComponent: React.FC = () => {
         specialFindings: latestAuditData?.specialFindings || audit.specialFindings || createEmptyFindings(),
         detailedFindings: latestAuditData?.detailedFindings || audit.detailedFindings || createEmptyFindings(),
         caseType: CASE_TYPE_ENUM.USER_QUARTERLY as CaseType,
-        // Calculate notification date from quarter information
-        notificationDate: (() => {
-          const quarterToUse = (audit.quarter as string) || selectedQuarter;
-          const [quarterStr, yearStr] = quarterToUse.split('-');
-          const quarterNum = parseInt(quarterStr.replace('Q', ''));
-          const year = parseInt(yearStr);
-          
-          // Generate a realistic date within the quarter
-          // Q1: Jan-Mar, Q2: Apr-Jun, Q3: Jul-Sep, Q4: Oct-Dec
-          const startMonth = (quarterNum - 1) * QUARTER_CALCULATIONS.MONTHS_PER_QUARTER; // 0-indexed month
-          const randomDay = Math.floor(Math.random() * QUARTER_CALCULATIONS.RANDOM_DAY_LIMIT) + 1; // 1-28 to avoid month-end issues
-          const randomMonth = startMonth + Math.floor(Math.random() * QUARTER_CALCULATIONS.MONTHS_PER_QUARTER); // Random month within quarter
-          
-          const notificationDate = new Date(year, randomMonth, randomDay);
-          return notificationDate.toISOString().split('T')[0]; // Return YYYY-MM-DD format
-        })(),
+        notificationDate,
         // Use the notified currency from the audit data, fallback to CHF
         notifiedCurrency: audit.notifiedCurrency ?? 'CHF'
       };
       
-      console.log('Final auditObject.rating:', auditObject.rating);
-      console.log('Final auditObject.notifiedCurrency:', auditObject.notifiedCurrency);
-      console.log('Original audit.notifiedCurrency:', audit.notifiedCurrency);
-      console.log('=== END DEBUG ===');
-      
+      // Set audit and open modal with slight delay to ensure DOM is ready
       setSelectedAudit(auditObject);
-      setIsModalOpen(true);
+      
+      // Use requestAnimationFrame to ensure state is updated before opening modal
+      requestAnimationFrame(() => {
+        setIsModalOpen(true);
+      });
+      
+    } catch (error) {
+      console.error('Error in handleOpenCompletion:', error);
+      setErrorMessage('Fehler beim Öffnen des Prüffensters.');
     }
   };
   
   // Handle complete audit
   const handleCompleteAuditAction = (auditId: string, auditorId: string, caseAuditData: CaseAuditData) => {
-    console.log('=== Complete Audit Debug ===');
-    console.log('auditId:', auditId);
-    console.log('auditorId:', auditorId);
-    console.log('caseAuditData:', caseAuditData);
-    
     // Call the audit completion handler
     handleCompleteAudit(auditId, auditorId, caseAuditData);
     
@@ -285,7 +289,6 @@ const QuarterlySelectionComponent: React.FC = () => {
     // Show success message
     setSuccessMessage('Audit erfolgreich verifiziert!');
     setTimeout(() => setSuccessMessage(''), 3000);
-    console.log('=== End Complete Audit Debug ===');
   };
   
   const convertToAuditStatus = (status: CaseAuditStatus | AUDIT_STATUS_ENUM): AUDIT_STATUS_ENUM => {
