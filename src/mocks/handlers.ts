@@ -136,10 +136,13 @@ export const handlers = [
   // Create Audit
   http.post(`${API_BASE_PATH}/audits`, async ({ request }) => {
     try {
+      // Clone the request to avoid "Body is unusable" errors
+      const clonedRequest = request.clone();
+      
       let requestData: ApiAuditRequestPayload = {};
       
       try {
-        requestData = await request.json() as typeof requestData;
+        requestData = await clonedRequest.json() as typeof requestData;
       } catch (error) {
         // Ignore parse error but log warning
         console.warn("[MSW] Failed to parse request body for /rest/kuk/v1/audits POST", error);
@@ -228,13 +231,16 @@ export const handlers = [
       const auditIdValue = Array.isArray(auditId) ? auditId[0] : auditId;
       const numericAuditorId = safeParseInt(auditIdValue);
       
+      // Clone the request to avoid "Body is unusable" errors
+      const clonedRequest = request.clone();
+      
       let requestData: ApiAuditRequestPayload = {
         type: "DOCUMENTATION_ISSUE",
         description: "No description provided"
       };
       
       try {
-        const jsonData = await request.json();
+        const jsonData = await clonedRequest.json();
         if (jsonData && typeof jsonData === 'object') {
           requestData = {
             type: jsonData.type ?? requestData.type,
@@ -396,13 +402,16 @@ export const handlers = [
     try {
       const { auditId } = params;
       
+      // Clone the request to avoid "Body is unusable" errors
+      const clonedRequest = request.clone();
+      
       let requestData: { type: string; description: string; } = {
         type: "DOCUMENTATION_ISSUE",
         description: "No description provided"
       };
       
       try {
-        const jsonData = await request.json();
+        const jsonData = await clonedRequest.json();
         if (jsonData && typeof jsonData === 'object') {
           requestData = {
             type: jsonData.type ?? requestData.type,
@@ -655,7 +664,10 @@ export const handlers = [
   // POST handler for selecting quarterly dossiers (legacy)
   http.post(`${API_BASE_PATH}/audit-completion/select-quarterly`, async ({ request }) => {
     try {
-      const body = await request.json() as { quarterKey: string; userIds: string[] };
+      // Clone the request to avoid "Body is unusable" errors
+      const clonedRequest = request.clone();
+      
+      const body = await clonedRequest.json() as { quarterKey: string; userIds: string[] };
       const { quarterKey } = body;
       
       // Parse the quarter key (e.g., "Q1-2023")
@@ -765,6 +777,9 @@ export const handlers = [
       const { auditId } = params;
       const numericAuditId = safeParseInt(Array.isArray(auditId) ? auditId[0] : auditId);
       
+      // Clone the request to avoid "Body is unusable" errors
+      const clonedRequest = request.clone();
+      
       // Parse request body
       let requestData: {
         status?: string;
@@ -778,7 +793,7 @@ export const handlers = [
         }>;
       } = {};
       try {
-        const jsonData = await request.json();
+        const jsonData = await clonedRequest.json();
         if (jsonData && typeof jsonData === 'object') {
           requestData = jsonData as typeof requestData;
         }
@@ -819,6 +834,9 @@ export const handlers = [
       const { auditId } = params;
       const numericAuditId = safeParseInt(Array.isArray(auditId) ? auditId[0] : auditId);
       
+      // Clone the request to avoid "Body is unusable" errors
+      const clonedRequest = request.clone();
+      
       // Parse request body
       let requestData: {
         auditor?: string;
@@ -831,7 +849,7 @@ export const handlers = [
       } = {};
       
       try {
-        const jsonData = await request.json();
+        const jsonData = await clonedRequest.json();
         if (jsonData && typeof jsonData === 'object') {
           requestData = jsonData as typeof requestData;
         }
