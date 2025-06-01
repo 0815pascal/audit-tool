@@ -30,12 +30,10 @@ export {
   getAuditsByAuditor,
   createAudit,
   updateAudit,
-  addFindingToAudit,
-  getFindingsByAudit,
+  addAuditFinding,
+  getAuditFindings,
   selectCasesForAudit,
   exportAuditsForQuarter,
-  getRandomAuditForUser,
-  selectQuarterlyDossiers,
   completeAuditAPI,
   getAuditCompletion
 } from './auditService';

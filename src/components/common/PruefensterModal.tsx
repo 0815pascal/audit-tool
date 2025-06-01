@@ -14,27 +14,22 @@ import {
   CaseAuditId
 } from '../../types/brandedTypes';
 import {
-  createEmptyFindings,
-  ensureCaseAuditId,
   ensureUserId,
+  createEmptyFindings,
+  createCaseAuditId
 } from '../../types/typeHelpers';
-
-import {Button, Checkbox, Select, TextArea} from './FormControls';
-import {useToast} from '../../context/ToastContext';
-import {useAppDispatch, useAppSelector} from '../../store/hooks';
-import {useSaveAuditCompletionMutation, updateAuditInProgress} from '../../store/caseAuditSlice';
 import {
-  BUTTON_COLOR,
-  BUTTON_SIZE,
+  SPECIAL_FINDING_ENUM,
   DETAILED_FINDING_ENUM,
   RATING_VALUE_ENUM,
-  SPECIAL_FINDING_ENUM,
-  TOAST_TYPE,
-  AUDIT_STATUS_ENUM
+  AUDIT_STATUS_ENUM,
+  BUTTON_COLOR,
+  BUTTON_SIZE
 } from '../../enums';
+import {Button, Checkbox, Select, TextArea} from './FormControls';
+import {useAppDispatch, useAppSelector} from '../../store/hooks';
+import {useSaveAuditCompletionMutation, updateAuditInProgress} from '../../store/caseAuditSlice';
 import {convertStatusToAuditStatus} from '../../utils/statusUtils';
-
-// Use the useUsers hook to get user data from Redux store
 import {useUsers} from '../../hooks/useUsers';
 
 interface PruefensterModalProps {
@@ -50,7 +45,6 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
   audit,
   onVerify
 }) => {
-  const { showToast } = useToast();
   const dispatch = useAppDispatch();
   const currentUserId = useAppSelector(state => state.auditUI.currentUserId);
   
@@ -144,10 +138,11 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
       
       // Helper function to get user initials by user ID
       const getUserInitials = (userId: string): string => {
+        if (!userId) return '-';
+        
         try {
           const user = allUsers.find(u => u.id === userId);
           if (user && 'initials' in user && user.initials) {
-            console.log(`Found initials for user ${userId}:`, user.initials);
             return user.initials;
           }
         } catch (error) {
@@ -156,7 +151,6 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
         
         // If we can't find the user, generate initials from the userId
         const initials = userId?.substring(0, 2).toUpperCase() || 'XX';
-        console.log(`Generated fallback initials for user ${userId}:`, initials);
         return initials;
       };
       
@@ -263,132 +257,98 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
   }, [comment, rating, selectedFindings, selectedDetailedFindings, audit.status, audit.isCompleted, hasFormData]);
 
   // Update the saveFormState function
-  const saveFormState = async () => {
-    try {
-      setCurrentStatus(AUDIT_STATUS_ENUM.IN_PROGRESS);
-      
-      // Convert verifier initials back to user ID
-      let auditorId = currentUserId; // Default to current user
-      
-      if (verifier) {
-        try {
-          // Find user by initials - add safety check for allUsers
-          const userByInitials = allUsers && allUsers.length > 0 
-            ? allUsers.find(u => 'initials' in u && u.initials === verifier.toUpperCase())
-            : null;
-          
-          if (userByInitials) {
-            auditorId = userByInitials.id;
-          } else {
-            // If we can't find by initials, use current user
-            console.warn(`Could not find user with initials ${verifier}, using current user`);
-          }
-        } catch (error) {
-          console.error('Error finding user by initials in saveFormState:', error);
-          // Fall back to current user
-        }
-      }
-      
-      const caseAuditData: CaseAuditData = {
-        comment,
-        rating,
-        specialFindings: selectedFindings,
-        detailedFindings: selectedDetailedFindings
-      };
-      
-      console.log('=== DEBUG: saveFormState ===');
-      console.log('audit.id:', audit.id);
-      console.log('audit.userId:', audit.userId);
-      console.log('auditorId:', auditorId);
-      console.log('caseAuditData:', caseAuditData);
-      console.log('rating being saved:', rating);
-      console.log('=== END DEBUG ===');
-      
-      // First update local Redux state
-      dispatch(updateAuditInProgress({
-        auditId: ensureCaseAuditId(audit.id),
-        userId: ensureUserId(audit.userId),
-        auditor: ensureUserId(auditorId || currentUserId),
-        ...caseAuditData
-      }));
-      
-      // Then persist to backend API
-      await saveAuditCompletion({
-        auditId: ensureCaseAuditId(audit.id),
-        auditor: ensureUserId(auditorId || currentUserId),
-        rating,
-        comment,
-        specialFindings: selectedFindings,
-        detailedFindings: selectedDetailedFindings,
-        status: AUDIT_STATUS_ENUM.IN_PROGRESS,
-        isCompleted: false
-      });
-      
-      showToast('Form saved', TOAST_TYPE.SUCCESS);
-    } catch (error) {
-      console.error('Error saving form state:', error);
-      showToast('Error saving form', TOAST_TYPE.ERROR);
-    }
-  };
-
-  const handleComplete = () => {
-    if (!onVerify) {
-      console.error('No onVerify handler provided');
-      return;
-    }
-
-    console.log('=== DEBUG: handleComplete ===');
-    console.log('Before completion - rating:', rating);
-    console.log('audit.id:', audit.id);
+  const saveFormState = useCallback(async () => {
+    if (!audit || !audit.id) return;
     
     // Convert verifier initials back to user ID
-    let auditorId = currentUserId; // Default to current user
+    let auditorId = currentUserId; // Default fallback
     
-    if (verifier) {
-      try {
-        // Find user by initials - add safety check for allUsers
-        const userByInitials = allUsers && allUsers.length > 0 
-          ? allUsers.find(u => 'initials' in u && u.initials === verifier.toUpperCase())
-          : null;
-        
-        if (userByInitials) {
-          auditorId = userByInitials.id;
-        } else {
-          // If we can't find by initials, use current user
-          console.warn(`Could not find user with initials ${verifier}, using current user`);
+    // Find user by initials - add safety check for allUsers
+    if (verifier && Array.isArray(allUsers) && allUsers.length > 0) {
+      const userByInitials = allUsers.find(user => {
+        if ('initials' in user && user.initials) {
+          return user.initials === verifier;
         }
-      } catch (error) {
-        console.error('Error finding user by initials:', error);
-        // Fall back to current user
+        return false;
+      });
+      if (userByInitials) {
+        auditorId = userByInitials.id;
       }
     }
     
+    // Fall back to current user
+    if (!auditorId && currentUserId) {
+      auditorId = currentUserId;
+    }
+
+    // First update local Redux state
+    dispatch(updateAuditInProgress({
+      auditId: createCaseAuditId(audit.id),
+      userId: ensureUserId(currentUserId),
+      auditor: ensureUserId(auditorId),
+      comment: comment,
+      rating: rating as RatingValue,
+      specialFindings: selectedFindings,
+      detailedFindings: selectedDetailedFindings
+    }));
+
+    // Then persist to backend API
+    try {
+      await saveAuditCompletion({
+        auditId: audit.id,
+        auditor: auditorId,
+        rating: rating,
+        comment: comment,
+        specialFindings: selectedFindings,
+        detailedFindings: selectedDetailedFindings,
+        status: 'in_progress',
+        isCompleted: false
+      }).unwrap();
+    } catch (error) {
+      console.error('Error saving audit completion:', error);
+    }
+  }, [audit, verifier, comment, rating, selectedFindings, selectedDetailedFindings, currentUserId, allUsers, dispatch, saveAuditCompletion]);
+
+  // Handle form completion
+  const handleComplete = useCallback(async () => {
+    if (!audit || !onVerify) return;
+
+    // Convert verifier initials back to user ID
+    let auditorId = currentUserId; // Default fallback
+    
+    // Find user by initials - add safety check for allUsers
+    if (verifier && Array.isArray(allUsers) && allUsers.length > 0) {
+      const userByInitials = allUsers.find(user => {
+        if ('initials' in user && user.initials) {
+          return user.initials === verifier;
+        }
+        return false;
+      });
+      if (userByInitials) {
+        auditorId = userByInitials.id;
+      }
+    }
+    
+    // Fall back to current user
+    if (!auditorId && currentUserId) {
+      auditorId = currentUserId;
+    }
+
     // Prepare the current form data
-    const currentFormData = {
+    const currentFormData: CaseAuditData = {
       comment,
-      rating,
+      rating: rating as RatingValue,
       specialFindings: selectedFindings,
       detailedFindings: selectedDetailedFindings
     };
-    
-    console.log('Current form data being passed:', currentFormData);
-    console.log('=== END DEBUG ===');
-    
-    try {
-      // Save the form state to Redux for persistence
-      saveFormState();
-      
-      // Pass the current form data directly to the completion handler
-      // Convert UserId to string for the onVerify function signature
-      const auditorIdString = auditorId ? String(auditorId) : String(currentUserId || '');
-      onVerify(audit.id, auditorIdString, currentFormData);
-      
-      showToast('Audit completed', TOAST_TYPE.SUCCESS);
-    } catch (error) {
-      console.error('Error completing audit:', error);
-      showToast('Error completing audit', TOAST_TYPE.ERROR);
-    }
-  };
+
+    // Save the form state to Redux for persistence
+    await saveFormState();
+
+    // Pass the current form data directly to the completion handler
+    // Convert UserId to string for the onVerify function signature
+    onVerify(audit.id, auditorId, currentFormData);
+  }, [audit, onVerify, verifier, comment, rating, selectedFindings, selectedDetailedFindings, currentUserId, allUsers, saveFormState]);
 
   // Handle when modal is being closed
   const handleCloseModal = () => {

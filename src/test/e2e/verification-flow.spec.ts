@@ -89,7 +89,6 @@ test.describe('IKS Audit Tool - Verification Data Persistence', () => {
     
     // Get the audit ID from the first column of this row
     const auditId = await targetAuditRow.locator('td').first().textContent();
-    console.log(`Working with audit ID: ${auditId}`);
     
     // Click on the Prüfen button
     await enabledPruefenButton.click();
@@ -135,28 +134,16 @@ test.describe('IKS Audit Tool - Verification Data Persistence', () => {
         ansehenButton = verifiedRow.locator('button:has-text("Ansehen")');
         await expect(ansehenButton).toBeVisible({ timeout: 2000 });
         
-        console.log(`Success: Found Ansehen button for audit ${auditId} on attempt ${attempts + 1}`);
         break; // If successful, exit the loop
-      } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        console.log(`Attempt ${attempts + 1}: Waiting for audit ${auditId} to show Geprüft status and Ansehen button... Error: ${errorMessage}`);
-        
+      } catch {
         // On later attempts, try to debug what we actually see
         if (attempts > 5) {
           try {
-            const tableText = await page.locator('tbody').textContent();
-            console.log(`Table content on attempt ${attempts + 1}:`, tableText);
-            
-            const allButtons = await page.locator('tbody button').allTextContents();
-            console.log(`All button texts on attempt ${attempts + 1}:`, allButtons);
-            
-            // Check the specific row for this audit
             const specificRow = page.locator('tbody tr').filter({ hasText: auditId || '' });
             const specificRowText = await specificRow.textContent();
-            console.log(`Specific audit ${auditId} row content:`, specificRowText);
-          } catch (debugError) {
-            const debugErrorMessage = debugError instanceof Error ? debugError.message : 'Unknown debug error';
-            console.log(`Debug error on attempt ${attempts + 1}:`, debugErrorMessage);
+            console.log(`Attempt ${attempts + 1}: Specific audit ${auditId} row content:`, specificRowText);
+          } catch {
+            // Silently continue if debug fails
           }
         }
       }
@@ -165,11 +152,8 @@ test.describe('IKS Audit Tool - Verification Data Persistence', () => {
     // Final check: ensure we have the verified row and button
     if (!verifiedRow || !ansehenButton) {
       // Last resort: look for the specific audit and its current state
-      console.log(`Last resort: Looking for audit ${auditId} in any state...`);
-      
       const specificAuditRow = page.locator('tbody tr').filter({ hasText: auditId || '' });
       const rowCount = await specificAuditRow.count();
-      console.log(`Found ${rowCount} rows for audit ${auditId}`);
       
       if (rowCount > 0) {
         const rowText = await specificAuditRow.textContent();
@@ -179,7 +163,6 @@ test.describe('IKS Audit Tool - Verification Data Persistence', () => {
         const anyButton = specificAuditRow.locator('button').first();
         if (await anyButton.isVisible()) {
           const buttonText = await anyButton.textContent();
-          console.log(`Audit ${auditId} button text:`, buttonText);
           
           if (buttonText === 'Ansehen') {
             ansehenButton = anyButton;

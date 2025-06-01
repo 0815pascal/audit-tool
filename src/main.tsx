@@ -8,28 +8,21 @@ import store from './store';
 import { ToastProvider } from './context/ToastContext';
 
 // Initialize MSW in development environment BEFORE React rendering
-const setupMocks = async () => {
-  // Only run in development environment
+async function enableMocking() {
   if (import.meta.env.DEV) {
-    try {
-      const { setupMSW } = await import('./mocks/browser');
-      
-      // Start the MSW worker
-      const success = await setupMSW();
-      if (success) {
-        console.log('[MSW] Mock Service Worker initialized successfully');
-      } else {
-        console.warn('[MSW] Mock Service Worker failed to initialize, continuing without mocks');
-      }
-      return success;
-    } catch (error) {
-      console.error('[MSW] Failed to initialize Mock Service Worker:', error);
-      console.warn('[MSW] Continuing without mocks - API calls will fail unless backend is available');
-      return false;
-    }
+    const { worker } = await import('./mocks/browser');
+    
+    // Start the worker with options
+    await worker.start({
+      onUnhandledRequest: 'bypass',
+      serviceWorker: {
+        url: '/mockServiceWorker.js',
+      },
+    });
+    
+    console.log('[MSW] Mock Service Worker initialized');
   }
-  return false;
-};
+}
 
 // Add global error handling
 window.addEventListener('error', (event) => {
@@ -51,7 +44,7 @@ window.addEventListener('error', (event) => {
 });
 
 // Start MSW first, then render app
-setupMocks().then(() => {
+enableMocking().then(() => {
   // The main rendering function
   ReactDOM.createRoot(document.getElementById('root')!).render(
     <React.StrictMode>

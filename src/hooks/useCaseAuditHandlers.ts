@@ -174,12 +174,9 @@ export const useCaseAuditHandlers = () => {
       const auditIdString = typeof auditId === 'string' ? auditId : String(auditId);
       const auditorString = typeof auditor === 'string' ? auditor : String(auditor);
       
-      console.log(`[RTK Query] Completing audit ${auditIdString} with RTK Query mutation`);
-      
       // First, ensure the audit exists in Redux state before trying to complete it
       const currentAuditData = auditData[auditIdString];
       if (!currentAuditData) {
-        console.log(`[Redux] Audit ${auditIdString} not found in Redux, creating default entry`);
         // Create a default audit entry if it doesn't exist
         dispatch(storeQuarterlyAudits({
           audits: [{
@@ -204,7 +201,7 @@ export const useCaseAuditHandlers = () => {
       }
       
       // Call the RTK Query mutation to make the actual API call
-      const result = await completeAuditMutation({
+      await completeAuditMutation({
         auditId: auditIdString,
         auditor: auditorString,
         rating: caseAuditData.rating,
@@ -215,10 +212,7 @@ export const useCaseAuditHandlers = () => {
         isCompleted: true
       }).unwrap();
       
-      console.log(`[RTK Query] Audit completion successful:`, result);
-      
       // Update local Redux state for immediate UI updates
-      console.log(`[Redux] Updating local Redux state for audit ${auditIdString}`);
       dispatch(completeAudit({
         auditId: typeof auditId === 'string' ? createCaseAuditId(auditId) : auditId,
         userId: ensureUserId(currentUserId),
@@ -231,8 +225,6 @@ export const useCaseAuditHandlers = () => {
       
       // Add a small delay to ensure Redux state has propagated to components
       await new Promise(resolve => setTimeout(resolve, 200));
-      
-      console.log(`[RTK Query] Audit ${auditId} completed by ${auditor} - Redux state updated`);
     } catch (error) {
       console.error('Error completing audit with RTK Query:', error);
       throw error; // Re-throw to let the UI handle the error
@@ -329,17 +321,13 @@ export const useCaseAuditHandlers = () => {
       // Call the API to get cases for audit selection using the correct endpoint
       const cases = await selectCasesForAudit(quarterPeriod);
       
-      console.log(`[API] Retrieved ${cases.length} cases for quarter ${quarterPeriod}`);
-      
       // Convert the CaseObj response to the format expected by Redux
       // Each case becomes an audit that needs to be verified
-      const userQuarterlyAudits = cases.map((caseObj, index) => {
+      const userQuarterlyAudits = cases.map((caseObj) => {
         // Calculate the actual quarter from the notification date
         const actualQuarter = caseObj.notificationDate ? 
           getQuarterFromNotificationDate(caseObj.notificationDate) : 
           quarterPeriod; // fallback to requested quarter if no notification date
-        
-        console.log(`[DEBUG] Case ${index + 1}: notificationDate=${caseObj.notificationDate}, actualQuarter=${actualQuarter}, notifiedCurrency=${caseObj.notifiedCurrency}`);
         
         const auditObj = {
           id: String(caseObj.caseNumber), // Convert to string
@@ -356,15 +344,11 @@ export const useCaseAuditHandlers = () => {
           caseType: String(CASE_TYPE_ENUM.USER_QUARTERLY) // Add the missing caseType property
         };
         
-        console.log(`[DEBUG] Created audit object:`, auditObj);
         return auditObj;
       });
       
       // Split the cases: first 8 are current quarter, last 2 are from previous quarter
       const currentQuarterAudits = userQuarterlyAudits.slice(0, 8);
-      const previousQuarterRandomAudits = userQuarterlyAudits.slice(8, 10);
-      
-      console.log(`Selected ${currentQuarterAudits.length} current quarter audits and ${previousQuarterRandomAudits.length} previous quarter audits`);
       
       // Dispatch the storeQuarterlyAudits action to store the fetched audits in Redux
       dispatch(storeQuarterlyAudits({
@@ -381,9 +365,9 @@ export const useCaseAuditHandlers = () => {
   
   // Export quarterly results
   const exportQuarterlyResults = (): void => {
-    console.log(`Exporting results for quarter ${selectedQuarter}`);
     // In a real implementation, this would handle the export logic
-    alert(`Results for ${selectedQuarter} exported successfully`);
+    // For now, just log the action
+    console.log(`Exporting results for quarter ${selectedQuarter}`);
   };
   
   // Define a more specific type for external audit data
