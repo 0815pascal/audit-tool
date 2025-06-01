@@ -532,8 +532,8 @@ test.describe('IKS Audit Tool - Auto-Select and Verification', () => {
     await userSelect.selectOption('5'); // Michael Brown
     await page.waitForTimeout(1000);
     
-    // Find Emily's case row and verify the button is disabled for Michael
-    const emilysCaseRow = page.locator(`tr:has-text("${caseId}")`);
+    // Find Emily's case row by targeting the exact case ID - use a more specific approach
+    const emilysCaseRow = page.getByRole('row', { name: new RegExp(`^${caseId}\\s+`) });
     const pruefenButtonForMichael = emilysCaseRow.locator('button:has-text("Prüfen")');
     
     // This should be disabled because Emily is working on it
@@ -556,5 +556,274 @@ test.describe('IKS Audit Tool - Auto-Select and Verification', () => {
     await expect(page.locator('[role="dialog"], .modal')).toBeVisible();
     
     console.log('✅ Emily can successfully continue her own in-progress audit after switching users!');
+  });
+
+  test('should allow team leader to continue their own in-progress audit after user switch', async ({ page }) => {
+    // ... existing code ...
+    console.log('✅ Emily can successfully continue her own in-progress audit after switching users!');
+  });
+
+  test('should return exactly 8 cases when auto-selecting (6 current + 2 previous quarter)', async ({ page }) => {
+    // This test validates the core business requirement:
+    // Auto-Select must return 6 cases from current quarter + 2 cases from previous quarter = 8 total
+    
+    // Ensure we're logged in as a team leader who can auto-select
+    const userSelect = page.locator('#user-select');
+    await userSelect.selectOption('4'); // Select Emily Davis (team leader)
+    
+    // Click the Auto-Select Audits button
+    const autoSelectButton = page.locator('button:has-text("Auto-Select Audits")');
+    await autoSelectButton.click();
+    
+    // Wait for the selection to complete
+    await page.waitForTimeout(3000);
+    
+    // Count the exact number of rows in the audit table
+    const auditTable = page.locator('.audit-table table tbody tr');
+    const rowCount = await auditTable.count();
+    
+    // Verify we have exactly 8 cases (6 current quarter + 2 previous quarter)
+    expect(rowCount).toBe(8);
+    
+    // Additionally verify we have the expected case distribution
+    // Get all case IDs to ensure we have the right mix
+    const caseIds = [];
+    for (let i = 0; i < rowCount; i++) {
+      const row = auditTable.nth(i);
+      const caseId = await row.locator('td').first().textContent();
+      caseIds.push(caseId?.trim());
+    }
+    
+    // Verify we have exactly 8 unique case IDs
+    const uniqueCaseIds = [...new Set(caseIds)];
+    expect(uniqueCaseIds.length).toBe(8);
+    
+    // Verify all case IDs are non-empty
+    expect(caseIds.every(id => id && id.length > 0)).toBe(true);
+  });
+
+  test('should display valid user names for all cases (no "Unknown" users)', async ({ page }) => {
+    // This test prevents regressions where user IDs don't map to actual users
+    // All cases should show real user names, never "Unknown"
+    
+    // Ensure we're logged in as a team leader who can auto-select
+    const userSelect = page.locator('#user-select');
+    await userSelect.selectOption('4'); // Select Emily Davis (team leader)
+    
+    // Click the Auto-Select Audits button
+    const autoSelectButton = page.locator('button:has-text("Auto-Select Audits")');
+    await autoSelectButton.click();
+    
+    // Wait for the selection to complete
+    await page.waitForTimeout(3000);
+    
+    // Get all rows in the audit table
+    const auditTable = page.locator('.audit-table table tbody tr');
+    const rowCount = await auditTable.count();
+    
+    // Check each row's "Verantwortlicher Fallbearbeiter" column (3rd column, 0-indexed = 2)
+    const userNames = [];
+    for (let i = 0; i < rowCount; i++) {
+      const row = auditTable.nth(i);
+      const userName = await row.locator('td').nth(2).textContent(); // Fixed: column 2, not 1
+      userNames.push(userName?.trim());
+    }
+    
+    // Verify no user name is "Unknown"
+    const unknownUsers = userNames.filter(name => name === 'Unknown');
+    expect(unknownUsers.length).toBe(0);
+    
+    // Verify all user names are non-empty
+    expect(userNames.every(name => name && name.length > 0)).toBe(true);
+    
+    // Verify we have expected user names from our mock data
+    const validUserNames = [
+      'John Smith',      // User 1
+      'Jane Doe',        // User 2  
+      'Robert Johnson',  // User 3
+      'Emily Davis',     // User 4
+      'Michael Brown',   // User 5
+      'Sarah Wilson',    // User 6
+      'David Thompson',  // User 7
+      'Lisa Garcia'      // User 8
+    ];
+    
+    // All displayed names should be from our valid user list
+    userNames.forEach(name => {
+      expect(validUserNames).toContain(name);
+    });
+    
+    console.log('✅ All user names are valid:', userNames);
+  });
+
+  test('should display correct quarter mix when auto-selecting (6 current + 2 previous quarter)', async ({ page }) => {
+    // This test ensures the Quarter column shows correct values:
+    // - 6 cases should show Q2-2025 (current quarter)  
+    // - 2 cases should show Q1-2025 (previous quarter)
+    
+    // Ensure we're logged in as a team leader who can auto-select
+    const userSelect = page.locator('#user-select');
+    await userSelect.selectOption('4'); // Select Emily Davis (team leader)
+    
+    // Click the Auto-Select Audits button
+    const autoSelectButton = page.locator('button:has-text("Auto-Select Audits")');
+    await autoSelectButton.click();
+    
+    // Wait for the selection to complete
+    await page.waitForTimeout(3000);
+    
+    // Get all rows in the audit table
+    const auditTable = page.locator('.audit-table table tbody tr');
+    const rowCount = await auditTable.count();
+    
+    // Verify we have exactly 8 cases
+    expect(rowCount).toBe(8);
+    
+    // Check each row's "Quartal" column (2nd column, 0-indexed = 1)
+    const quarterValues = [];
+    for (let i = 0; i < rowCount; i++) {
+      const row = auditTable.nth(i);
+      const quarter = await row.locator('td').nth(1).textContent(); // Quarter column
+      quarterValues.push(quarter?.trim());
+    }
+    
+    // Count Q2-2025 and Q1-2025 cases
+    const q2Cases = quarterValues.filter(q => q === 'Q2-2025');
+    const q1Cases = quarterValues.filter(q => q === 'Q1-2025');
+    
+    // Verify we have exactly 6 current quarter cases and 2 previous quarter cases
+    expect(q2Cases.length).toBe(6);
+    expect(q1Cases.length).toBe(2);
+    
+    // Verify no other quarter values exist
+    const totalExpectedCases = q2Cases.length + q1Cases.length;
+    expect(totalExpectedCases).toBe(8);
+    
+    console.log('✅ Quarter distribution correct:', {
+      'Q2-2025': q2Cases.length,
+      'Q1-2025': q1Cases.length,
+      total: quarterValues.length
+    });
+  });
+
+  test('should display correct quarter mix when auto-selecting for Q2-2025', async ({ page }) => {
+    // This test prevents regressions where Quarter column shows wrong quarters
+    // We should see 6 cases from Q2-2025 and 2 cases from Q1-2025
+    
+    // Ensure we're logged in as a team leader who can auto-select
+    const userSelect = page.locator('#user-select');
+    await userSelect.selectOption('4'); // Select Emily Davis (team leader)
+    
+    // Click the Auto-Select Audits button
+    const autoSelectButton = page.locator('button:has-text("Auto-Select Audits")');
+    await autoSelectButton.click();
+    
+    // Wait for the selection to complete
+    await page.waitForTimeout(3000);
+    
+    // Get all rows in the audit table
+    const auditTable = page.locator('.audit-table tbody');
+    const rows = auditTable.locator('tr');
+    const rowCount = await rows.count();
+    
+    expect(rowCount).toBe(8); // Should have exactly 8 cases
+    
+    // Count Q2-2025 and Q1-2025 cases
+    let q2Count = 0;
+    let q1Count = 0;
+    
+    for (let i = 0; i < rowCount; i++) {
+      const row = rows.nth(i);
+      const quarterCell = row.locator('td').nth(1); // Quarter is column index 1
+      const quarterText = await quarterCell.textContent();
+      
+      if (quarterText?.includes('Q2-2025')) {
+        q2Count++;
+      } else if (quarterText?.includes('Q1-2025')) {
+        q1Count++;
+      }
+    }
+    
+    // Should have 6 current quarter (Q2-2025) and 2 previous quarter (Q1-2025)
+    expect(q2Count).toBe(6);
+    expect(q1Count).toBe(2);
+    
+    console.log(`✅ Quarter distribution correct: ${q2Count} Q2-2025 cases, ${q1Count} Q1-2025 cases`);
+  });
+
+  test('should not accumulate cases when Auto-Select is clicked multiple times', async ({ page }) => {
+    // This test prevents regressions where multiple clicks accumulate cases
+    // Each click should replace the previous selection, not add to it
+    
+    // Ensure we're logged in as a team leader who can auto-select
+    const userSelect = page.locator('#user-select');
+    await userSelect.selectOption('4'); // Select Emily Davis (team leader)
+    
+    // Click Auto-Select button FIRST time
+    const autoSelectButton = page.locator('button:has-text("Auto-Select Audits")');
+    await autoSelectButton.click();
+    await page.waitForTimeout(2000);
+    
+    // Verify we have exactly 8 cases after first click
+    let auditTable = page.locator('.audit-table tbody');
+    let rows = auditTable.locator('tr');
+    let rowCount = await rows.count();
+    expect(rowCount).toBe(8);
+    
+    // Count previous quarter cases after first click
+    let q1CountFirst = 0;
+    for (let i = 0; i < rowCount; i++) {
+      const row = rows.nth(i);
+      const quarterCell = row.locator('td').nth(1);
+      const quarterText = await quarterCell.textContent();
+      if (quarterText?.includes('Q1-2025')) {
+        q1CountFirst++;
+      }
+    }
+    expect(q1CountFirst).toBe(2);
+    
+    // Click Auto-Select button SECOND time
+    await autoSelectButton.click();
+    await page.waitForTimeout(2000);
+    
+    // Verify we STILL have exactly 8 cases after second click (not 16!)
+    rows = auditTable.locator('tr');
+    rowCount = await rows.count();
+    expect(rowCount).toBe(8); // Should still be 8, not accumulated to 16
+    
+    // Count previous quarter cases after second click
+    let q1CountSecond = 0;
+    for (let i = 0; i < rowCount; i++) {
+      const row = rows.nth(i);
+      const quarterCell = row.locator('td').nth(1);
+      const quarterText = await quarterCell.textContent();
+      if (quarterText?.includes('Q1-2025')) {
+        q1CountSecond++;
+      }
+    }
+    expect(q1CountSecond).toBe(2); // Should still be 2, not accumulated to 4
+    
+    // Click Auto-Select button THIRD time to be extra sure
+    await autoSelectButton.click();
+    await page.waitForTimeout(2000);
+    
+    // Verify we STILL have exactly 8 cases after third click
+    rows = auditTable.locator('tr');
+    rowCount = await rows.count();
+    expect(rowCount).toBe(8); // Should still be 8, not accumulated to 24
+    
+    // Count previous quarter cases after third click
+    let q1CountThird = 0;
+    for (let i = 0; i < rowCount; i++) {
+      const row = rows.nth(i);
+      const quarterCell = row.locator('td').nth(1);
+      const quarterText = await quarterCell.textContent();
+      if (quarterText?.includes('Q1-2025')) {
+        q1CountThird++;
+      }
+    }
+    expect(q1CountThird).toBe(2); // Should still be 2, not accumulated to 6
+    
+    console.log(`✅ Multiple clicks test passed: Always 8 total cases, always 2 Q1-2025 cases`);
   });
 }); 

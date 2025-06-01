@@ -225,6 +225,56 @@ export const mockCases: MockCaseData[] = [
     isSpecialist: false,
     caseType: CASE_TYPES.USER_QUARTERLY,
     notifiedCurrency: 'EUR'
+  },
+  {
+    id: '11',
+    userId: '5',
+    notificationDate: '2025-05-22', // Q2 2025
+    clientName: 'Michael Brown Jr.',
+    policyNumber: 91234,
+    caseNumber: 30053678,
+    dossierRisk: 901234,
+    dossierName: 'Brown Construction Ltd',
+    totalAmount: 1100,
+    isCompleted: false,
+    claimsStatus: CLAIMS_STATUS_ENUM.FULL_COVER,
+    coverageAmount: 1100,
+    auditor: '',
+    comment: '',
+    rating: '',
+    specialFindings: createEmptySpecialFindings(),
+    detailedFindings: createEmptyDetailedFindings(),
+    quarter: '2',
+    year: 2025,
+    isAkoReviewed: false,
+    isSpecialist: false,
+    caseType: CASE_TYPES.USER_QUARTERLY,
+    notifiedCurrency: 'CHF'
+  },
+  {
+    id: '12',
+    userId: '6',
+    notificationDate: '2025-06-18', // Q2 2025
+    clientName: 'Sarah Wilson',
+    policyNumber: 12367,
+    caseNumber: 30054789,
+    dossierRisk: 123456,
+    dossierName: 'Wilson Financial Services',
+    totalAmount: 950,
+    isCompleted: false,
+    claimsStatus: CLAIMS_STATUS_ENUM.PARTIAL_COVER,
+    coverageAmount: 950,
+    auditor: '',
+    comment: '',
+    rating: '',
+    specialFindings: createEmptySpecialFindings(),
+    detailedFindings: createEmptyDetailedFindings(),
+    quarter: '2',
+    year: 2025,
+    isAkoReviewed: false,
+    isSpecialist: true,
+    caseType: CASE_TYPES.USER_QUARTERLY,
+    notifiedCurrency: 'USD'
   }
 ];
 

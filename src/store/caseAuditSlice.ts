@@ -483,6 +483,28 @@ const auditUISlice = createSlice({
     }>) => {
       const { audits } = action.payload;
       
+      // Clear existing audits for the same quarter selection
+      // We need to identify which audits belong to the current auto-selection
+      // and remove them before adding the new ones
+      if (audits.length > 0) {
+        // Get the quarters from the new audits to identify which ones to clear
+        const quartersInNewSelection = new Set(audits.map(audit => audit.quarter));
+        
+        // Remove existing audits that have the same quarters as the new selection
+        // This prevents accumulation when Auto-Select is clicked multiple times
+        Object.keys(state.auditData).forEach(auditId => {
+          const existingAudit = state.auditData[auditId];
+          if (existingAudit && quartersInNewSelection.has(existingAudit.quarter)) {
+            // Only remove if it's a quarterly selection audit (not manually added audits)
+            if (existingAudit.caseType === CASE_TYPE_ENUM.USER_QUARTERLY || 
+                existingAudit.caseType === CASE_TYPE_ENUM.PREVIOUS_QUARTER_RANDOM) {
+              delete state.auditData[auditId];
+            }
+          }
+        });
+      }
+      
+      // Now add the new audits
       audits.forEach(audit => {
         state.auditData[audit.id] = {
           isCompleted: audit.isCompleted,
@@ -604,29 +626,14 @@ export const selectQuarterlyAuditsForPeriod = createSelector(
       };
     }
 
-    const [quarterStr, yearStr] = quarterKey.split('-');
-    const quarterNum = parseInt(quarterStr.replace('Q', ''));
-    const yearNum = parseInt(yearStr);
-    
-    if (isNaN(quarterNum) || isNaN(yearNum) || quarterNum < 1 || quarterNum > 4) {
-      return {
-        userQuarterlyAudits: [],
-        previousQuarterRandomAudits: [],
-        lastSelectionDate: null
-      };
-    }
-
+    // Get all audits stored for this quarter selection
+    // Note: These audits may have different individual quarters (current vs previous)
+    // but they're all part of the same audit selection for the quarterKey
     const auditsForPeriod = Object.entries(auditData)
-      .filter(([, audit]) => {
-        if (!audit) return false;
-        const auditQuarterStr = audit.quarter.split('-')[0].substring(1);
-        const auditYearStr = audit.quarter.split('-')[1];
-        const auditQuarter = parseInt(auditQuarterStr);
-        const auditYear = parseInt(auditYearStr);
-        return auditQuarter === quarterNum && auditYear === yearNum;
-      })
-      .map(([id, audit]) => ({ id, ...audit }));
+      .map(([id, audit]) => ({ id, ...audit }))
+      .filter(audit => audit); // Only keep valid audits
     
+    // Separate by case type, not by individual quarter
     const userQuarterlyAudits = auditsForPeriod
       .filter(audit => audit.caseType === CASE_TYPE_ENUM.USER_QUARTERLY);
     

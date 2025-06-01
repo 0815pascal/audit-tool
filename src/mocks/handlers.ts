@@ -35,16 +35,21 @@ export const handlers = [
       const quarterValue = Array.isArray(quarter) ? quarter[0] : quarter ?? '';
       const parsedQuarter = parseQuarter(quarterValue);
       
+      console.log(`[MSW] Requested quarter: ${quarterValue}`, parsedQuarter);
+      
       if (!parsedQuarter) {
+        console.log(`[MSW] Failed to parse quarter: ${quarterValue}`);
         return HttpResponse.json([], { status: 200 });
       }
       
-      // Filter cases for the requested quarter
-      const filteredCases = mockCases.filter(caseItem => {
+      // According to requirements: 8 cases per quarter
+      // - 6 cases from current quarter (one per employee)
+      // - 2 additional random cases from previous quarter
+      
+      // Filter cases for the requested quarter (current quarter)
+      const currentQuarterCases = mockCases.filter(caseItem => {
         try {
-          // Use the notificationDate property to deduce quarter
           const { quarterNum, year } = getQuarterFromDate(caseItem.notificationDate);
-          
           return quarterNum === parsedQuarter.quarterNum && 
                 year === parsedQuarter.year;
         } catch {
@@ -52,8 +57,44 @@ export const handlers = [
         }
       });
       
+      console.log(`[MSW] Current quarter (Q${parsedQuarter.quarterNum}-${parsedQuarter.year}) cases:`, currentQuarterCases.length);
+      
+      // Get previous quarter
+      let previousQuarter = parsedQuarter.quarterNum - 1;
+      let previousYear = parsedQuarter.year;
+      if (previousQuarter < 1) {
+        previousQuarter = 4;
+        previousYear = parsedQuarter.year - 1;
+      }
+      
+      console.log(`[MSW] Looking for previous quarter: Q${previousQuarter}-${previousYear}`);
+      
+      // Filter cases for the previous quarter
+      const previousQuarterCases = mockCases.filter(caseItem => {
+        try {
+          const { quarterNum, year } = getQuarterFromDate(caseItem.notificationDate);
+          return quarterNum === previousQuarter && 
+                year === previousYear;
+        } catch {
+          return false;
+        }
+      });
+      
+      console.log(`[MSW] Previous quarter (Q${previousQuarter}-${previousYear}) cases:`, previousQuarterCases.length);
+      
+      // Take all available current quarter cases (should be 6 based on requirements)
+      // and 2 random cases from previous quarter
+      const selectedPreviousCases = previousQuarterCases
+        .sort(() => 0.5 - Math.random()) // Randomize
+        .slice(0, 2); // Take first 2
+      
+      // Combine current quarter cases with 2 previous quarter cases
+      const combinedCases = [...currentQuarterCases, ...selectedPreviousCases];
+      
+      console.log(`[MSW] Returning ${combinedCases.length} total cases (${currentQuarterCases.length} current + ${selectedPreviousCases.length} previous)`);
+      
       // Convert to API format
-      const audits = filteredCases
+      const audits = combinedCases
         .map(caseItem => {
           try {
             const caseObj = caseToCaseObj(caseItem);

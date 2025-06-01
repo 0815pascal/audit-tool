@@ -2,50 +2,54 @@ import React from 'react';
 import './App.css';
 import TabNavigation from './components/TabNavigation';
 import QuarterlySelectionComponent from './components/QuarterlySelectionComponent';
-import UserListComponent from './components/UserListComponent';
 import { Card } from './components/common';
 import { useTabNavigation } from './hooks/useCaseAuditHandlers';
 import { TAB_VIEW_ENUM } from './enums';
 
-// Header component inlined
-const Header: React.FC = () => {
-  return (
-    <header style={{ 
-      backgroundColor: 'var(--primary-color)', 
-      color: 'white',
-      padding: '1rem',
-      marginBottom: '2rem'
-    }}>
-      <div className="container">
-        <h1 style={{ margin: 0, color: 'white' }}>CARA IKS</h1>
-      </div>
-    </header>
-  );
-};
-
-function App() {
+const App: React.FC = () => {
   const { activeTab, handleTabChange } = useTabNavigation();
 
   return (
-    <div className="app" data-testid="app-container">
-      <Header />
-      <TabNavigation activeTab={activeTab} onTabChange={handleTabChange} />
-      
-      {activeTab === TAB_VIEW_ENUM.AUDIT_LOG && (
-        <Card title="Audit Log" className="mb-4" fullWidth>
-          <div className="p-4 text-center text-gray-500">
-            This section is reserved for future implementation.
+    <div className="App" data-testid="app-container">
+      <div className="container-fluid">
+        <div className="row">
+          <div className="col">
+            <div className="d-flex justify-content-center mb-4">
+              <h1 
+                className="display-4 fw-bold text-center"
+                style={{
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
+                  textShadow: '2px 2px 4px rgba(0,0,0,0.1)'
+                }}
+              >
+                IKS Audit Tool
+              </h1>
+            </div>
+            
+            <Card>
+              <TabNavigation 
+                activeTab={activeTab} 
+                onTabChange={handleTabChange}
+              />
+              
+              <div className="tab-content mt-4">
+                {activeTab === TAB_VIEW_ENUM.IKS && <QuarterlySelectionComponent />}
+                {activeTab === TAB_VIEW_ENUM.AUDIT_LOG && (
+                  <div className="text-center py-5">
+                    <h3>Audit Log</h3>
+                    <p>Audit history and logs will be displayed here.</p>
+                  </div>
+                )}
+              </div>
+            </Card>
           </div>
-        </Card>
-      )}
-      {activeTab === TAB_VIEW_ENUM.IKS && (
-        <div className="iks-tab-content">
-          <QuarterlySelectionComponent />
         </div>
-      )}
-      {activeTab === TAB_VIEW_ENUM.USERS && <UserListComponent />}
+      </div>
     </div>
   );
-}
+};
 
 export default App;

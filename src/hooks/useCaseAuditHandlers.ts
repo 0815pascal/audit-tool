@@ -324,10 +324,17 @@ export const useCaseAuditHandlers = () => {
       // Convert the CaseObj response to the format expected by Redux
       // Each case becomes an audit that needs to be verified
       const userQuarterlyAudits = cases.map((caseObj) => {
-        // Calculate the actual quarter from the notification date
+        // Calculate the actual quarter from the notification date for display purposes
+        // This ensures the Quarter column shows the correct value (Q1-2025 vs Q2-2025)
         const actualQuarter = caseObj.notificationDate ? 
           getQuarterFromNotificationDate(caseObj.notificationDate) : 
           quarterPeriod; // fallback to requested quarter if no notification date
+        
+        // Determine if this case is from the current quarter or previous quarter
+        const isCurrentQuarter = actualQuarter === quarterPeriod;
+        const caseType = isCurrentQuarter ? 
+          CASE_TYPE_ENUM.USER_QUARTERLY : 
+          CASE_TYPE_ENUM.PREVIOUS_QUARTER_RANDOM;
         
         const auditObj = {
           id: String(caseObj.caseNumber), // Convert to string
@@ -338,21 +345,19 @@ export const useCaseAuditHandlers = () => {
           coverageAmount: caseObj.coverageAmount,
           isCompleted: false,
           claimsStatus: String(caseObj.claimsStatus), // Convert to string
-          quarter: actualQuarter, // Use the calculated quarter from notification date
+          quarter: actualQuarter, // Use the actual quarter from notification date for display
           isAkoReviewed: false,
           notifiedCurrency: caseObj.notifiedCurrency || 'CHF', // Include the currency from API response
-          caseType: String(CASE_TYPE_ENUM.USER_QUARTERLY) // Add the missing caseType property
+          caseType: String(caseType) // Set caseType based on whether it's current or previous quarter
         };
         
         return auditObj;
       });
       
-      // Split the cases: first 8 are current quarter, last 2 are from previous quarter
-      const currentQuarterAudits = userQuarterlyAudits.slice(0, 8);
-      
-      // Dispatch the storeQuarterlyAudits action to store the fetched audits in Redux
+      // Dispatch the storeQuarterlyAudits action to store all fetched audits in Redux
+      // MSW handler now returns the correct amount (6 current + 2 previous = 8 total)
       dispatch(storeQuarterlyAudits({
-        audits: currentQuarterAudits
+        audits: userQuarterlyAudits
       }));
       
       setLoadingStatus(ACTION_STATUS.idle);
@@ -464,10 +469,10 @@ export const useCaseAuditHandlers = () => {
  * Extracted from useCaseAuditHandlers to prevent unnecessary API calls
  */
 export const useTabNavigation = () => {
-  const [activeTab, setActiveTab] = useState<TabView>(TAB_VIEWS.IKS);
+  const [activeTab, setActiveTab] = useState<TAB_VIEW_ENUM>(TAB_VIEW_ENUM.IKS);
 
   // Handle tab change
-  const handleTabChange = (tab: TabView): void => {
+  const handleTabChange = (tab: TAB_VIEW_ENUM): void => {
     setActiveTab(tab);
   };
 

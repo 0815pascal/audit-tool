@@ -87,10 +87,13 @@ export const caseToCaseObj = (caseItem: Record<string, unknown>): ApiCaseRespons
     Math.floor(Math.random() * 28) + 1
   ).toISOString().split('T')[0];
   
+  // Extract the actual userId from the case data, not the case ID
+  const actualUserId = safeParseInt(caseItem.userId as string | number | undefined, 1);
+  
   return {
     caseNumber: createCaseId(numericId),
     claimOwner: {
-      userId: numericId,
+      userId: actualUserId, // Use the actual userId from case data
       role: USER_ROLE_ENUM.SPECIALIST
     },
     claimsStatus: (caseItem.claimsStatus as typeof CLAIMS_STATUS.FULL_COVER) || CLAIMS_STATUS.FULL_COVER,

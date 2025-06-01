@@ -181,8 +181,7 @@ export enum INPUT_TYPE_ENUM {
 // Tab view enum for navigation
 export enum TAB_VIEW_ENUM {
   AUDIT_LOG = 'auditLog',
-  IKS = 'iks',
-  USERS = 'users'
+  IKS = 'iks'
 }
 
 // Valid year ranges enum

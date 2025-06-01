@@ -125,7 +125,7 @@ test.describe('IKS Audit Tool - Verification Data Persistence', () => {
         await page.waitForTimeout(1000);
         
         // Look for the specific audit row by audit ID that should now show "Geprüft"
-        verifiedRow = page.locator('tbody tr').filter({ hasText: auditId || '' }).filter({ hasText: 'Geprüft' });
+        verifiedRow = page.getByRole('row', { name: new RegExp(`^${auditId}\\s+.*Geprüft`) });
         
         // Check if the row is visible
         await expect(verifiedRow).toBeVisible({ timeout: 3000 });
@@ -152,7 +152,7 @@ test.describe('IKS Audit Tool - Verification Data Persistence', () => {
     // Final check: ensure we have the verified row and button
     if (!verifiedRow || !ansehenButton) {
       // Last resort: look for the specific audit and its current state
-      const specificAuditRow = page.locator('tbody tr').filter({ hasText: auditId || '' });
+      const specificAuditRow = page.getByRole('row', { name: new RegExp(`^${auditId}\\s+`) });
       const rowCount = await specificAuditRow.count();
       
       if (rowCount > 0) {
