@@ -156,15 +156,14 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
       
       // Set verifier to initials (whether from existing audit or current user)
       if (audit.auditor) {
-        console.log('Using existing auditor ID:', audit.auditor);
-        // Use the existing auditor ID
-        const auditorId = audit.auditor.toString?.() || String(audit.auditor);
-        const verifierInitials = getUserInitials(auditorId);
-        setVerifier(verifierInitials);
+        // If an auditor is already assigned to this audit, use their initials
+        const existingAuditor = allUsers.find(user => user.id === audit.auditor);
+        if (existingAuditor) {
+          setVerifier(existingAuditor.initials || 'XX');
+        }
       } else {
-        // Use the current user's initials as the verifier
+        // No auditor assigned yet, use current user
         const currentUserInitials = getUserInitials(currentUserId || '');
-        console.log('Setting verifier to current user initials:', currentUserInitials);
         setVerifier(currentUserInitials);
       }
       

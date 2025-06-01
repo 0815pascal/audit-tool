@@ -366,8 +366,7 @@ export const useCaseAuditHandlers = () => {
   // Export quarterly results
   const exportQuarterlyResults = (): void => {
     // In a real implementation, this would handle the export logic
-    // For now, just log the action
-    console.log(`Exporting results for quarter ${selectedQuarter}`);
+    // For now, this is a placeholder function
   };
   
   // Define a more specific type for external audit data
