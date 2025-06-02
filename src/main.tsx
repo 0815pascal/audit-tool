@@ -5,7 +5,6 @@ import { Provider } from 'react-redux';
 import App from './App.tsx';
 import './index.css';
 import store from './store';
-import { ToastProvider } from './context/ToastContext';
 
 // Add global error handling
 window.addEventListener('error', (event) => {
@@ -41,9 +40,7 @@ const startApp = async () => {
   ReactDOM.createRoot(document.getElementById('root')!).render(
     <React.StrictMode>
       <Provider store={store}>
-        <ToastProvider>
-          <App />
-        </ToastProvider>
+        <App />
       </Provider>
     </React.StrictMode>,
   );

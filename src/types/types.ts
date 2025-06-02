@@ -1,6 +1,5 @@
 import {
   FINDING_CATEGORY,
-  TOAST_TYPE,
   ACTION_STATUS_ENUM,
   CLAIMS_STATUS_ENUM,
   USER_ROLE_ENUM,
@@ -122,7 +121,6 @@ export type CaseType = CASE_TYPE_ENUM;
 // Types using enums for stronger typing - Keep only ones that are used
 export type ClaimsStatus = CLAIMS_STATUS_ENUM;
 export type FindingCategory = FINDING_CATEGORY;
-export type ToastType = TOAST_TYPE;
 export type RatingValue = RATING_VALUE_ENUM | '';
 export type FindingType = DETAILED_FINDING_ENUM | SPECIAL_FINDING_ENUM;
 
@@ -263,10 +261,4 @@ export interface PropsWithClassName {
 // Generic component props type helper with HTML attributes
 export type ComponentProps<T = HTMLDivElement> = HTMLAttributes<T> & PropsWithClassName;
 
-export interface ToastData {
-  message: string;
-  type: ToastType;
-}
-
-// Context provider related types
 export type ContextProviderProps = PropsWithChildren;

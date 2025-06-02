@@ -54,14 +54,6 @@ export enum HTTP_STATUS_CODE {
   INTERNAL_SERVER_ERROR = 500
 }
 
-// Toast types enum
-export enum TOAST_TYPE {
-  SUCCESS = 'success',
-  ERROR = 'error',
-  INFO = 'info',
-  WARNING = 'warning'
-}
-
 // Case status enum
 export enum CASE_STATUS_ENUM {
   OPEN = 'OPEN',
@@ -196,8 +188,7 @@ export enum TIME_MS_ENUM {
   ONE_MINUTE = 60 * 1000,
   ONE_HOUR = 60 * 60 * 1000,
   ONE_DAY = 24 * 60 * 60 * 1000,
-  ONE_WEEK = 7 * 24 * 60 * 60 * 1000,
-  TOAST_DURATION = 3000
+  ONE_WEEK = 7 * 24 * 60 * 60 * 1000
 }
 
 // Default values enum
@@ -239,14 +230,6 @@ export enum ERROR_TYPE_ENUM {
   API = 'api',
   FETCH = 'fetch',
   UNKNOWN = 'unknown'
-}
-
-// CSS color classes for toast background colors
-export enum TOAST_BG_COLOR_ENUM {
-  SUCCESS = 'bg-green-500',
-  ERROR = 'bg-red-500',
-  WARNING = 'bg-yellow-500',
-  INFO = 'bg-blue-500'
 }
 
 // CSS color constants for UI components
