@@ -5,7 +5,6 @@ import axios from 'axios';
 import { CaseObj } from './apiUtils';
 import { AUDIT_STATUS_ENUM } from '../enums';
 import { API_BASE_PATH } from '../constants';
-import { ApiAuditResponse } from '../mocks/mockTypes';
 
 /**
  * Fetch audits for a specific quarter

@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { USER_ROLE_ENUM, AUDIT_STATUS_ENUM, CASE_TYPE_ENUM } from '../enums'
-import { generateRealisticCaseNumber } from '../utils/statusUtils'
+import { USER_ROLE_ENUM } from '../enums'
 import { COVERAGE_LIMITS } from '../constants'
 
 // Mock user data for testing
