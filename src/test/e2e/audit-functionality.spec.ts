@@ -461,24 +461,45 @@ test.describe('IKS Audit Tool - Auto-Select and Verification', () => {
     await autoSelectButton.click();
     await page.waitForTimeout(2000);
     
-    // Wait for the audit table to be populated with enabled Prüfen buttons
-    await page.waitForSelector('tr:has(button:has-text("Prüfen"):not([disabled]))', { timeout: 10000 });
+    // Wait for the audit table to be populated
+    await page.waitForSelector('tbody tr', { timeout: 10000 });
     
-    // Get the first enabled Prüfen button and its corresponding case ID
-    const firstEnabledRow = page.locator('tr:has(button:has-text("Prüfen"):not([disabled]))').first();
+    // Find a row where the Prüfer column (5th column, index 4) specifically shows "-"
+    // We need to check each row individually to find one with "-" in the Prüfer column
+    const allRows = page.locator('tbody tr');
+    const rowCount = await allRows.count();
     
-    // Wait for the row to be visible and stable
-    await expect(firstEnabledRow).toBeVisible();
+    let firstUnworkedRow = null;
+    for (let i = 0; i < rowCount; i++) {
+      const row = allRows.nth(i);
+      const prueferCell = row.locator('td').nth(4); // Prüfer is the 5th column (0-indexed)
+      const prueferText = await prueferCell.textContent();
+      
+      if (prueferText?.trim() === '-') {
+        firstUnworkedRow = row;
+        break;
+      }
+    }
     
-    const caseId = await firstEnabledRow.locator('td').first().textContent();
+    // Ensure we found a row with "-" in the Prüfer column
+    if (!firstUnworkedRow) {
+      throw new Error('No row found with "-" in the Prüfer column');
+    }
+    
+    await expect(firstUnworkedRow).toBeVisible();
+    
+    const caseId = await firstUnworkedRow.locator('td').first().textContent();
     console.log('Emily will work on case:', caseId);
     
+    // Verify this row has an enabled Prüfen button (Emily should be able to work on it)
+    const pruefenButton = firstUnworkedRow.locator('button:has-text("Prüfen")');
+    await expect(pruefenButton).toBeEnabled();
+    
     // Before verification starts, the Prüfer column should show '-'
-    const prueferCellBefore = firstEnabledRow.locator('td').nth(4); // Prüfer is the 5th column (0-indexed)
+    const prueferCellBefore = firstUnworkedRow.locator('td').nth(4); // Prüfer is the 5th column (0-indexed)
     await expect(prueferCellBefore).toHaveText('-');
     
     // Click the Prüfen button for this case
-    const pruefenButton = firstEnabledRow.locator('button:has-text("Prüfen")');
     await pruefenButton.click();
     
     // Wait for modal to be visible
@@ -496,7 +517,7 @@ test.describe('IKS Audit Tool - Auto-Select and Verification', () => {
     await page.waitForTimeout(1000);
     
     // After Emily starts verification, the Prüfer column should show her initials 'ED', not her user ID '4'
-    const prueferCellAfter = firstEnabledRow.locator('td').nth(4); // Prüfer is the 5th column (0-indexed)
+    const prueferCellAfter = firstUnworkedRow.locator('td').nth(4); // Prüfer is the 5th column (0-indexed)
     const prueferValue = await prueferCellAfter.textContent();
     
     // Verify it's not a numeric user ID
@@ -873,9 +894,6 @@ test.describe('IKS Audit Tool - Auto-Select and Verification', () => {
       expect(quarterText).toContain('Q2-2025');
     }
     
-    // Verify the info message is shown
-    await expect(page.locator('text=Use "Auto-Select Audits" to select cases for audit review')).toBeVisible();
-    
     console.log(`✅ Quarter auto-load test passed: ${rowCount} cases loaded for Q2-2025`);
   });
 
@@ -938,9 +956,6 @@ test.describe('IKS Audit Tool - Auto-Select and Verification', () => {
     
     expect(q1Count).toBe(rowCount); // ALL cases should be Q1-2025
     expect(q2CountAfter).toBe(0); // NO Q2-2025 cases should remain
-    
-    // Verify the info message is shown
-    await expect(page.locator('text=Use "Auto-Select Audits" to select cases for audit review')).toBeVisible();
     
     console.log(`✅ Quarter replacement test passed: ${q1Count} Q1-2025 cases, ${q2CountAfter} Q2-2025 cases after quarter change`);
   });

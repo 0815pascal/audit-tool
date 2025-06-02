@@ -20,12 +20,37 @@ test.describe('IKS Audit Tool - Verification Data Persistence', () => {
     await page.selectOption('#user-select', '4'); // Emily Davis user ID
     await page.waitForTimeout(500);
 
-    // Auto-select audits for Q1-2025
+    // Auto-select audits for Q2-2025 (current quarter)
     await page.click('button:has-text("Auto-Select Audits")');
     await page.waitForTimeout(2000);
 
-    // Find any enabled Prüfen button (Emily can verify other users' audits)
-    const enabledPruefenButton = page.locator('button:has-text("Prüfen"):not([disabled])').first();
+    // Find a case that Emily can work on - look for one with "-" in the Prüfer column 
+    // (newly auto-selected cases that haven't been assigned to anyone yet)
+    const allRows = page.locator('tbody tr');
+    const rowCount = await allRows.count();
+    
+    let availableRow = null;
+    for (let i = 0; i < rowCount; i++) {
+      const row = allRows.nth(i);
+      const prueferCell = row.locator('td').nth(4); // Prüfer is the 5th column (0-indexed)
+      const prueferText = await prueferCell.textContent();
+      
+      if (prueferText?.trim() === '-') {
+        availableRow = row;
+        break;
+      }
+    }
+    
+    if (!availableRow) {
+      throw new Error('No row found with "-" in the Prüfer column');
+    }
+    
+    await expect(availableRow).toBeVisible();
+    
+    // Find the enabled Prüfen button for this case
+    const enabledPruefenButton = availableRow.locator('button:has-text("Prüfen")');
+    await expect(enabledPruefenButton).toBeEnabled();
+    
     await enabledPruefenButton.click();
     
     // Wait for modal to open
@@ -42,13 +67,15 @@ test.describe('IKS Audit Tool - Verification Data Persistence', () => {
     
     // Wait for modal to close
     await page.waitForSelector('.modal', { state: 'hidden' });
+    await page.waitForTimeout(1000);
     
-    // Find the audit row that should now show "In Bearbeitung"
-    const inProgressRow = page.locator('tbody tr').filter({ hasText: 'In Bearbeitung' }).first();
-    await expect(inProgressRow).toBeVisible();
+    // The case should now show "In Bearbeitung" and have Emily's initials in Prüfer column
+    await expect(availableRow).toContainText('In Bearbeitung');
     
-    // Now reopen the verification modal to check if data persisted
-    await inProgressRow.locator('button:has-text("Prüfen")').click();
+    // Now Emily should be able to reopen her own in-progress verification
+    const pruefenButton = availableRow.locator('button:has-text("Prüfen")');
+    await expect(pruefenButton).toBeEnabled(); // Emily can work on her own cases
+    await pruefenButton.click();
     
     // Wait for modal to open again
     await page.waitForSelector('.modal', { state: 'visible' });

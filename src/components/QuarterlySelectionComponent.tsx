@@ -518,9 +518,6 @@ const QuarterlySelectionComponent: React.FC = () => {
               
               {/* Always show this message when no quarterly audits have been selected */}
               <p className="no-data">Keine Audits für dieses Quartal ausgewählt.</p>
-              <p className="info-message">
-                Use "Auto-Select Audits" to select cases for audit review.
-              </p>
             </div>
           ) : (
             <table>
