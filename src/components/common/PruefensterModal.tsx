@@ -364,14 +364,14 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
       title="Prueffenster"
     >
       <div className="pruefenster-content">
-        <div className="case-info-grid">
-          <div className="info-field info-field--left">
-            <span className="field-label field-label--left">Case Number</span>
-            <span className="field-value field-value--left">{audit.id}</span>
+        <div className="case-info-grid text-left mb-8">
+          <div className="info-field flex flex-col">
+            <span className="field-label text-left text-uppercase">Case Number</span>
+            <span className="field-value text-left mt-micro">{audit.id}</span>
           </div>
-          <div className="info-field info-field--right">
-            <span className="field-label field-label--right">Status</span>
-            <span className={`status-badge ${
+          <div className="info-field flex flex-col">
+            <span className="field-label text-right text-uppercase">Status</span>
+            <span className={`status-badge text-right text-uppercase mt-micro ${
               currentStatus === AUDIT_STATUS_ENUM.COMPLETED ? 'status-badge--completed' : 
               currentStatus === AUDIT_STATUS_ENUM.IN_PROGRESS ? 'status-badge--in-progress' : 
               'status-badge--pending'
@@ -381,54 +381,54 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
                'Nicht Verifiziert'}
             </span>
           </div>
-          <div className="info-field info-field--left">
-            <span className="field-label field-label--left">Policy Number</span>
-            <span className="field-value field-value--left">{audit.policyNumber}</span>
+          <div className="info-field flex flex-col">
+            <span className="field-label text-left text-uppercase">Policy Number</span>
+            <span className="field-value text-left mt-micro">{audit.policyNumber}</span>
           </div>
-          <div className="info-field info-field--right">
-            <span className="field-label field-label--right">Client</span>
-            <span className="field-value field-value--right">{audit.clientName}</span>
+          <div className="info-field flex flex-col">
+            <span className="field-label text-right text-uppercase">Client</span>
+            <span className="field-value text-right mt-micro">{audit.clientName}</span>
           </div>
-          <div className="info-field info-field--left">
-            <span className="field-label field-label--left">Coverage Amount</span>
-            <span className="field-value field-value--left field-value--currency">
+          <div className="info-field flex flex-col">
+            <span className="field-label text-left text-uppercase">Coverage Amount</span>
+            <span className="field-value text-left field-value--currency mt-micro">
               {new Intl.NumberFormat('de-CH', { 
                 style: 'currency', 
                 currency: audit.notifiedCurrency ?? 'CHF'
               }).format(audit.coverageAmount)}
             </span>
           </div>
-          <div className="info-field info-field--right">
-            <span className="field-label field-label--right">Fallbearbeiter</span>
-            <span className="field-value field-value--right">
+          <div className="info-field flex flex-col">
+            <span className="field-label text-right text-uppercase">Fallbearbeiter</span>
+            <span className="field-value text-right mt-micro">
               {(() => {
                 const user = allUsers.find(u => u.id === audit.userId);
                 return user ? user.displayName : audit.userId;
               })()}
             </span>
           </div>
-          <div className="info-field info-field--left">
-            <span className="field-label field-label--left">Quarter</span>
-            <span className="field-value field-value--left">{audit.quarter}</span>
+          <div className="info-field flex flex-col">
+            <span className="field-label text-left text-uppercase">Quarter</span>
+            <span className="field-value text-left mt-micro">{audit.quarter}</span>
           </div>
-          <div className="info-field info-field--right">
-            <span className="field-label field-label--right">Notification Date</span>
-            <span className="field-value field-value--right">
+          <div className="info-field flex flex-col">
+            <span className="field-label text-right text-uppercase">Notification Date</span>
+            <span className="field-value text-right mt-micro">
               {audit.notificationDate ? new Date(audit.notificationDate).toLocaleDateString('de-CH') : '-'}
             </span>
           </div>
-          <div className="info-field info-field--left">
-            <span className="field-label field-label--left">Dossier</span>
-            <span className="field-value field-value--left">{audit.dossierName}</span>
+          <div className="info-field flex flex-col">
+            <span className="field-label text-left text-uppercase">Dossier</span>
+            <span className="field-value text-left mt-micro">{audit.dossierName}</span>
           </div>
-          <div className="info-field info-field--right">
-            <span className="field-label field-label--right">Prüfer</span>
-            <span className="field-value field-value--right">{verifier || '-'}</span>
+          <div className="info-field flex flex-col">
+            <span className="field-label text-right text-uppercase">Prüfer</span>
+            <span className="field-value text-right mt-micro">{verifier || '-'}</span>
           </div>
         </div>
 
-        <div className="form-section">
-          <h4 className="section-heading">Prüfergebnis</h4>
+        <div className="form-section mb-4">
+          <h4 className="section-heading text-left">Prüfergebnis</h4>
           <Select
             id="pruefenster-rating"
             options={ratingOptions}
@@ -437,7 +437,7 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
           />
         </div>
 
-        <div className="form-section">
+        <div className="form-section mb-4">
           <TextArea
             id="pruefenster-comment"
             value={comment}
@@ -447,8 +447,8 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
           />
         </div>
 
-        <div className="form-section">
-          <h4 className="section-heading">Spezielle Erkenntnisse</h4>
+        <div className="form-section mb-4">
+          <h4 className="section-heading text-left">Spezielle Erkenntnisse</h4>
           <div>
             {specialFindingsOptions.map(opt => (
               <Checkbox
@@ -462,8 +462,8 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
           </div>
         </div>
 
-        <div className="form-section">
-          <h4 className="section-heading">Detaillierte Prüfergebnisse</h4>
+        <div className="form-section mb-4">
+          <h4 className="section-heading text-left">Detaillierte Prüfergebnisse</h4>
           <div>
             {detailedFindingsOptions.map(opt => (
               <Checkbox
@@ -477,7 +477,7 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
           </div>
         </div>
 
-        <div className="button-container">
+        <div className="button-container flex justify-end gap-md">
           <Button
             onClick={handleCloseModal}
             color={BUTTON_COLOR.TEXT}

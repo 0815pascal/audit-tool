@@ -15,10 +15,10 @@ window.addEventListener('error', (event) => {
     const rootEl = document.getElementById('root');
     if (rootEl) {
       rootEl.innerHTML = `
-        <div style="color: red; text-align: center; margin: 20px;">
+        <div class="global-error">
           <p>Error loading application:</p>
-          <pre style="background: #f8f8f8; padding: 10px; text-align: left; max-width: 800px; margin: 0 auto; overflow: auto;">${event.message}</pre>
-          <button onclick="window.location.reload()" style="margin-top: 10px; padding: 8px 16px;">Reload</button>
+          <pre class="global-error__message">${event.message}</pre>
+          <button onclick="window.location.reload()" class="global-error__reload-button">Reload</button>
         </div>
       `;
     }

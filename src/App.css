@@ -1,21 +1,21 @@
 #root {
-  max-width: 1280px;
+  max-width: var(--width-2xl);
   margin: 0 auto;
-  padding: 0 2rem 2rem 2rem;
+  padding: 0 var(--spacing-4xl) var(--spacing-4xl) var(--spacing-4xl);
   text-align: center;
 }
 
 .logo {
-  height: 6em;
-  padding: 1.5em;
+  height: var(--height-6em);
+  padding: var(--spacing-3xl);
   will-change: filter;
-  transition: filter 300ms;
+  transition: filter var(--transition-slow);
 }
 .logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
+  filter: drop-shadow(0 0 2em var(--logo-vite));
 }
 .logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+  filter: drop-shadow(0 0 2em var(--logo-react));
 }
 
 @keyframes logo-spin {
@@ -33,20 +33,25 @@
   }
 }
 
-.card {
-  padding: 1.5rem;
-}
-
 .read-the-docs {
-  color: #888;
+  color: var(--text-light);
 }
 
 .app {
-  min-height: 100vh;
+  min-height: var(--height-screen);
   display: flex;
   flex-direction: column;
 }
 
 main {
   flex: 1;
+}
+
+/* BEM Block: App */
+.app__title {
+  background: var(--gradient-app-title);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: var(--text-shadow-sm);
 }

@@ -4,10 +4,10 @@
 .modal {
   /* Main modal container styles will be applied to the dialog element */
   background-color: white;
-  border-radius: 4px;
-  width: 600px;
+  border-radius: var(--border-radius);
+  width: var(--width-md);
   max-height: 90vh;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--box-shadow-strong);
   display: flex;
   flex-direction: column;
 }
@@ -19,11 +19,11 @@
   left: 0;
   width: 100vw;
   height: 100vh;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: var(--overlay-dark);
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000;
+  z-index: var(--z-modal);
 }
 
 /* Element: Modal Header */
@@ -31,13 +31,13 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem;
-  border-bottom: 1px solid #e9ecef;
+  padding: var(--spacing-3xl);
+  border-bottom: var(--border-thin) var(--border-modal);
   background-color: white;
-  border-radius: 4px 4px 0 0;
+  border-radius: var(--border-radius) var(--border-radius) 0 0;
   position: sticky;
   top: 0;
-  z-index: 1001;
+  z-index: var(--z-modal-header);
 }
 
 /* Element: Modal Title */
@@ -47,46 +47,46 @@
 
 /* Element: Modal Close Button */
 .modal__close-button {
-  font-size: 1.5rem;
-  line-height: 1;
+  font-size: var(--font-size-xl);
+  line-height: var(--line-height-none);
   border: none;
   background: transparent;
   cursor: pointer;
-  color: #333;
-  padding: 4px 8px;
+  color: var(--text-dark);
+  padding: var(--spacing-xs) var(--spacing-md);
 }
 
 /* Modifier: Close Button Hover State */
 .modal__close-button:hover {
-  color: #000;
+  color: var(--text-black);
   opacity: 0.8;
 }
 
 /* Modifier: Close Button Focus State */
 .modal__close-button:focus {
-  outline: 2px solid #007bff;
-  outline-offset: 2px;
+  outline: var(--outline-focus) var(--primary-color);
+  outline-offset: var(--outline-offset);
 }
 
 /* Element: Modal Content/Body */
 .modal__content {
-  padding: 1rem;
+  padding: var(--spacing-3xl);
   overflow-y: auto;
   flex: 1;
 }
 
 /* Responsive Modifiers */
-@media (max-width: 768px) {
+@media (max-width: calc(var(--breakpoint-tablet) * 1px)) {
   .modal {
     width: 95vw;
     max-height: 95vh;
   }
   
   .modal__header {
-    padding: 0.75rem;
+    padding: var(--spacing-lg);
   }
   
   .modal__content {
-    padding: 0.75rem;
+    padding: var(--spacing-lg);
   }
 } 

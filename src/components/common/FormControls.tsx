@@ -1,6 +1,7 @@
 import React from 'react';
+import './FormControls.css';
 import { SelectOption } from '../../types/types';
-import { BUTTON_COLOR, BUTTON_SIZE, INPUT_TYPE_ENUM, UI_COLOR_ENUM } from '../../enums';
+import { BUTTON_COLOR, BUTTON_SIZE, INPUT_TYPE_ENUM } from '../../enums';
 
 /**
  * Common form controls that can be reused across the application
@@ -22,37 +23,24 @@ export const Button: React.FC<ButtonProps> = ({
   disabled = false,
   size = BUTTON_SIZE.MEDIUM
 }) => {
-  // Color mapping
-  const colorMap = {
-    [BUTTON_COLOR.PRIMARY]: UI_COLOR_ENUM.PRIMARY,
-    [BUTTON_COLOR.SUCCESS]: UI_COLOR_ENUM.SUCCESS,
-    [BUTTON_COLOR.DANGER]: UI_COLOR_ENUM.DANGER,
-    [BUTTON_COLOR.INFO]: UI_COLOR_ENUM.INFO,
-    [BUTTON_COLOR.TEXT]: UI_COLOR_ENUM.TRANSPARENT
-  };
+  const baseClass = 'button';
+  const colorClass = `button--${color}`;
+  const sizeClass = `button--${size}`;
+  const disabledClass = disabled ? 'button--disabled' : '';
   
-  // Size mapping
-  const sizeMap = {
-    [BUTTON_SIZE.SMALL]: { padding: '6px 12px', fontSize: '0.9rem' },
-    [BUTTON_SIZE.MEDIUM]: { padding: '8px 16px', fontSize: '1rem' },
-    [BUTTON_SIZE.LARGE]: { padding: '10px 20px', fontSize: '1.1rem' }
-  };
+  // Add utility classes for color variants
+  const utilityClasses = [];
+  if (color !== BUTTON_COLOR.TEXT) {
+    utilityClasses.push(`bg-${color}`, 'text-white');
+  }
+  
+  const className = [baseClass, colorClass, sizeClass, disabledClass, ...utilityClasses].filter(Boolean).join(' ');
   
   return (
     <button
       onClick={onClick}
       disabled={disabled}
-      style={{
-        backgroundColor: colorMap[color],
-        color: color === BUTTON_COLOR.TEXT ? UI_COLOR_ENUM.PRIMARY : UI_COLOR_ENUM.WHITE,
-        padding: sizeMap[size].padding,
-        fontSize: sizeMap[size].fontSize,
-        border: 'none',
-        borderRadius: '4px',
-        cursor: disabled ? 'not-allowed' : 'pointer',
-        opacity: disabled ? 0.7 : 1,
-        fontWeight: 'bold'
-      }}
+      className={className}
     >
       {children}
     </button>
@@ -75,7 +63,7 @@ export const Checkbox: React.FC<CheckboxProps> = ({
   onChange,
   disabled = false
 }) => (
-  <div className="checkbox-container">
+  <div className="checkbox-container flex items-center gap-md mb-4">
     <input
       type={INPUT_TYPE_ENUM.CHECKBOX}
       id={id}
@@ -83,11 +71,7 @@ export const Checkbox: React.FC<CheckboxProps> = ({
       onChange={onChange}
       disabled={disabled}
     />
-    <label htmlFor={id} style={{ 
-      textAlign: 'left', 
-      fontSize: '14px',
-      fontFamily: '"Source Sans Pro", "Helvetica Neue", Arial, sans-serif'
-    }}>{label}</label>
+    <label htmlFor={id} className="checkbox__label text-left text-sm m-0">{label}</label>
   </div>
 );
 
@@ -109,8 +93,8 @@ export const TextArea: React.FC<TextAreaProps> = ({
   placeholder = '',
   rows = 3
 }) => (
-  <div>
-   {label && <label style={{ display: 'flex', marginLeft: '.5rem' }} htmlFor={id}>{label}</label>}
+  <div className="form-field mb-4">
+   {label && <label className="form-field__label flex font-medium p-md mb-4" htmlFor={id}>{label}</label>}
     <textarea
       id={id}
       value={value}
@@ -136,12 +120,17 @@ export const Card: React.FC<CardProps> = ({
   className = '',
   fullWidth = false,
   centerTitle = false
-}) => (
-  <div className={`card ${className}`} style={{ width: fullWidth ? '100%' : 'auto' }}>
-    {title && <h2 className={centerTitle ? "text-center" : "text-left"}>{title}</h2>}
-    {children}
-  </div>
-);
+}) => {
+  const widthClass = fullWidth ? 'card--full-width w-100' : 'card--auto-width w-auto';
+  const cardClassName = `card ${widthClass} ${className}`.trim();
+  
+  return (
+    <div className={cardClassName}>
+      {title && <h2 className={centerTitle ? "text-center" : "text-left"}>{title}</h2>}
+      {children}
+    </div>
+  );
+};
 
 // Select dropdown component
 interface SelectProps<T = string> {
@@ -165,13 +154,13 @@ export const Select = <T extends string>({
   };
   
   return (
-    <div style={{ display: 'flex', flexDirection: 'column'}}>
-      {label && <label htmlFor={id} style={{ marginBottom: '0.25rem' }}>{label}</label>}
+    <div className="select-field flex flex-col">
+      {label && <label htmlFor={id} className="select-field__label mb-0 font-medium">{label}</label>}
       <select
         id={id}
         value={value}
         onChange={handleChange}
-        style={{ padding: '6px', borderRadius: '4px', fontSize: '14px', border: `1px solid ${UI_COLOR_ENUM.BORDER}` }}
+        className="select-field__control"
       >
         <option value="">-- Select --</option>
         {options.map(opt => (

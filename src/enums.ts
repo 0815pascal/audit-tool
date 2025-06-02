@@ -230,11 +230,11 @@ export enum ERROR_TYPE_ENUM {
 export enum UI_COLOR_ENUM {
   PRIMARY = 'var(--primary-color)',
   SUCCESS = 'var(--success-color)',
-  DANGER = '#d24723',
-  INFO = '#00008f',
+  DANGER = 'var(--danger-color)',
+  INFO = 'var(--info-color)',
   WHITE = 'white',
   TRANSPARENT = 'transparent',
-  BORDER = '#ccc'
+  BORDER = 'var(--border-color)'
 }
 
 // CSS text alignment classes

@@ -1,0 +1,78 @@
+/* FormControls Component - Extends Global Button System */
+
+/* Button Base - Extends Global Button */
+.button {
+  /* Inherits from global button styles in index.css */
+  font-weight: var(--font-weight-bold); /* Override global medium weight */
+}
+
+/* Button Color Variants - Only non-empty rules */
+.button--text {
+  background-color: transparent;
+  color: var(--primary-color);
+}
+
+/* Button Size Variants */
+.button--small {
+  padding: var(--spacing-sm) calc(var(--spacing-sm) * 2);
+  font-size: var(--font-size-special-md);
+}
+
+.button--medium {
+  padding: var(--spacing-md) var(--spacing-xl);
+  font-size: var(--font-size-md);
+}
+
+.button--large {
+  padding: var(--spacing-lg) var(--spacing-2xl);
+  font-size: var(--font-size-special-lg);
+}
+
+/* Button State Modifiers */
+.button--disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Button Hover States */
+.button--primary:hover:not(.button--disabled) {
+  background-color: var(--hover-color);
+}
+
+.button--success:hover:not(.button--disabled) {
+  background-color: var(--success-hover);
+}
+
+.button--danger:hover:not(.button--disabled) {
+  background-color: var(--danger-hover);
+}
+
+.button--info:hover:not(.button--disabled) {
+  background-color: var(--info-hover);
+}
+
+.button--secondary:hover:not(.button--disabled) {
+  background-color: var(--secondary-hover);
+}
+
+.button--text:hover:not(.button--disabled) {
+  background-color: var(--hover-primary);
+}
+
+/* Form Components - Only rules with actual properties */
+
+.checkbox-container input[type="checkbox"] {
+  width: auto;
+}
+
+.checkbox__label {
+  font-family: var(--font-family-source);
+}
+
+.select-field__control {
+  padding: var(--spacing-sm);
+  border-radius: var(--border-radius);
+  font-size: var(--font-size-sm);
+  border: var(--border-thin) var(--border-color);
+  font-family: inherit;
+} 
