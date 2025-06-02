@@ -42,23 +42,18 @@ import {
 } from '../types/typeHelpers';
 import { useUsers } from './useUsers';
 import {
-  TAB_VIEWS,
   ACTION_STATUS,
   COVERAGE_LIMITS,
   QUARTER_CALCULATIONS
 } from '../constants';
-import { CLAIMS_STATUS_ENUM, CASE_TYPE_ENUM, DEFAULT_VALUE_ENUM, USER_ROLE_ENUM, AUDIT_STATUS_ENUM, TAB_VIEW_ENUM } from '../enums';
+import { CLAIMS_STATUS_ENUM, CASE_TYPE_ENUM, DEFAULT_VALUE_ENUM, USER_ROLE_ENUM, AUDIT_STATUS_ENUM } from '../enums';
 import { mapAuditStatusToCaseAuditStatus } from '../utils/statusUtils';
 import { selectCasesForAudit, getAllCasesByQuarter } from '../services';
-
-// Tab view type alias
-type TabView = TAB_VIEW_ENUM;
 
 /**
  * Hook for handling case audit operations
  */
 export const useCaseAuditHandlers = () => {
-  const [activeTab, setActiveTab] = useState<TabView>(TAB_VIEWS.IKS);
   const [selectedUser, setSelectedUser] = useState<UserId>(createUserId(''));
   const [, setCurrentAudit] = useState<CaseAudit | null>(null);
   
@@ -120,11 +115,6 @@ export const useCaseAuditHandlers = () => {
       }));
     }
   }, [dispatch, currentUser, currentUserId]); // Add currentUser to dependencies
-  
-  // Handle tab change
-  const handleTabChange = (tab: TabView): void => {
-    setActiveTab(tab);
-  };
   
   // Handle selecting a user
   const handleSelectUser = async (userId: UserId | string): Promise<void> => {
@@ -472,7 +462,6 @@ export const useCaseAuditHandlers = () => {
   };
   
   return {
-    activeTab,
     selectedUser,
     usersList,
     currentUserId,
@@ -485,7 +474,6 @@ export const useCaseAuditHandlers = () => {
     usersNeedingAuditsCount: auditCount,
     userQuarterlyStatus,
     
-    handleTabChange,
     handleSelectUser,
     handleUserChange,
     handleCompleteAudit,
@@ -497,23 +485,5 @@ export const useCaseAuditHandlers = () => {
     canCompleteAudit: canCompleteAuditCheck,
     handleSelectQuarterlyAudits,
     exportQuarterlyResults
-  };
-};
-
-/**
- * Lightweight hook for tab navigation
- * Extracted from useCaseAuditHandlers to prevent unnecessary API calls
- */
-export const useTabNavigation = () => {
-  const [activeTab, setActiveTab] = useState<TAB_VIEW_ENUM>(TAB_VIEW_ENUM.IKS);
-
-  // Handle tab change
-  const handleTabChange = (tab: TAB_VIEW_ENUM): void => {
-    setActiveTab(tab);
-  };
-
-  return {
-    activeTab,
-    handleTabChange
   };
 };

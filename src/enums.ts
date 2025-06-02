@@ -171,12 +171,6 @@ export enum INPUT_TYPE_ENUM {
   WEEK = 'week'
 }
 
-// Tab view enum for navigation
-export enum TAB_VIEW_ENUM {
-  AUDIT_LOG = 'auditLog',
-  IKS = 'iks'
-}
-
 // Valid year ranges enum
 export enum YEAR_LIMIT_ENUM {
   MIN = 2000,

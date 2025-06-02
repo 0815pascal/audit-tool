@@ -4,7 +4,6 @@ import {
   ACTION_STATUS_ENUM, 
   USER_ROLE_ENUM,
   CASE_TYPE_ENUM,
-  TAB_VIEW_ENUM,
   DETAILED_FINDING_ENUM,
   SPECIAL_FINDING_ENUM
 } from './enums';
@@ -34,18 +33,6 @@ export const CASE_TYPES: Record<CASE_TYPE_ENUM, CASE_TYPE_ENUM> = {
   [CASE_TYPE_ENUM.PREVIOUS_QUARTER_RANDOM]: CASE_TYPE_ENUM.PREVIOUS_QUARTER_RANDOM,
   [CASE_TYPE_ENUM.QUARTER_DISPLAY]: CASE_TYPE_ENUM.QUARTER_DISPLAY
 };
-
-// Tab view constants for easier access
-export const TAB_VIEWS = {
-  AUDIT_LOG: TAB_VIEW_ENUM.AUDIT_LOG,
-  IKS: TAB_VIEW_ENUM.IKS
-} as const;
-
-// Display names for tabs
-export const TAB_VIEWS_DISPLAY = {
-  [TAB_VIEW_ENUM.AUDIT_LOG]: "Audit Log",
-  [TAB_VIEW_ENUM.IKS]: "IKS"
-} as const;
 
 // Action status constants for async operations
 export const ACTION_STATUS: Record<ACTION_STATUS_ENUM, ACTION_STATUS_ENUM> = {
