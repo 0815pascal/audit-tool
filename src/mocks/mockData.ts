@@ -9,7 +9,7 @@ import {
 import { 
   CASE_TYPES
 } from '../constants';
-import { USER_ROLE_ENUM, Department, CLAIMS_STATUS_ENUM } from '../enums';
+import { USER_ROLE_ENUM, Department, CLAIMS_STATUS_ENUM, RATING_VALUE_ENUM, CASE_TYPE_ENUM } from '../enums';
 import { MockCaseData } from './mockTypes';
 
 // Mock users data
@@ -275,6 +275,87 @@ export const mockCases: MockCaseData[] = [
     isSpecialist: true,
     caseType: CASE_TYPES.USER_QUARTERLY,
     notifiedCurrency: 'USD'
+  },
+  // PRE-LOADED CASES: These will be shown in the table upon component loading
+  {
+    id: '13',
+    userId: '1', 
+    notificationDate: '2025-06-25', // Q2 2025
+    clientName: 'Neo Anderson',
+    policyNumber: 13579,
+    caseNumber: 30055900,
+    dossierRisk: 987654,
+    dossierName: 'Zion Technologies',
+    totalAmount: 1500,
+    isCompleted: true, // VERIFIED CASE
+    claimsStatus: CLAIMS_STATUS_ENUM.FULL_COVER,
+    coverageAmount: 1500,
+    auditor: '4', // Verified by Emily Davis (User ID 4, Team Leader)
+    comment: 'Audit completed successfully with excellent documentation and proper procedures followed.',
+    rating: RATING_VALUE_ENUM.SUCCESSFULLY_FULFILLED,
+    specialFindings: { 
+      ...createEmptySpecialFindings(),
+      feedback: true,
+      communication: true
+    },
+    detailedFindings: createEmptyDetailedFindings(),
+    quarter: '2',
+    year: 2025,
+    isAkoReviewed: true,
+    isSpecialist: true,
+    caseType: CASE_TYPE_ENUM.PRE_LOADED,
+    notifiedCurrency: 'CHF'
+  },
+  {
+    id: '14',
+    userId: '2',
+    notificationDate: '2025-06-20', // Q2 2025  
+    clientName: 'Trinity Moss',
+    policyNumber: 24680,
+    caseNumber: 30056011,
+    dossierRisk: 654321,
+    dossierName: 'Nebuchadnezzar Corp',
+    totalAmount: 775,
+    isCompleted: false, // IN-PROGRESS CASE
+    claimsStatus: CLAIMS_STATUS_ENUM.PARTIAL_COVER,
+    coverageAmount: 775,
+    auditor: '6', // In progress by Sarah Wilson (User ID 6, Specialist)
+    comment: 'Audit in progress - reviewing documentation and coverage details.',
+    rating: '',
+    specialFindings: createEmptySpecialFindings(),
+    detailedFindings: createEmptyDetailedFindings(),
+    quarter: '2',
+    year: 2025,
+    isAkoReviewed: false,
+    isSpecialist: false,
+    caseType: CASE_TYPE_ENUM.PRE_LOADED,
+    notifiedCurrency: 'EUR'
+  },
+  // Add a third pre-loaded case for Emily's in-progress work (for E2E test)
+  {
+    id: '15',
+    userId: '3', // Robert Johnson's case
+    notificationDate: '2025-06-15', // Q2 2025  
+    clientName: 'Morpheus Johnson',
+    policyNumber: 35791,
+    caseNumber: 30057122,
+    dossierRisk: 321987,
+    dossierName: 'Red Pill Industries',
+    totalAmount: 1200,
+    isCompleted: false, // IN-PROGRESS by Emily for E2E test
+    claimsStatus: CLAIMS_STATUS_ENUM.FULL_COVER,
+    coverageAmount: 1200,
+    auditor: '4', // In progress by Emily Davis (User ID 4, Team Leader) - for E2E test
+    comment: 'Emily is working on this audit - data persistence test case.',
+    rating: '',
+    specialFindings: createEmptySpecialFindings(),
+    detailedFindings: createEmptyDetailedFindings(),
+    quarter: '2',
+    year: 2025,
+    isAkoReviewed: false,
+    isSpecialist: false,
+    caseType: CASE_TYPE_ENUM.PRE_LOADED,
+    notifiedCurrency: 'CHF'
   }
 ];
 

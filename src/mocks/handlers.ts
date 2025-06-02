@@ -510,9 +510,11 @@ export const handlers = [
   }),
 
   // Select cases for audit
-  http.get(`${API_BASE_PATH}/audits/select-cases/:quarter`, ({ params }) => {
+  http.get(`${API_BASE_PATH}/audits/select-cases/:quarter`, ({ params, request }) => {
     try {
       const { quarter } = params;
+      const url = new URL(request.url);
+      const preLoadedCount = parseInt(url.searchParams.get('preLoadedCount') || '0');
       
       const quarterValue = Array.isArray(quarter) ? quarter[0] : quarter ?? '';
       const parsedQuarter = parseQuarter(quarterValue);
@@ -521,7 +523,18 @@ export const handlers = [
         return HttpResponse.json([], { status: 200 });
       }
       
-      // Get 8 cases for the current quarter - using notificationDate to deduce quarter
+      // Total cases should always be 8, minus any pre-loaded cases
+      const totalNeeded = 8 - preLoadedCount;
+      
+      // Calculate how many current quarter and previous quarter cases we need
+      // Original ratio: 6 current, 2 previous = 8 total
+      // If we have pre-loaded cases, we need to adjust
+      let currentQuarterNeeded = Math.max(0, 6 - preLoadedCount); // Reduce current quarter cases first
+      let previousQuarterNeeded = totalNeeded > currentQuarterNeeded ? Math.min(2, totalNeeded - currentQuarterNeeded) : 0;
+      
+      console.log(`[MSW] Auto-selecting for ${quarterValue}: preLoaded=${preLoadedCount}, currentNeeded=${currentQuarterNeeded}, previousNeeded=${previousQuarterNeeded}, total=${currentQuarterNeeded + previousQuarterNeeded + preLoadedCount}`);
+      
+      // Get cases for the current quarter - using notificationDate to deduce quarter
       const currentQuarterCases = mockCases
         .filter(caseItem => {
           try {
@@ -534,11 +547,11 @@ export const handlers = [
             return false;
           }
         })
-        .slice(0, 8) // Take 8 cases for current quarter
+        .slice(0, currentQuarterNeeded) // Take only what we need
         .map(caseItem => caseToCaseObj(caseItem))
         .filter(caseObj => caseObj !== null);
       
-      // Get 2 random cases from previous quarter - using notificationDate to deduce quarter
+      // Get cases from previous quarter - using notificationDate to deduce quarter
       const { quarter: prevQuarterNum, year: prevYear } = getPreviousQuarterInfo(parsedQuarter.quarterNum, parsedQuarter.year);
       
       const previousQuarterCases = mockCases
@@ -547,16 +560,16 @@ export const handlers = [
           const { quarterNum: caseQuarter, year: caseYear } = getQuarterFromDate(caseItem.notificationDate);
           return caseQuarter === prevQuarterNum && caseYear === prevYear;
         })
-        .slice(0, 2) // Take 2 random cases from previous quarter
+        .slice(0, previousQuarterNeeded) // Take only what we need
         .map(caseItem => caseToCaseObj(caseItem))
         .filter(caseObj => caseObj !== null);
       
-      // If we don't have enough cases, generate some mock ones
+      // If we don't have enough cases from existing data, generate mock ones
       const totalCurrentCases = currentQuarterCases.length;
       const totalPreviousCases = previousQuarterCases.length;
       
       // Generate additional current quarter cases if needed
-      for (let i = totalCurrentCases; i < 8; i++) {
+      for (let i = totalCurrentCases; i < currentQuarterNeeded; i++) {
         // Generate a notification date for the current quarter
         const currentQuarterDate = new Date(parsedQuarter.year, (parsedQuarter.quarterNum - 1) * 3 + Math.floor(Math.random() * 3), Math.floor(Math.random() * 28) + 1);
         
@@ -580,7 +593,7 @@ export const handlers = [
       }
       
       // Generate additional previous quarter cases if needed
-      for (let i = totalPreviousCases; i < 2; i++) {
+      for (let i = totalPreviousCases; i < previousQuarterNeeded; i++) {
         // Generate a notification date for the previous quarter
         const { quarter: prevQuarterNum, year: prevYear } = getPreviousQuarterInfo(parsedQuarter.quarterNum, parsedQuarter.year);
         const previousQuarterDate = new Date(prevYear, (prevQuarterNum - 1) * 3 + Math.floor(Math.random() * 3), Math.floor(Math.random() * 28) + 1);
@@ -604,8 +617,10 @@ export const handlers = [
         previousQuarterCases.push(mockCase);
       }
       
-      // Combine all cases (8 current + 2 previous = 10 total)
+      // Combine cases (total should be exactly what we need to reach 8 with pre-loaded)
       const allCases = [...currentQuarterCases, ...previousQuarterCases];
+      
+      console.log(`[MSW] Returning ${allCases.length} auto-selected cases (${currentQuarterCases.length} current + ${previousQuarterCases.length} previous). With ${preLoadedCount} pre-loaded = ${allCases.length + preLoadedCount} total`);
       
       return HttpResponse.json(allCases, { status: 200 });
     } catch (error) {
@@ -918,4 +933,38 @@ export const handlers = [
       }, { status: 500 });
     }
   }),
+
+  // =======================================================
+  // PRE-LOADED CASES ENDPOINT
+  // =======================================================
+
+  // GET /rest/kuk/v1/pre-loaded-cases - Get pre-loaded cases (verified and in-progress)
+  http.get(`${API_BASE_PATH}/pre-loaded-cases`, () => {
+    const preLoadedCases = mockCases.filter((caseItem: any) => 
+      caseItem.caseType === 'PRE_LOADED'
+    ).map((caseItem: any) => ({
+      id: caseItem.id,
+      userId: caseItem.userId,
+      auditor: caseItem.auditor,
+      isCompleted: caseItem.isCompleted,
+      comment: caseItem.comment,
+      rating: caseItem.rating,
+      specialFindings: caseItem.specialFindings,
+      detailedFindings: caseItem.detailedFindings,
+      coverageAmount: caseItem.coverageAmount,
+      claimsStatus: caseItem.claimsStatus,
+      quarter: `Q${caseItem.quarter}-${caseItem.year}`,
+      isAkoReviewed: caseItem.isAkoReviewed,
+      notifiedCurrency: caseItem.notifiedCurrency
+    }));
+
+    console.log(`[MSW] Serving ${preLoadedCases.length} pre-loaded cases`);
+    
+    return HttpResponse.json({
+      success: true,
+      data: preLoadedCases
+    });
+  }),
+
+  // =======================================================
 ];

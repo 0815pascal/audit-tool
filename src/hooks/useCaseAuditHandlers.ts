@@ -14,7 +14,9 @@ import {
   storeQuarterlyAudits,
   storeAllCasesForQuarter,
   useGetCurrentUserQuery,
-  useCompleteAuditMutation
+  useCompleteAuditMutation,
+  useGetPreLoadedCasesQuery,
+  loadPreLoadedCases
 } from '../store/caseAuditSlice';
 import {
   CaseAuditStatus,
@@ -115,6 +117,18 @@ export const useCaseAuditHandlers = () => {
       }));
     }
   }, [dispatch, currentUser, currentUserId]); // Add currentUser to dependencies
+  
+  // Load pre-loaded cases (verified and in-progress) on app initialization
+  const { data: preLoadedCases } = useGetPreLoadedCasesQuery();
+  
+  useEffect(() => {
+    if (preLoadedCases && preLoadedCases.length > 0) {
+      console.log(`Loading ${preLoadedCases.length} pre-loaded cases for immediate display...`);
+      // Store pre-loaded cases in Redux and show them immediately
+      // These represent already completed/in-progress work
+      dispatch(loadPreLoadedCases(preLoadedCases));
+    }
+  }, [dispatch, preLoadedCases]);
   
   // Handle selecting a user
   const handleSelectUser = async (userId: UserId | string): Promise<void> => {
@@ -344,8 +358,32 @@ export const useCaseAuditHandlers = () => {
       // Use the quarter key as is
       const quarterPeriod = quarterKey;
       
-      // Call the API to get cases for audit selection using the correct endpoint
-      const cases = await selectCasesForAudit(quarterPeriod);
+      // Ensure pre-loaded cases are available in Redux before counting
+      // They might have been cleared by quarter dropdown changes
+      if (preLoadedCases && preLoadedCases.length > 0) {
+        dispatch(loadPreLoadedCases(preLoadedCases));
+        // Wait a moment for Redux to update
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+      
+      // Count existing pre-loaded cases more reliably
+      // Check both the selector and the raw audit data for PRE_LOADED cases
+      const currentPreLoadedCases = quarterlyAudits.preLoadedCases || [];
+      const preLoadedFromRedux = Object.values(auditData).filter(audit => 
+        audit.caseType === CASE_TYPE_ENUM.PRE_LOADED
+      );
+      
+      // Use the maximum count to ensure we don't miss any pre-loaded cases
+      const preLoadedCount = Math.max(
+        currentPreLoadedCases.length, 
+        preLoadedFromRedux.length,
+        preLoadedCases ? preLoadedCases.length : 0 // Also check API data
+      );
+      
+      console.log(`Pre-loaded cases count: ${preLoadedCount} (selector: ${currentPreLoadedCases.length}, redux: ${preLoadedFromRedux.length}, api: ${preLoadedCases ? preLoadedCases.length : 0})`);
+      
+      // Call the API to get cases for audit selection, passing the pre-loaded count
+      const cases = await selectCasesForAudit(quarterPeriod, preLoadedCount);
       
       // Convert the CaseObj response to the format expected by Redux
       // Each case becomes an audit that needs to be verified
@@ -381,10 +419,12 @@ export const useCaseAuditHandlers = () => {
       });
       
       // Dispatch the storeQuarterlyAudits action to store all fetched audits in Redux
-      // MSW handler now returns the correct amount (6 current + 2 previous = 8 total)
+      // With pre-loaded cases consideration: total will be exactly 8
       dispatch(storeQuarterlyAudits({
         audits: userQuarterlyAudits
       }));
+      
+      console.log(`Auto-selected ${userQuarterlyAudits.length} cases. With ${preLoadedCount} pre-loaded cases = ${userQuarterlyAudits.length + preLoadedCount} total`);
       
       setLoadingStatus(ACTION_STATUS.idle);
     } catch (error) {

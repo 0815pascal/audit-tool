@@ -120,7 +120,8 @@ export enum USER_ROLE_ENUM {
 export enum CASE_TYPE_ENUM {
   USER_QUARTERLY = 'USER_QUARTERLY',
   PREVIOUS_QUARTER_RANDOM = 'PREVIOUS_QUARTER_RANDOM',
-  QUARTER_DISPLAY = 'QUARTER_DISPLAY' // For displaying all cases in a quarter
+  QUARTER_DISPLAY = 'QUARTER_DISPLAY', // For displaying all cases in a quarter
+  PRE_LOADED = 'PRE_LOADED' // For cases that appear on initial load but don't affect auto-selection
 }
 
 // Rating value enum

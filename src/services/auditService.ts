@@ -208,26 +208,31 @@ export const getAuditFindings = async (caseAuditId: CaseAuditId): Promise<unknow
 /**
  * Select cases for audit in a given quarter
  */
-export const selectCasesForAudit = async (quarterPeriod: QuarterPeriod): Promise<CaseObj[]> => {
+export const selectCasesForAudit = async (quarterPeriod: QuarterPeriod, preLoadedCount: number = 0): Promise<CaseObj[]> => {
   try {
-    // Use the correct endpoint that matches MSW handlers
-    const response = await axios.get(`${API_BASE_PATH}/audits/quarter/${quarterPeriod}`);
+    // Use the select-cases endpoint that accounts for pre-loaded cases
+    const url = `${API_BASE_PATH}/audits/select-cases/${quarterPeriod}`;
+    const params = preLoadedCount > 0 ? `?preLoadedCount=${preLoadedCount}` : '';
+    
+    const response = await axios.get(`${url}${params}`);
     
     if (response.status !== 200) {
       throw new Error(`API responded with status ${response.status}`);
     }
     
-    // The MSW handler returns audits, but we need to extract the caseObj from each audit
-    const audits = response.data as ApiAuditResponse[];
-    const caseObjs = audits.map(audit => ({
-      ...audit.caseObj,
+    // The response should be an array of CaseObj directly
+    return response.data.map((caseData: Record<string, unknown>) => ({
+      caseNumber: String(caseData.caseNumber),
       claimOwner: {
-        ...audit.caseObj.claimOwner,
-        userId: String(audit.caseObj.claimOwner.userId) as UserId
-      }
+        userId: String((caseData.claimOwner && (caseData.claimOwner as Record<string, unknown>).userId) || caseData.userId || 'unknown') as UserId,
+        role: (caseData.claimOwner && (caseData.claimOwner as Record<string, unknown>).role) || 'STAFF'
+      },
+      coverageAmount: Number(caseData.coverageAmount) || 0,
+      claimsStatus: String(caseData.claimsStatus) || 'FULL_COVER',
+      caseStatus: String(caseData.caseStatus) || 'COMPENSATED',
+      notificationDate: String(caseData.notificationDate),
+      notifiedCurrency: String(caseData.notifiedCurrency) || 'CHF'
     }));
-    
-    return caseObjs;
   } catch (error) {
     console.error(`Error selecting cases for audit in quarter ${quarterPeriod}:`, error);
     throw error;

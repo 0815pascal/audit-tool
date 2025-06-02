@@ -194,9 +194,12 @@ const QuarterlySelectionComponent: React.FC = () => {
   // Handle opening the completion modal
   const handleOpenCompletion = (auditId: string) => {
     try {
-      // Find the audit in the quarterlyDossiers
-      const audit = [...quarterlyDossiers.userQuarterlyAudits, ...quarterlyDossiers.previousQuarterRandomAudits]
-        .find(a => a.id === auditId) as AuditItem | undefined;
+      // Find the audit in the quarterlyDossiers (including pre-loaded cases)
+      const audit = [
+        ...quarterlyDossiers.userQuarterlyAudits, 
+        ...quarterlyDossiers.previousQuarterRandomAudits,
+        ...(quarterlyDossiers.preLoadedCases || [])
+      ].find(a => a.id === auditId) as AuditItem | undefined;
       
       if (!audit) {
         console.error('Audit not found for ID:', auditId);
@@ -427,42 +430,98 @@ const QuarterlySelectionComponent: React.FC = () => {
       <div className="audit-tables">
         <div className="audit-table">
           {quarterlyDossiers.userQuarterlyAudits.length === 0 && quarterlyDossiers.previousQuarterRandomAudits.length === 0 ? (
-            // Show quarter display cases if no audits are selected
-            quarterlyDossiers.quarterDisplayCases && quarterlyDossiers.quarterDisplayCases.length > 0 ? (
-              <div>
-                <h3>All Cases for {selectedQuarter}</h3>
-                <table>
-                  <thead>
-                    <tr>
-                      <th data-testid="case-id-header">CaseID</th>
-                      <th data-testid="quarter-header">Quartal</th>
-                      <th data-testid="responsible-user-header">Verantwortlicher Fallbearbeiter</th>
-                      <th data-testid="coverage-amount-header">Schadenssumme</th>
-                      <th data-testid="claims-status-header">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {quarterlyDossiers.quarterDisplayCases.map((caseItem: AuditItem) => {
-                      const user = findUserById(caseItem.userId);
-                      return (
-                        <tr key={caseItem.id}>
-                          <td>{caseItem.id}</td>
-                          <td>{caseItem.quarter}</td>
-                          <td>{user ? user.displayName : 'Unknown'}</td>
-                          <td>{caseItem.coverageAmount?.toLocaleString()} {caseItem.notifiedCurrency || 'CHF'}</td>
-                          <td>{caseItem.claimsStatus}</td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-                <p className="info-message">
-                  Use "Auto-Select Audits" to select cases for audit review.
-                </p>
-              </div>
-            ) : (
+            // Show current pre-loaded cases and quarter display cases, but indicate no quarterly selection has been made
+            <div>
+              {/* Show pre-loaded cases if available */}
+              {quarterlyDossiers.preLoadedCases && quarterlyDossiers.preLoadedCases.length > 0 && (
+                <div>
+                  <h3>Current Cases</h3>
+                  <table>
+                    <thead>
+                      <tr>
+                        <th data-testid="case-id-header">CaseID</th>
+                        <th data-testid="quarter-header">Quartal</th>
+                        <th data-testid="responsible-user-header">Verantwortlicher Fallbearbeiter</th>
+                        <th data-testid="completion-result-header">Prüfergebnis</th>
+                        <th data-testid="verifier-header">Prüfer</th>
+                        <th data-testid="actions-header">Aktionen</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {quarterlyDossiers.preLoadedCases.map((audit: AuditItem) => {
+                        const user = findUserById(audit.userId);
+                        const latestAuditData = auditData[audit.id];
+                        const currentStatus = latestAuditData?.status || audit.status;
+                        const currentAuditor = latestAuditData?.auditor || audit.auditor;
+                        let canComplete = false;
+                        try {
+                          canComplete = canCompleteAudit(audit.id);
+                        } catch {
+                          // If canCompleteAudit throws an error, keep canComplete as false
+                        }
+                        return (
+                          <tr key={audit.id}>
+                            <td>{audit.id}</td>
+                            <td>{audit.quarter}</td>
+                            <td>{user ? user.displayName : 'Unknown'}</td>
+                            <td>{convertToAuditStatus(currentStatus) === AUDIT_STATUS_ENUM.COMPLETED ? 'Geprüft' : 
+                                 convertToAuditStatus(currentStatus) === AUDIT_STATUS_ENUM.IN_PROGRESS ? 'In Bearbeitung' : 'Nicht geprüft'}</td>
+                            <td>{getUserInitials(currentAuditor ?? '')}</td>
+                            <td>
+                              <button
+                                className="complete-button"
+                                onClick={() => handleOpenCompletion(audit.id)}
+                                disabled={!canComplete}
+                              >
+                                {convertToAuditStatus(currentStatus) === AUDIT_STATUS_ENUM.COMPLETED ? 'Ansehen' : 'Prüfen'}
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+              
+              {/* Show quarter display cases if available */}
+              {quarterlyDossiers.quarterDisplayCases && quarterlyDossiers.quarterDisplayCases.length > 0 && (
+                <div>
+                  <h3>All Cases for {selectedQuarter}</h3>
+                  <table>
+                    <thead>
+                      <tr>
+                        <th data-testid="case-id-header">CaseID</th>
+                        <th data-testid="quarter-header">Quartal</th>
+                        <th data-testid="responsible-user-header">Verantwortlicher Fallbearbeiter</th>
+                        <th data-testid="coverage-amount-header">Schadenssumme</th>
+                        <th data-testid="claims-status-header">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {quarterlyDossiers.quarterDisplayCases.map((caseItem: AuditItem) => {
+                        const user = findUserById(caseItem.userId);
+                        return (
+                          <tr key={caseItem.id}>
+                            <td>{caseItem.id}</td>
+                            <td>{caseItem.quarter}</td>
+                            <td>{user ? user.displayName : 'Unknown'}</td>
+                            <td>{caseItem.coverageAmount?.toLocaleString()} {caseItem.notifiedCurrency || 'CHF'}</td>
+                            <td>{caseItem.claimsStatus}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+              
+              {/* Always show this message when no quarterly audits have been selected */}
               <p className="no-data">Keine Audits für dieses Quartal ausgewählt.</p>
-            )
+              <p className="info-message">
+                Use "Auto-Select Audits" to select cases for audit review.
+              </p>
+            </div>
           ) : (
             <table>
               <thead>
@@ -476,6 +535,44 @@ const QuarterlySelectionComponent: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
+                {/* Pre-loaded Cases (verified and in-progress cases) */}
+                {quarterlyDossiers.preLoadedCases && quarterlyDossiers.preLoadedCases.map((audit: AuditItem) => {
+                  const user = findUserById(audit.userId);
+                  // Get the latest audit data from Redux to ensure we show current status
+                  const latestAuditData = auditData[audit.id];
+                  
+                  // Use Redux data for status if available, otherwise fallback to audit data
+                  const currentStatus = latestAuditData?.status || audit.status;
+                  const currentAuditor = latestAuditData?.auditor || audit.auditor;
+                  
+                  // Store the result of canCompleteAudit in a variable with a default false value for safety
+                  let canComplete = false;
+                  try {
+                    canComplete = canCompleteAudit(audit.id);
+                  } catch {
+                    // If canCompleteAudit throws an error, keep canComplete as false
+                  }
+                  return (
+                    <tr key={audit.id}>
+                      <td>{audit.id}</td>
+                      <td>{audit.quarter}</td>
+                      <td>{user ? user.displayName : 'Unknown'}</td>
+                      <td>{convertToAuditStatus(currentStatus) === AUDIT_STATUS_ENUM.COMPLETED ? 'Geprüft' : 
+                           convertToAuditStatus(currentStatus) === AUDIT_STATUS_ENUM.IN_PROGRESS ? 'In Bearbeitung' : 'Nicht geprüft'}</td>
+                      <td>{getUserInitials(currentAuditor ?? '')}</td>
+                      <td>
+                        <button
+                          className="complete-button"
+                          onClick={() => handleOpenCompletion(audit.id)}
+                          disabled={!canComplete}
+                        >
+                          {convertToAuditStatus(currentStatus) === AUDIT_STATUS_ENUM.COMPLETED ? 'Ansehen' : 'Prüfen'}
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+                
                 {/* User Quarterly Audits */}
                 {quarterlyDossiers.userQuarterlyAudits.map((audit: AuditItem) => {
                   const user = findUserById(audit.userId);

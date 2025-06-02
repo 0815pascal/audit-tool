@@ -3,6 +3,7 @@ import { createSlice, PayloadAction, createSelector } from '@reduxjs/toolkit';
 import {
   CaseAudit,
   CaseAuditActionPayload,
+  CaseAuditStatus,
   FindingsRecord,
   Quarter,
   QuarterNumber,
@@ -288,17 +289,34 @@ export const auditApi = createApi({
     // Add finding to audit
     addAuditFinding: builder.mutation<FindingsRecord, {
       auditId: string;
-      type: string;
-      description: string;
+      findingType: string;
+      findingDescription: string;
     }>({
-      query: ({ auditId, ...findingData }) => ({
-        url: `/audits/${auditId}/findings`,
+      query: ({ auditId, findingType, findingDescription }) => ({
+        url: `/audit-findings/${auditId}`,
         method: 'POST',
-        body: findingData,
+        body: { findingType, findingDescription },
       }),
-      invalidatesTags: (_, __, { auditId }) => [
-        { type: 'Audit', id: `${auditId}-findings` },
-      ],
+    }),
+
+    // Get pre-loaded cases (verified and in-progress)
+    getPreLoadedCases: builder.query<Array<{
+      id: string;
+      userId: string;
+      auditor: string;
+      isCompleted: boolean;
+      comment: string;
+      rating: string;
+      specialFindings: FindingsRecord;
+      detailedFindings: FindingsRecord;
+      coverageAmount: number;
+      claimsStatus: string;
+      quarter: string;
+      isAkoReviewed: boolean;
+      notifiedCurrency: string;
+    }>, void>({
+      query: () => '/pre-loaded-cases',
+      transformResponse: (response: any) => response.data || [],
     }),
   }),
 });
@@ -316,6 +334,7 @@ export const {
   useUpdateAuditMutation,
   useGetAuditFindingsQuery,
   useAddAuditFindingMutation,
+  useGetPreLoadedCasesQuery,
 } = auditApi;
 
 // UI State interface for local state management
@@ -495,9 +514,10 @@ const auditUISlice = createSlice({
         Object.keys(state.auditData).forEach(auditId => {
           const existingAudit = state.auditData[auditId];
           if (existingAudit && quartersInNewSelection.has(existingAudit.quarter)) {
-            // Only remove if it's a quarterly selection audit (not manually added audits)
+            // Only remove if it's a quarterly selection audit (not manually added audits or PRE_LOADED)
             if (existingAudit.caseType === CASE_TYPE_ENUM.USER_QUARTERLY || 
                 existingAudit.caseType === CASE_TYPE_ENUM.PREVIOUS_QUARTER_RANDOM) {
+              // NOTE: PRE_LOADED cases are preserved during auto-selection
               delete state.auditData[auditId];
             }
           }
@@ -544,15 +564,15 @@ const auditUISlice = createSlice({
     }>) => {
       const { cases } = action.payload;
       
-      // Clear ALL existing audit cases (auto-selected and quarter display)
-      // This ensures when user selects a quarter from dropdown, 
-      // any previously auto-selected cases are completely replaced
+      // Clear ALL existing audit cases (including pre-loaded cases)
+      // When user selects a quarter from dropdown, show only cases from that quarter
       Object.keys(state.auditData).forEach(auditId => {
         const existingAudit = state.auditData[auditId];
         if (existingAudit && (
           existingAudit.caseType === CASE_TYPE_ENUM.QUARTER_DISPLAY ||
           existingAudit.caseType === CASE_TYPE_ENUM.USER_QUARTERLY ||
-          existingAudit.caseType === CASE_TYPE_ENUM.PREVIOUS_QUARTER_RANDOM
+          existingAudit.caseType === CASE_TYPE_ENUM.PREVIOUS_QUARTER_RANDOM ||
+          existingAudit.caseType === CASE_TYPE_ENUM.PRE_LOADED // Clear pre-loaded cases too
         )) {
           delete state.auditData[auditId];
         }
@@ -598,6 +618,60 @@ const auditUISlice = createSlice({
     clearError: (state) => {
       state.error = null;
     },
+
+    // Load pre-loaded cases (verified and in-progress) on app initialization
+    loadPreLoadedCases: (state, action: PayloadAction<Array<{
+      id: string;
+      userId: string;
+      auditor: string;
+      isCompleted: boolean;
+      comment: string;
+      rating: string;
+      specialFindings: FindingsRecord;
+      detailedFindings: FindingsRecord;
+      coverageAmount: number;
+      claimsStatus: string;
+      quarter: string;
+      isAkoReviewed: boolean;
+      notifiedCurrency: string;
+    }>>) => {
+      const preLoadedCases = action.payload;
+      
+      // Add pre-loaded cases without clearing existing data
+      preLoadedCases.forEach(caseData => {
+        // Determine the correct status based on completion and auditor assignment
+        let status: CaseAuditStatus;
+        if (caseData.isCompleted) {
+          status = mapAuditStatusToCaseAuditStatus(AUDIT_STATUS_ENUM.COMPLETED);
+        } else if (caseData.auditor && caseData.auditor.trim() !== '') {
+          status = mapAuditStatusToCaseAuditStatus(AUDIT_STATUS_ENUM.IN_PROGRESS);
+        } else {
+          status = mapAuditStatusToCaseAuditStatus(AUDIT_STATUS_ENUM.PENDING);
+        }
+        
+        state.auditData[caseData.id] = {
+          isCompleted: caseData.isCompleted,
+          isIncorrect: false,
+          completionDate: caseData.isCompleted ? createISODateString(new Date()) : null,
+          userId: ensureUserId(caseData.userId),
+          quarter: caseData.quarter,
+          year: parseInt(caseData.quarter.split('-')[1]),
+          steps: {},
+          auditor: ensureUserId(caseData.auditor),
+          comment: caseData.comment || '',
+          rating: (caseData.rating || '') as RatingValue,
+          specialFindings: caseData.specialFindings || createEmptyFindings(),
+          detailedFindings: caseData.detailedFindings || createEmptyFindings(),
+          status: status,
+          caseType: CASE_TYPE_ENUM.PRE_LOADED,
+          coverageAmount: caseData.coverageAmount,
+          claimsStatus: caseData.claimsStatus as CLAIMS_STATUS_ENUM,
+          isAkoReviewed: caseData.isAkoReviewed,
+          dossierName: `Case ${caseData.id}`,
+          notifiedCurrency: caseData.notifiedCurrency || 'CHF'
+        };
+      });
+    },
   },
 });
 
@@ -615,6 +689,7 @@ export const {
   setLoading,
   setError,
   clearError,
+  loadPreLoadedCases,
 } = auditUISlice.actions;
 
 // Enhanced selectors that work with RTK Query cache
@@ -678,6 +753,7 @@ export const selectQuarterlyAuditsForPeriod = createSelector(
         userQuarterlyAudits: [],
         previousQuarterRandomAudits: [],
         quarterDisplayCases: [],
+        preLoadedCases: [],
         lastSelectionDate: null
       };
     }
@@ -698,10 +774,15 @@ export const selectQuarterlyAuditsForPeriod = createSelector(
     const quarterDisplayCases = auditsForPeriod
       .filter(audit => audit.caseType === CASE_TYPE_ENUM.QUARTER_DISPLAY);
     
+    // Include pre-loaded cases (verified and in-progress cases that appear on initial load)
+    const preLoadedCases = auditsForPeriod
+      .filter(audit => audit.caseType === CASE_TYPE_ENUM.PRE_LOADED);
+    
     return {
       userQuarterlyAudits,
       previousQuarterRandomAudits,
       quarterDisplayCases,
+      preLoadedCases,
       lastSelectionDate: null
     };
   }
