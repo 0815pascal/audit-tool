@@ -143,6 +143,15 @@
   /* Height System */
   --height-screen: 100vh;
   --height-6em: 6em;
+
+  /* Modal-specific Design Tokens */
+  --border-radius-xl: 0.5rem;
+  --font-size-2xl: 1.75rem;
+  
+  /* Modal Colors */
+  --modal-close-default: #9CA3AF;
+  --modal-close-hover: #111827;
+  --modal-close-bg-hover: #e5e7eb;
 }
 
 * {
@@ -302,6 +311,10 @@ input, select, textarea {
 
 .mb-0 {
   margin-bottom: 0;
+}
+
+.mb-2 {
+  margin-bottom: var(--spacing-md);
 }
 
 .mb-4 {

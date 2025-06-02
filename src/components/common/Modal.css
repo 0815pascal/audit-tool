@@ -4,8 +4,9 @@
 .modal {
   /* Main modal container styles will be applied to the dialog element */
   background-color: white;
-  border-radius: var(--border-radius);
-  width: var(--width-md);
+  border-radius: var(--border-radius-large);
+  width: 34rem;
+  max-width: 90vw;
   max-height: 90vh;
   box-shadow: var(--box-shadow-strong);
   display: flex;
@@ -28,41 +29,51 @@
 
 /* Element: Modal Header */
 .modal__header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: var(--spacing-3xl);
-  border-bottom: var(--border-thin) var(--border-modal);
-  background-color: white;
-  border-radius: var(--border-radius) var(--border-radius) 0 0;
+  padding: 1.25rem 1.25rem 1rem 1.25rem;
+  border-radius: var(--border-radius-large) var(--border-radius-large) 0 0;
   position: sticky;
   top: 0;
   z-index: var(--z-modal-header);
 }
 
+.modal__header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 1.25rem;
+  right: 1.25rem;
+  height: 1px;
+  background-color: var(--border-modal);
+}
+
 /* Element: Modal Title */
 .modal__title {
   margin: 0;
+  font-size: var(--font-size-lg);
 }
 
 /* Element: Modal Close Button */
 .modal__close-button {
-  font-size: var(--font-size-xl);
+  font-size: var(--font-size-2xl);
   line-height: var(--line-height-none);
   border: none;
   background: transparent;
   cursor: pointer;
-  color: var(--text-dark);
-  padding: var(--spacing-xs) var(--spacing-md);
+  color: var(--modal-close-default);
+  padding: 0.125rem 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--border-radius-xl);
+  transition: color 0.2s, background-color 0.2s;
 }
 
-/* Modifier: Close Button Hover State */
-.modal__close-button:hover {
-  color: var(--text-black);
-  opacity: 0.8;
+/* Close Button States */
+.modal__header .modal__close-button:hover {
+  color: var(--modal-close-hover);
+  background-color: var(--modal-close-bg-hover);
 }
 
-/* Modifier: Close Button Focus State */
 .modal__close-button:focus {
   outline: var(--outline-focus) var(--primary-color);
   outline-offset: var(--outline-offset);
@@ -70,12 +81,12 @@
 
 /* Element: Modal Content/Body */
 .modal__content {
-  padding: var(--spacing-3xl);
+  padding: 1.25rem;
   overflow-y: auto;
   flex: 1;
 }
 
-/* Responsive Modifiers */
+/* Responsive Design */
 @media (max-width: calc(var(--breakpoint-tablet) * 1px)) {
   .modal {
     width: 95vw;
@@ -83,10 +94,20 @@
   }
   
   .modal__header {
-    padding: var(--spacing-lg);
+    padding: 1rem 1rem 0.75rem 1rem;
   }
   
   .modal__content {
-    padding: var(--spacing-lg);
+    padding: 1rem;
+  }
+  
+  .modal__header::after {
+    left: 1rem;
+    right: 1rem;
+  }
+  
+  .modal__close-button {
+    font-size: 1.5rem;
+    padding: 0.125rem 0.375rem;
   }
 } 

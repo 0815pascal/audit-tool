@@ -63,7 +63,7 @@ export const Checkbox: React.FC<CheckboxProps> = ({
   onChange,
   disabled = false
 }) => (
-  <div className="checkbox-container flex items-center gap-md mb-4">
+  <div className="checkbox-container flex items-center gap-md mb-2">
     <input
       type={INPUT_TYPE_ENUM.CHECKBOX}
       id={id}

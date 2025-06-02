@@ -24,7 +24,7 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, title, onClose, children }
         onClick={(e) => e.stopPropagation()}
       >
         {/* Fixed Header */}
-        <div className="modal__header">
+        <div className="modal__header flex justify-between items-center">
           <h3 id="modal-title" className="modal__title">{title}</h3>
           <button 
             onClick={onClose} 
