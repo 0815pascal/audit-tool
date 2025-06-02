@@ -1,0 +1,106 @@
+/* PruefensterModal Styles */
+
+.pruefenster-content {
+  font-family: "Source Sans Pro", "Helvetica Neue", Arial, sans-serif;
+}
+
+/* Case Information Grid */
+.case-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 16px;
+  font-size: 14px;
+  line-height: 1.3;
+  text-align: left;
+  font-family: "Source Sans Pro", "Helvetica Neue", Arial, sans-serif;
+  margin-bottom: 20px;
+}
+
+/* Info Field Layouts */
+.info-field {
+  display: flex;
+  flex-direction: column;
+}
+
+.info-field--left {
+  text-align: left;
+}
+
+.info-field--right {
+  text-align: right;
+}
+
+/* Field Labels */
+.field-label {
+  font-weight: 600;
+  color: #6c757d;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.field-label--left {
+  text-align: left;
+}
+
+.field-label--right {
+  text-align: right;
+}
+
+/* Field Values */
+.field-value {
+  margin-top: 2px;
+  color: #212529;
+  font-weight: 500;
+}
+
+.field-value--left {
+  text-align: left;
+}
+
+.field-value--right {
+  text-align: right;
+}
+
+/* Currency formatting */
+.field-value--currency {
+  font-size: 14px;
+}
+
+/* Status Badge */
+.status-badge {
+  font-weight: bold;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  margin-top: 2px;
+}
+
+.status-badge--completed {
+  color: var(--success-color);
+}
+
+.status-badge--in-progress {
+  color: var(--warning-color);
+}
+
+.status-badge--pending {
+  color: var(--danger-color);
+}
+
+/* Section Headings */
+.section-heading {
+  text-align: left;
+  font-family: "Source Sans Pro", "Helvetica Neue", Arial, sans-serif;
+}
+
+/* Form spacing */
+.form-section {
+  margin-bottom: 1rem;
+}
+
+/* Button container */
+.button-container {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+} 

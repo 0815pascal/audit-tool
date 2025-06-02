@@ -31,6 +31,7 @@ import {useAppDispatch, useAppSelector} from '../../store/hooks';
 import {useSaveAuditCompletionMutation, updateAuditInProgress} from '../../store/caseAuditSlice';
 import {convertStatusToAuditStatus} from '../../utils/statusUtils';
 import {useUsers} from '../../hooks/useUsers';
+import './PruefensterModal.css';
 
 interface PruefensterModalProps {
   isOpen: boolean;
@@ -363,136 +364,71 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
       title="Prueffenster"
     >
       <div className="pruefenster-content">
-        {/* Case Information - moved outside of box */}
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: '1fr 1fr', 
-          gap: '8px 16px', 
-          fontSize: '14px',
-          lineHeight: '1.3',
-          textAlign: 'left',
-          fontFamily: '"Source Sans Pro", "Helvetica Neue", Arial, sans-serif',
-          marginBottom: '20px',
-        }}>
-          <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'left' }}>
-          <span style={{ fontWeight: '600', color: '#6c757d', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'left' }}>
-              Case Number
-            </span>
-            <span style={{ marginTop: '2px', color: '#212529', fontWeight: '500', textAlign: 'left' }}>
-            {audit.id}
-          </span>
+        <div className="case-info-grid">
+          <div className="info-field info-field--left">
+            <span className="field-label field-label--left">Case Number</span>
+            <span className="field-value field-value--left">{audit.id}</span>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'right' }}>
-          <span style={{ fontWeight: '600', color: '#6c757d', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-            Status
-            </span>
-          <span 
-            className={`status-badge ${currentStatus}`}
-            style={{
-              color: 
-                currentStatus === AUDIT_STATUS_ENUM.COMPLETED ? 'var(--success-color)' : 
-                currentStatus === AUDIT_STATUS_ENUM.IN_PROGRESS ? 'var(--warning-color)' : /* warning color */
-                'var(--danger-color)', /* danger color */
-              fontWeight: 'bold',
-              textTransform: 'uppercase',
-              fontSize: '0.8rem',
-            }}
-          >
-            {currentStatus === AUDIT_STATUS_ENUM.COMPLETED ? 'Verifiziert' : 
-             currentStatus === AUDIT_STATUS_ENUM.IN_PROGRESS ? 'In Bearbeitung' : 
-             'Nicht Verifiziert'}
-          </span>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'left' }}>
-            <span style={{ fontWeight: '600', color: '#6c757d', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'left' }}>
-              Policy Number
-            </span>
-            <span style={{ marginTop: '2px', color: '#212529', fontWeight: '500', textAlign: 'left' }}>
-              {audit.policyNumber}
+          <div className="info-field info-field--right">
+            <span className="field-label field-label--right">Status</span>
+            <span className={`status-badge ${
+              currentStatus === AUDIT_STATUS_ENUM.COMPLETED ? 'status-badge--completed' : 
+              currentStatus === AUDIT_STATUS_ENUM.IN_PROGRESS ? 'status-badge--in-progress' : 
+              'status-badge--pending'
+            }`}>
+              {currentStatus === AUDIT_STATUS_ENUM.COMPLETED ? 'Verifiziert' : 
+               currentStatus === AUDIT_STATUS_ENUM.IN_PROGRESS ? 'In Bearbeitung' : 
+               'Nicht Verifiziert'}
             </span>
           </div>
-          
-          <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'right' }}>
-            <span style={{ fontWeight: '600', color: '#6c757d', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'right' }}>
-              Client
-            </span>
-            <span style={{ marginTop: '2px', color: '#212529', fontWeight: '500', textAlign: 'right' }}>
-              {audit.clientName}
-            </span>
+          <div className="info-field info-field--left">
+            <span className="field-label field-label--left">Policy Number</span>
+            <span className="field-value field-value--left">{audit.policyNumber}</span>
           </div>
-          
-          <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'left' }}>
-            <span style={{ fontWeight: '600', color: '#6c757d', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'left' }}>
-              Coverage Amount
-            </span>
-            <span style={{ marginTop: '2px', fontWeight: '500', fontSize: '14px', textAlign: 'left' }}>
+          <div className="info-field info-field--right">
+            <span className="field-label field-label--right">Client</span>
+            <span className="field-value field-value--right">{audit.clientName}</span>
+          </div>
+          <div className="info-field info-field--left">
+            <span className="field-label field-label--left">Coverage Amount</span>
+            <span className="field-value field-value--left field-value--currency">
               {new Intl.NumberFormat('de-CH', { 
                 style: 'currency', 
                 currency: audit.notifiedCurrency ?? 'CHF'
               }).format(audit.coverageAmount)}
             </span>
           </div>
-          
-          <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'right' }}>
-            <span style={{ fontWeight: '600', color: '#6c757d', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'right' }}>
-              Fallbearbeiter
-            </span>
-            <span style={{ marginTop: '2px', color: '#212529', fontWeight: '500', textAlign: 'right' }}>
+          <div className="info-field info-field--right">
+            <span className="field-label field-label--right">Fallbearbeiter</span>
+            <span className="field-value field-value--right">
               {(() => {
                 const user = allUsers.find(u => u.id === audit.userId);
                 return user ? user.displayName : audit.userId;
               })()}
             </span>
           </div>
-          
-          <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'left' }}>
-            <span style={{ fontWeight: '600', color: '#6c757d', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'left' }}>
-              Quarter
-            </span>
-            <span style={{ marginTop: '2px', color: '#212529', fontWeight: '500', textAlign: 'left' }}>
-              {audit.quarter}
-            </span>
+          <div className="info-field info-field--left">
+            <span className="field-label field-label--left">Quarter</span>
+            <span className="field-value field-value--left">{audit.quarter}</span>
           </div>
-          
-          <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'right' }}>
-            <span style={{ fontWeight: '600', color: '#6c757d', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'right' }}>
-              Notification Date
-            </span>
-            <span style={{ marginTop: '2px', color: '#212529', fontWeight: '500', textAlign: 'right' }}>
+          <div className="info-field info-field--right">
+            <span className="field-label field-label--right">Notification Date</span>
+            <span className="field-value field-value--right">
               {audit.notificationDate ? new Date(audit.notificationDate).toLocaleDateString('de-CH') : '-'}
             </span>
           </div>
-          
-          <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'left' }}>
-            <span style={{ fontWeight: '600', color: '#6c757d', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'left' }}>
-              Dossier
-            </span>
-            <span style={{ marginTop: '2px', color: '#212529', fontWeight: '500', textAlign: 'left' }}>
-              {audit.dossierName}
-            </span>
+          <div className="info-field info-field--left">
+            <span className="field-label field-label--left">Dossier</span>
+            <span className="field-value field-value--left">{audit.dossierName}</span>
           </div>
-          
-          <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'right' }}>
-            <span style={{ fontWeight: '600', color: '#6c757d', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-              Prüfer
-            </span>
-            <span style={{ marginTop: '2px', color: '#212529', fontWeight: '500'}}>
-              {verifier || '-'}
-            </span>
-          </div>
-          
-          <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'right' }}>
-            <span style={{ fontWeight: '600', color: '#6c757d', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', textAlign: 'right' }}>
-              {/* Empty cell to maintain grid balance */}
-            </span>
+          <div className="info-field info-field--right">
+            <span className="field-label field-label--right">Prüfer</span>
+            <span className="field-value field-value--right">{verifier || '-'}</span>
           </div>
         </div>
 
-        <div className="mb-4">
-          <h4 style={{ 
-            textAlign: 'left',
-            fontFamily: '"Source Sans Pro", "Helvetica Neue", Arial, sans-serif'
-          }}>Prüfergebnis</h4>
+        <div className="form-section">
+          <h4 className="section-heading">Prüfergebnis</h4>
           <Select
             id="pruefenster-rating"
             options={ratingOptions}
@@ -501,7 +437,7 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
           />
         </div>
 
-        <div className="mb-4">
+        <div className="form-section">
           <TextArea
             id="pruefenster-comment"
             value={comment}
@@ -511,11 +447,8 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
           />
         </div>
 
-        <div className="mb-4">
-          <h4 style={{ 
-            textAlign: 'left',
-            fontFamily: '"Source Sans Pro", "Helvetica Neue", Arial, sans-serif'
-          }}>Spezielle Erkenntnisse</h4>
+        <div className="form-section">
+          <h4 className="section-heading">Spezielle Erkenntnisse</h4>
           <div>
             {specialFindingsOptions.map(opt => (
               <Checkbox
@@ -529,11 +462,8 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
           </div>
         </div>
 
-        <div className="mb-4">
-          <h4 style={{ 
-            textAlign: 'left',
-            fontFamily: '"Source Sans Pro", "Helvetica Neue", Arial, sans-serif'
-          }}>Detaillierte Prüfergebnisse</h4>
+        <div className="form-section">
+          <h4 className="section-heading">Detaillierte Prüfergebnisse</h4>
           <div>
             {detailedFindingsOptions.map(opt => (
               <Checkbox
@@ -547,7 +477,7 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
           </div>
         </div>
 
-        <div className="d-flex justify-content-end gap-2">
+        <div className="button-container">
           <Button
             onClick={handleCloseModal}
             color={BUTTON_COLOR.TEXT}
