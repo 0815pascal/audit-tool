@@ -53,11 +53,11 @@ export const getAllCasesByQuarter = async (quarter: QuarterPeriod): Promise<Case
     }
     
     // The response should be an array of case objects
-    return response.data.map((caseData: any) => ({
+    return response.data.map((caseData: Record<string, unknown>) => ({
       caseNumber: String(caseData.caseNumber),
       claimOwner: {
-        userId: String((caseData.claimOwner && caseData.claimOwner.userId) || caseData.userId || 'unknown') as UserId,
-        displayName: String((caseData.claimOwner && caseData.claimOwner.displayName) || caseData.displayName || 'Unknown')
+        userId: String((caseData.claimOwner && (caseData.claimOwner as Record<string, unknown>).userId) || caseData.userId || 'unknown') as UserId,
+        displayName: String((caseData.claimOwner && (caseData.claimOwner as Record<string, unknown>).displayName) || caseData.displayName || 'Unknown')
       },
       coverageAmount: Number(caseData.coverageAmount) || 0,
       claimsStatus: String(caseData.claimsStatus) || 'FULL_COVER',

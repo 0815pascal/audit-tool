@@ -542,7 +542,7 @@ const auditUISlice = createSlice({
         notifiedCurrency?: string;
       }>;
     }>) => {
-      const { quarter, cases } = action.payload;
+      const { cases } = action.payload;
       
       // Clear ALL existing audit cases (auto-selected and quarter display)
       // This ensures when user selects a quarter from dropdown, 
