@@ -138,4 +138,27 @@ export const createEmptySpecialFindings = (): SpecialFindingsRecord => {
 // Helper to format a quarter period (Q1-2023 format)
 export function formatQuarterPeriod(quarter: QuarterNumber, year: number): QuarterPeriod {
   return `Q${quarter}-${year}`;
+}
+
+/**
+ * Convert a generic Record<string, boolean> to a FindingsRecord
+ * This ensures all required enum properties are present by merging with empty findings
+ */
+export function convertToFindingsRecord(apiFindings?: Record<string, boolean>): FindingsRecord {
+  const emptyFindings = createEmptyFindings();
+  
+  if (!apiFindings) {
+    return emptyFindings;
+  }
+  
+  // Merge API findings with empty findings, ensuring only valid enum keys are used
+  const validFindings: Partial<FindingsRecord> = {};
+  
+  Object.entries(apiFindings).forEach(([key, value]) => {
+    if (key in emptyFindings) {
+      (validFindings as Record<string, boolean>)[key] = value;
+    }
+  });
+  
+  return { ...emptyFindings, ...validFindings };
 } 

@@ -262,3 +262,139 @@ export interface PropsWithClassName {
 export type ComponentProps<T = HTMLDivElement> = HTMLAttributes<T> & PropsWithClassName;
 
 export type ContextProviderProps = PropsWithChildren;
+
+// =============================================
+// Redux Action Payload Types
+// =============================================
+
+/**
+ * Represents a single audit item in API responses and Redux actions
+ * Used for both userQuarterlyAudits and previousQuarterRandomAudits
+ */
+export interface AuditItem {
+  id: string;
+  userId: string;
+  status: string;
+  auditor: string;
+  coverageAmount: number;
+  isCompleted: boolean;
+  claimsStatus: string;
+  quarter: string;
+  isAkoReviewed: boolean;
+  notifiedCurrency?: string;
+  caseType: string;
+  comment?: string;
+  rating?: string;
+  specialFindings?: Record<string, boolean>;
+  detailedFindings?: Record<string, boolean>;
+}
+
+/**
+ * Payload for storeQuarterlyAudits Redux action
+ */
+export interface StoreQuarterlyAuditsPayload {
+  audits: AuditItem[];
+}
+
+/**
+ * Represents a case item for quarter display (simplified view)
+ */
+export interface QuarterCaseItem {
+  id: string;
+  userId: string;
+  coverageAmount: number;
+  claimsStatus: string;
+  quarter: string;
+  notifiedCurrency?: string;
+}
+
+/**
+ * Payload for storeAllCasesForQuarter Redux action
+ */
+export interface StoreAllCasesForQuarterPayload {
+  quarter: string;
+  cases: QuarterCaseItem[];
+}
+
+/**
+ * Represents a pre-loaded case with full audit data
+ */
+export interface PreLoadedCaseItem {
+  id: string;
+  userId: string;
+  auditor: string;
+  isCompleted: boolean;
+  comment: string;
+  rating: string;
+  specialFindings: Record<string, boolean>;
+  detailedFindings: Record<string, boolean>;
+  coverageAmount: number;
+  claimsStatus: string;
+  quarter: string;
+  isAkoReviewed: boolean;
+  notifiedCurrency: string;
+}
+
+/**
+ * Payload for loadPreLoadedCases Redux action
+ */
+export type LoadPreLoadedCasesPayload = PreLoadedCaseItem[];
+
+// =============================================
+// API Response Types
+// =============================================
+
+/**
+ * Response structure for quarterly audits API endpoints
+ */
+export interface QuarterlyAuditsData {
+  quarterKey: string;
+  userQuarterlyAudits: AuditItem[];
+  previousQuarterRandomAudits: AuditItem[];
+  lastSelectionDate: string;
+}
+
+/**
+ * Complete API response for quarterly audits
+ */
+export interface QuarterlyAuditsResponse {
+  success: boolean;
+  data: QuarterlyAuditsData;
+}
+
+/**
+ * Response structure for audit completion operations
+ */
+export interface AuditCompletionResponse {
+  success: boolean;
+  auditId: string;
+  status: string;
+  completionDate?: string;
+  message?: string;
+}
+
+/**
+ * Response structure for current user API
+ */
+export interface CurrentUserResponse {
+  success: boolean;
+  data: User;
+}
+
+// =============================================
+// RTK Query Mutation Parameters
+// =============================================
+
+/**
+ * Parameters for audit completion mutations
+ */
+export interface AuditCompletionParams {
+  auditId: string;
+  auditor: string;
+  rating: string;
+  comment: string;
+  specialFindings: Record<string, boolean>;
+  detailedFindings: Record<string, boolean>;
+  status: string;
+  isCompleted: boolean;
+}

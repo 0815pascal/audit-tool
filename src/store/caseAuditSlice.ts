@@ -1,18 +1,30 @@
+import { createSlice, createSelector, type PayloadAction } from '@reduxjs/toolkit';
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import { createSlice, PayloadAction, createSelector } from '@reduxjs/toolkit';
+import type { RootState } from './index';
 import {
   CaseAudit,
-  CaseAuditActionPayload,
   CaseAuditStatus,
+  CaseAuditActionPayload,
   FindingsRecord,
+  StoredCaseAuditData,
   Quarter,
   QuarterNumber,
   QuarterPeriod,
   RatingValue,
-  StoredCaseAuditData,
   User,
-  UserRole
+  UserRole,
+  StoreQuarterlyAuditsPayload,
+  StoreAllCasesForQuarterPayload,
+  LoadPreLoadedCasesPayload,
+  QuarterlyAuditsData,
+  QuarterlyAuditsResponse,
+  AuditCompletionResponse,
+  CurrentUserResponse,
+  AuditCompletionParams
 } from '../types/types';
+import { CASE_TYPE_ENUM, CLAIMS_STATUS_ENUM, USER_ROLE_ENUM, AUDIT_STATUS_ENUM } from '../enums';
+import { QUARTER_CALCULATIONS, API_BASE_PATH } from '../constants';
+import { mapAuditStatusToCaseAuditStatus } from '../utils/statusUtils';
 import {
   createUserId,
   createValidYear,
@@ -20,11 +32,8 @@ import {
   formatQuarterPeriod,
   createEmptyFindings,
   createISODateString,
+  convertToFindingsRecord
 } from '../types/typeHelpers';
-import { RootState } from './index';
-import { CASE_TYPE_ENUM, CLAIMS_STATUS_ENUM, USER_ROLE_ENUM, AUDIT_STATUS_ENUM } from '../enums';
-import { QUARTER_CALCULATIONS, API_BASE_PATH } from '../constants';
-import { mapAuditStatusToCaseAuditStatus } from '../utils/statusUtils';
 
 // Memoize the getCurrentQuarter function to avoid creating new objects on each call
 let cachedQuarter: Quarter | null = null;
@@ -57,62 +66,6 @@ export const getCurrentQuarter = (): Quarter => {
 export const formatQuarterYear = (quarter: QuarterNumber, year: number): QuarterPeriod => {
   return `Q${quarter}-${year}`;
 };
-
-// Types for API responses
-interface AuditCompletionResponse {
-  success: boolean;
-  auditId: string;
-  status: string;
-  completionDate?: string;
-  message?: string;
-}
-
-interface QuarterlyAuditsResponse {
-  success: boolean;
-  data: {
-    quarterKey: string;
-    userQuarterlyAudits: Array<{
-      id: string;
-      userId: string;
-      status: string;
-      auditor: string;
-      coverageAmount: number;
-      isCompleted: boolean;
-      claimsStatus: string;
-      quarter: string;
-      isAkoReviewed: boolean;
-      notifiedCurrency?: string;
-      caseType: string;
-      comment?: string;
-      rating?: string;
-      specialFindings?: Record<string, boolean>;
-      detailedFindings?: Record<string, boolean>;
-    }>;
-    previousQuarterRandomAudits: Array<{
-      id: string;
-      userId: string;
-      status: string;
-      auditor: string;
-      coverageAmount: number;
-      isCompleted: boolean;
-      claimsStatus: string;
-      quarter: string;
-      isAkoReviewed: boolean;
-      notifiedCurrency?: string;
-      caseType: string;
-      comment?: string;
-      rating?: string;
-      specialFindings?: Record<string, boolean>;
-      detailedFindings?: Record<string, boolean>;
-    }>;
-    lastSelectionDate: string;
-  };
-}
-
-interface CurrentUserResponse {
-  success: boolean;
-  data: User;
-}
 
 // RTK Query API slice for audit operations
 export const auditApi = createApi({
@@ -165,7 +118,7 @@ export const auditApi = createApi({
     }),
 
     // Select quarterly audits
-    selectQuarterlyAudits: builder.mutation<QuarterlyAuditsResponse['data'], QuarterPeriod>({
+    selectQuarterlyAudits: builder.mutation<QuarterlyAuditsData, QuarterPeriod>({
       query: (quarterPeriod) => ({
         url: '/audit-completion/select-quarterly',
         method: 'POST',
@@ -184,7 +137,7 @@ export const auditApi = createApi({
     }),
 
     // Get quarterly audits for a specific period
-    getQuarterlyAudits: builder.query<QuarterlyAuditsResponse['data'], QuarterPeriod>({
+    getQuarterlyAudits: builder.query<QuarterlyAuditsData, QuarterPeriod>({
       query: (quarterPeriod) => `/audit-completion/select-quarterly/${quarterPeriod}`,
       transformResponse: (response: QuarterlyAuditsResponse) => {
         if (!response.success) {
@@ -198,16 +151,7 @@ export const auditApi = createApi({
     }),
 
     // Complete audit
-    completeAudit: builder.mutation<AuditCompletionResponse, {
-      auditId: string;
-      auditor: string;
-      rating: string;
-      comment: string;
-      specialFindings: Record<string, boolean>;
-      detailedFindings: Record<string, boolean>;
-      status: string;
-      isCompleted: boolean;
-    }>({
+    completeAudit: builder.mutation<AuditCompletionResponse, AuditCompletionParams>({
       query: ({ auditId, ...completionData }) => ({
         url: `/audit/${auditId}/complete`,
         method: 'POST',
@@ -226,16 +170,7 @@ export const auditApi = createApi({
     }),
 
     // Save audit completion (in-progress)
-    saveAuditCompletion: builder.mutation<AuditCompletionResponse, {
-      auditId: string;
-      auditor: string;
-      rating: string;
-      comment: string;
-      specialFindings: Record<string, boolean>;
-      detailedFindings: Record<string, boolean>;
-      status: string;
-      isCompleted: boolean;
-    }>({
+    saveAuditCompletion: builder.mutation<AuditCompletionResponse, AuditCompletionParams>({
       query: ({ auditId, ...completionData }) => ({
         url: `/audit-completion/${auditId}`,
         method: 'PUT',
@@ -495,25 +430,7 @@ const auditUISlice = createSlice({
     },
 
     // Store quarterly audits
-    storeQuarterlyAudits: (state, action: PayloadAction<{
-      audits: Array<{
-        id: string;
-        userId: string;
-        status: string;
-        auditor: string;
-        coverageAmount: number;
-        isCompleted: boolean;
-        claimsStatus: string;
-        quarter: string;
-        isAkoReviewed: boolean;
-        notifiedCurrency?: string;
-        caseType: string;
-        comment?: string;
-        rating?: string;
-        specialFindings?: FindingsRecord;
-        detailedFindings?: FindingsRecord;
-      }>;
-    }>) => {
+    storeQuarterlyAudits: (state, action: PayloadAction<StoreQuarterlyAuditsPayload>) => {
       const { audits } = action.payload;
       
       // Clear existing audits for the same quarter selection
@@ -551,8 +468,8 @@ const auditUISlice = createSlice({
           auditor: ensureUserId(audit.auditor),
           comment: audit.comment ?? '',
           rating: (audit.rating ?? '') as RatingValue,
-          specialFindings: audit.specialFindings ?? createEmptyFindings(),
-          detailedFindings: audit.detailedFindings ?? createEmptyFindings(),
+          specialFindings: convertToFindingsRecord(audit.specialFindings),
+          detailedFindings: convertToFindingsRecord(audit.detailedFindings),
           status: mapAuditStatusToCaseAuditStatus(audit.status as AUDIT_STATUS_ENUM),
           caseType: audit.caseType as CASE_TYPE_ENUM,
           coverageAmount: audit.coverageAmount,
@@ -565,17 +482,7 @@ const auditUISlice = createSlice({
     },
 
     // Store all cases for a quarter (when quarter dropdown changes)
-    storeAllCasesForQuarter: (state, action: PayloadAction<{
-      quarter: string;
-      cases: Array<{
-        id: string;
-        userId: string;
-        coverageAmount: number;
-        claimsStatus: string;
-        quarter: string;
-        notifiedCurrency?: string;
-      }>;
-    }>) => {
+    storeAllCasesForQuarter: (state, action: PayloadAction<StoreAllCasesForQuarterPayload>) => {
       const { cases } = action.payload;
       
       // Clear ALL existing audit cases (including pre-loaded cases)
@@ -634,21 +541,7 @@ const auditUISlice = createSlice({
     },
 
     // Load pre-loaded cases (verified and in-progress) on app initialization
-    loadPreLoadedCases: (state, action: PayloadAction<Array<{
-      id: string;
-      userId: string;
-      auditor: string;
-      isCompleted: boolean;
-      comment: string;
-      rating: string;
-      specialFindings: FindingsRecord;
-      detailedFindings: FindingsRecord;
-      coverageAmount: number;
-      claimsStatus: string;
-      quarter: string;
-      isAkoReviewed: boolean;
-      notifiedCurrency: string;
-    }>>) => {
+    loadPreLoadedCases: (state, action: PayloadAction<LoadPreLoadedCasesPayload>) => {
       const preLoadedCases = action.payload;
       
       // Add pre-loaded cases without clearing existing data
@@ -674,8 +567,8 @@ const auditUISlice = createSlice({
           auditor: ensureUserId(caseData.auditor),
           comment: caseData.comment ?? '',
           rating: (caseData.rating ?? '') as RatingValue,
-          specialFindings: caseData.specialFindings ?? createEmptyFindings(),
-          detailedFindings: caseData.detailedFindings ?? createEmptyFindings(),
+          specialFindings: convertToFindingsRecord(caseData.specialFindings),
+          detailedFindings: convertToFindingsRecord(caseData.detailedFindings),
           status: status,
           caseType: CASE_TYPE_ENUM.PRE_LOADED,
           coverageAmount: caseData.coverageAmount,
