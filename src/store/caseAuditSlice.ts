@@ -665,24 +665,25 @@ export const selectQuarterlyAuditsForPeriod = createSelector(
       };
     }
 
-    // Get all audits stored for this quarter selection
-    const auditsForPeriod = Object.entries(auditData)
+    // Get all audits stored in Redux
+    const allAudits = Object.entries(auditData)
       .map(([id, audit]) => ({ id, ...audit }))
       .filter(audit => audit); // Only keep valid audits
     
-    // Separate by case type
-    const userQuarterlyAudits = auditsForPeriod
+    // Separate by case type - but always include PRE_LOADED cases regardless of quarter
+    const userQuarterlyAudits = allAudits
       .filter(audit => audit.caseType === CASE_TYPE_ENUM.USER_QUARTERLY);
     
-    const previousQuarterRandomAudits = auditsForPeriod
+    const previousQuarterRandomAudits = allAudits
       .filter(audit => audit.caseType === CASE_TYPE_ENUM.PREVIOUS_QUARTER_RANDOM);
     
-    // Include cases that are just for display (these should be for any quarter since we clear all when switching)
-    const quarterDisplayCases = auditsForPeriod
+    // Quarter display cases (when a quarter is selected from dropdown)
+    const quarterDisplayCases = allAudits
       .filter(audit => audit.caseType === CASE_TYPE_ENUM.QUARTER_DISPLAY);
     
-    // Include pre-loaded cases (verified and in-progress cases that appear on initial load)
-    const preLoadedCases = auditsForPeriod
+    // Pre-loaded cases (verified and in-progress cases that appear on initial load)
+    // These should always appear regardless of quarter selection
+    const preLoadedCases = allAudits
       .filter(audit => audit.caseType === CASE_TYPE_ENUM.PRE_LOADED);
     
     return {

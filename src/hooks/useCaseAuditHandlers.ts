@@ -383,8 +383,6 @@ export const useCaseAuditHandlers = () => {
         preLoadedCases ? preLoadedCases.length : 0 // Also check API data
       );
       
-      console.log(`Pre-loaded cases count: ${preLoadedCount} (selector: ${currentPreLoadedCases.length}, redux: ${preLoadedFromRedux.length}, api: ${preLoadedCases ? preLoadedCases.length : 0})`);
-      
       // Call the API to get cases for audit selection, passing the pre-loaded count
       const cases = await selectCasesForAudit(quarterPeriod, preLoadedCount);
       
@@ -426,8 +424,6 @@ export const useCaseAuditHandlers = () => {
       dispatch(storeQuarterlyAudits({
         audits: userQuarterlyAudits
       }));
-      
-      console.log(`Auto-selected ${userQuarterlyAudits.length} cases. With ${preLoadedCount} pre-loaded cases = ${userQuarterlyAudits.length + preLoadedCount} total`);
       
       setLoadingStatus(ACTION_STATUS.idle);
     } catch (error) {

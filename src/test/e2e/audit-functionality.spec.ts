@@ -34,6 +34,16 @@ test.describe('IKS Audit Tool - Auto-Select and Verification', () => {
     const userSelect = page.locator('#user-select');
     await userSelect.selectOption('4'); // Select Emily Davis (team leader)
     
+    // Select year and quarter first
+    const yearSelect = page.locator('#year-select');
+    await yearSelect.selectOption('2025');
+    
+    const quarterSelect = page.locator('#quarter-select');
+    await quarterSelect.selectOption('Q1-2025');
+    
+    // Wait for the quarter selection to be processed
+    await page.waitForTimeout(500);
+    
     // Click the Auto-Select Audits button
     const autoSelectButton = page.locator('button:has-text("Auto-Select Audits")');
     await autoSelectButton.click();
@@ -41,7 +51,7 @@ test.describe('IKS Audit Tool - Auto-Select and Verification', () => {
     // Wait for the selection to complete
     await page.waitForTimeout(2000);
     
-    // Check that audits are now visible in the table
+    // Check that audits are now visible in the table (any table within audit-table)
     const auditTable = page.locator('.audit-table table');
     await expect(auditTable).toBeVisible();
   });
@@ -311,8 +321,8 @@ test.describe('IKS Audit Tool - Auto-Select and Verification', () => {
     const exportButton = page.locator('button:has-text("Export Results")');
     await exportButton.click();
     
-    // Check that success message is displayed
-    const successMessage = page.locator('.success-message');
+    // Check that success message is displayed (using the correct CSS class)
+    const successMessage = page.locator('.quarterly-selection__success-message');
     await expect(successMessage).toBeVisible();
     await expect(successMessage).toContainText('Successfully exported results');
   });

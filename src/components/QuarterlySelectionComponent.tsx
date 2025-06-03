@@ -25,7 +25,7 @@ import {useCaseAuditHandlers} from '../hooks/useCaseAuditHandlers';
 import {PruefensterModal} from './common';
 import './QuarterlySelectionComponent.css';
 import {useAppDispatch, useAppSelector} from '../store/hooks';
-import {formatQuarterYear, selectAuditData, selectUserRole, setCurrentUser} from '../store/caseAuditSlice';
+import {formatQuarterYear, selectAuditData, selectUserRole, setCurrentUser, setUserRole} from '../store/caseAuditSlice';
 import {QUARTER_CALCULATIONS} from '../constants';
 
 // Define an interface for what we actually get from the API/store
@@ -107,8 +107,21 @@ const QuarterlySelectionComponent: React.FC = () => {
 
   // Handle changing the current user (when dropdown changes) - override the hook version
   const handleUserChange = (userId: string) => {
+    // Update Redux state first
     dispatch(setCurrentUser(userId));
-    originalHandleUserChange(userId); // Also call the original function
+    
+    // Find the user in the users list and set their role immediately
+    const user = usersList.find(u => u.id === userId);
+    if (user) {
+      dispatch(setUserRole({
+        userId: userId,
+        role: user.authorities,
+        department: user.department ?? 'Unknown'
+      }));
+    }
+    
+    // Also call the original function from the hook
+    originalHandleUserChange(userId);
   };
   
   // Get audit data from Redux to access latest completion data

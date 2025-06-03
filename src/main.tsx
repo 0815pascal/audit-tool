@@ -28,13 +28,19 @@ window.addEventListener('error', (event) => {
 // Start the app
 const startApp = async () => {
   if (import.meta.env.MODE === 'development') {
-    const { worker } = await import('./mocks/browser');
-    await worker.start({
-      onUnhandledRequest: 'bypass',
-      serviceWorker: {
-        url: '/mockServiceWorker.js',
-      },
-    });
+    try {
+      const { worker } = await import('./mocks/browser');
+      await worker.start({
+        onUnhandledRequest: 'bypass',
+        serviceWorker: {
+          url: '/mockServiceWorker.js',
+        },
+      });
+      console.log('[MSW] Browser service worker started successfully');
+    } catch (error) {
+      console.error('[MSW] Failed to start service worker:', error);
+      console.warn('[MSW] App will continue without mocking - some features may not work');
+    }
   }
   
   ReactDOM.createRoot(document.getElementById('root')!).render(
