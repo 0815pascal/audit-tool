@@ -183,7 +183,7 @@ const getUsersQuerySelector = userApi.endpoints.getUsers.select();
 
 export const selectAllUsers = createSelector(
   [getUsersQuerySelector],
-  (usersResult) => usersResult.data || []
+  (usersResult) => usersResult.data ?? []
 );
 
 export const selectActiveUsers = createSelector(
@@ -200,7 +200,7 @@ export const selectSelectedUserId = (state: RootState) => state.userUI.selectedU
 
 export const selectSelectedUser = createSelector(
   [selectAllUsers, selectSelectedUserId],
-  (users, selectedId) => selectedId ? users.find(user => user.id === selectedId) || null : null
+  (users, selectedId) => selectedId ? users.find(user => user.id === selectedId) ?? null : null
 );
 
 // Loading and error selectors for the users query
@@ -211,7 +211,7 @@ export const selectUsersLoading = createSelector(
 
 export const selectUsersError = createSelector(
   [getUsersQuerySelector],
-  (usersResult) => usersResult.error || null
+  (usersResult) => usersResult.error ?? null
 );
 
 export const selectUsersFetching = createSelector(

@@ -113,7 +113,7 @@ export const useCaseAuditHandlers = () => {
       dispatch(setUserRole({
         userId: currentUser.id.toString(),
         role: currentUser.authorities,
-        department: currentUser.department || 'Unknown'
+        department: currentUser.department ?? 'Unknown'
       }));
     }
   }, [dispatch, currentUser, currentUserId]); // Add currentUser to dependencies
@@ -155,7 +155,7 @@ export const useCaseAuditHandlers = () => {
       dispatch(setUserRole({
         userId: userIdString,
         role: user.authorities,
-        department: user.department || 'Unknown'
+        department: user.department ?? 'Unknown'
       }));
     }
     
@@ -186,7 +186,7 @@ export const useCaseAuditHandlers = () => {
           coverageAmount: caseObj.coverageAmount,
           claimsStatus: String(caseObj.claimsStatus),
           quarter: actualQuarter,
-          notifiedCurrency: caseObj.notifiedCurrency || 'CHF'
+          notifiedCurrency: caseObj.notifiedCurrency ?? 'CHF'
         };
       });
       
@@ -221,13 +221,13 @@ export const useCaseAuditHandlers = () => {
         dispatch(storeQuarterlyAudits({
           audits: [{
             id: auditIdString,
-            userId: currentUserId || '1',
+            userId: currentUserId ?? '1',
             status: 'pending',
             auditor: auditorString,
             coverageAmount: 0,
             isCompleted: false,
             claimsStatus: 'FULL_COVER',
-            quarter: selectedQuarter || 'Q1-2025',
+            quarter: selectedQuarter ?? 'Q1-2025',
             isAkoReviewed: false,
             caseType: 'USER_QUARTERLY',
             comment: caseAuditData.comment,
@@ -371,7 +371,7 @@ export const useCaseAuditHandlers = () => {
       
       // Count existing pre-loaded cases more reliably
       // Check both the selector and the raw audit data for PRE_LOADED cases
-      const currentPreLoadedCases = quarterlyAudits.preLoadedCases || [];
+      const currentPreLoadedCases = quarterlyAudits.preLoadedCases ?? [];
       const preLoadedFromRedux = Object.values(auditData).filter(audit => 
         audit.caseType === CASE_TYPE_ENUM.PRE_LOADED
       );
@@ -414,7 +414,7 @@ export const useCaseAuditHandlers = () => {
           claimsStatus: String(caseObj.claimsStatus), // Convert to string
           quarter: actualQuarter, // Use the actual quarter from notification date for display
           isAkoReviewed: false,
-          notifiedCurrency: caseObj.notifiedCurrency || 'CHF', // Include the currency from API response
+          notifiedCurrency: caseObj.notifiedCurrency ?? 'CHF', // Include the currency from API response
           caseType: String(caseType) // Set caseType based on whether it's current or previous quarter
         };
         
@@ -464,27 +464,27 @@ export const useCaseAuditHandlers = () => {
   const auditToCaseAudit = (audit: ExternalAuditData): CaseAudit => {
     // Create a base CaseAudit object with defaults
     const defaultAudit: CaseAudit = {
-      id: createCaseAuditId(audit.id || String(Date.now())),
+      id: createCaseAuditId(audit.id ?? String(Date.now())),
       userId: ensureUserId(audit.userId ?? currentUserId),
       date: createISODateString(),
-      clientName: `Client ${audit.id || 'Unknown'}`,
+      clientName: `Client ${audit.id ?? 'Unknown'}`,
       policyNumber: createPolicyId(DEFAULT_VALUE_ENUM.SAMPLE_POLICY_ID),
       caseNumber: createCaseId(DEFAULT_VALUE_ENUM.DEFAULT_CASE_NUMBER),
       dossierRisk: 0,
-      dossierName: `Case ${audit.id || 'Unknown'}`,
+      dossierName: `Case ${audit.id ?? 'Unknown'}`,
       totalAmount: audit.coverageAmount ?? 0,
       coverageAmount: audit.coverageAmount ?? 0,
-      isCompleted: audit.isCompleted || false,
-      isAkoReviewed: audit.isAkoReviewed || false,
+      isCompleted: audit.isCompleted ?? false,
+      isAkoReviewed: audit.isAkoReviewed ?? false,
       isSpecialist: false,
-      quarter: selectedQuarter,
+      quarter: selectedQuarter ?? 'Q1-2025',
       year: filteredYear,
       claimsStatus: audit.claimsStatus ?? CLAIMS_STATUS_ENUM.FULL_COVER,
       auditor: ensureUserId(audit.auditor ?? ''),
       comment: audit.comment ?? '',
       rating: (audit.rating ?? '') as RatingValue,
-      specialFindings: audit.specialFindings || createEmptyFindings(),
-      detailedFindings: audit.detailedFindings || createEmptyFindings(),
+      specialFindings: audit.specialFindings ?? createEmptyFindings(),
+      detailedFindings: audit.detailedFindings ?? createEmptyFindings(),
       caseType: CASE_TYPE_ENUM.USER_QUARTERLY
     };
     

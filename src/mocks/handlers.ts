@@ -521,8 +521,8 @@ export const handlers = [
       // Calculate how many current quarter and previous quarter cases we need
       // Original ratio: 6 current, 2 previous = 8 total
       // If we have pre-loaded cases, we need to adjust
-      let currentQuarterNeeded = Math.max(0, 6 - preLoadedCount); // Reduce current quarter cases first
-      let previousQuarterNeeded = totalNeeded > currentQuarterNeeded ? Math.min(2, totalNeeded - currentQuarterNeeded) : 0;
+      const currentQuarterNeeded = Math.max(0, 6 - preLoadedCount); // Reduce current quarter cases first
+      const previousQuarterNeeded = totalNeeded > currentQuarterNeeded ? Math.min(2, totalNeeded - currentQuarterNeeded) : 0;
       
       console.log(`[MSW] Auto-selecting for ${quarterValue}: preLoaded=${preLoadedCount}, currentNeeded=${currentQuarterNeeded}, previousNeeded=${previousQuarterNeeded}, total=${currentQuarterNeeded + previousQuarterNeeded + preLoadedCount}`);
       
@@ -856,7 +856,7 @@ export const handlers = [
         rating: requestData.rating ?? '',
         comment: requestData.comment ?? '',
         completionDate: requestData.status === AUDIT_STATUS_ENUM.COMPLETED ? new Date().toISOString() : undefined,
-        findings: requestData.findings || []
+        findings: requestData.findings ?? []
       };
       
       return HttpResponse.json({
@@ -908,8 +908,8 @@ export const handlers = [
         auditor: requestData.auditor ?? '',
         rating: requestData.rating ?? '',
         comment: requestData.comment ?? '',
-        specialFindings: requestData.specialFindings || {},
-        detailedFindings: requestData.detailedFindings || {},
+        specialFindings: requestData.specialFindings ?? {},
+        detailedFindings: requestData.detailedFindings ?? {},
         status: requestData.status ?? 'completed',
         isCompleted: requestData.isCompleted ?? true,
         completionDate: new Date().toISOString(),
@@ -932,9 +932,9 @@ export const handlers = [
 
   // GET /rest/kuk/v1/pre-loaded-cases - Get pre-loaded cases (verified and in-progress)
   http.get(`${API_BASE_PATH}/pre-loaded-cases`, () => {
-    const preLoadedCases = mockCases.filter((caseItem: any) => 
+    const preLoadedCases = mockCases.filter((caseItem: typeof mockCases[0]) => 
       caseItem.caseType === 'PRE_LOADED'
-    ).map((caseItem: any) => ({
+    ).map((caseItem: typeof mockCases[0]) => ({
       id: caseItem.id,
       userId: caseItem.userId,
       auditor: caseItem.auditor,

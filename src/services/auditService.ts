@@ -24,7 +24,7 @@ export const getAuditsByQuarter = async (quarter: QuarterPeriod): Promise<UserAu
       userId: String(item.userId),
       quarter: item.quarter,
       status: item.status,
-      auditor: item.auditor || '',
+      auditor: item.auditor ?? '',
       coverageAmount: item.coverageAmount ?? 0,
       isCompleted: Boolean(item.isCompleted),
       isAkoReviewed: Boolean(item.isAkoReviewed),
@@ -55,8 +55,8 @@ export const getAllCasesByQuarter = async (quarter: QuarterPeriod): Promise<Case
     return response.data.map((caseData: Record<string, unknown>) => ({
       caseNumber: String(caseData.caseNumber),
       claimOwner: {
-        userId: String((caseData.claimOwner && (caseData.claimOwner as Record<string, unknown>).userId) || caseData.userId || 'unknown') as UserId,
-        displayName: String((caseData.claimOwner && (caseData.claimOwner as Record<string, unknown>).displayName) || caseData.displayName || 'Unknown')
+        userId: String((caseData.claimOwner && (caseData.claimOwner as Record<string, unknown>).userId) ?? caseData.userId ?? 'unknown') as UserId,
+        displayName: String((caseData.claimOwner && (caseData.claimOwner as Record<string, unknown>).displayName) ?? caseData.displayName ?? 'Unknown')
       },
       coverageAmount: Number(caseData.coverageAmount) || 0,
       claimsStatus: String(caseData.claimsStatus) || 'FULL_COVER',
@@ -87,12 +87,12 @@ export const getAuditsByAuditor = async (auditorId: UserId): Promise<UserAuditFo
       userId: String(item.userId),
       quarter: item.quarter,
       status: item.status,
-      auditor: item.auditor || '',
-      coverageAmount: item.coverageAmount || 0,
+      auditor: item.auditor ?? '',
+      coverageAmount: item.coverageAmount ?? 0,
       isCompleted: Boolean(item.isCompleted),
       isAkoReviewed: Boolean(item.isAkoReviewed),
-      claimsStatus: item.claimsStatus || 'FULL_COVER',
-      notifiedCurrency: item.notifiedCurrency || 'CHF'
+      claimsStatus: item.claimsStatus ?? 'FULL_COVER',
+      notifiedCurrency: item.notifiedCurrency ?? 'CHF'
     }));
   } catch (error) {
     console.error(`Error fetching audits for auditor ${auditorId}:`, error);
@@ -120,12 +120,12 @@ export const createAudit = async (payload: Record<string, unknown>): Promise<Aud
       userId: String(data.userId),
       quarter: data.quarter,
       status: data.status,
-      auditor: data.auditor || '',
-      coverageAmount: data.coverageAmount || 0,
+      auditor: data.auditor ?? '',
+      coverageAmount: data.coverageAmount ?? 0,
       isCompleted: Boolean(data.isCompleted),
       isAkoReviewed: Boolean(data.isAkoReviewed),
-      claimsStatus: data.claimsStatus || 'FULL_COVER',
-      notifiedCurrency: data.notifiedCurrency || 'CHF'
+      claimsStatus: data.claimsStatus ?? 'FULL_COVER',
+      notifiedCurrency: data.notifiedCurrency ?? 'CHF'
     };
   } catch (error) {
     console.error('Error creating audit:', error);
@@ -153,12 +153,12 @@ export const updateAudit = async (caseAuditId: CaseAuditId, payload: Record<stri
       userId: String(data.userId),
       quarter: data.quarter,
       status: data.status,
-      auditor: data.auditor || '',
-      coverageAmount: data.coverageAmount || 0,
+      auditor: data.auditor ?? '',
+      coverageAmount: data.coverageAmount ?? 0,
       isCompleted: Boolean(data.isCompleted),
       isAkoReviewed: Boolean(data.isAkoReviewed),
-      claimsStatus: data.claimsStatus || 'FULL_COVER',
-      notifiedCurrency: data.notifiedCurrency || 'CHF'
+      claimsStatus: data.claimsStatus ?? 'FULL_COVER',
+      notifiedCurrency: data.notifiedCurrency ?? 'CHF'
     };
   } catch (error) {
     console.error(`Error updating audit ${caseAuditId}:`, error);
@@ -223,8 +223,8 @@ export const selectCasesForAudit = async (quarterPeriod: QuarterPeriod, preLoade
     return response.data.map((caseData: Record<string, unknown>) => ({
       caseNumber: String(caseData.caseNumber),
       claimOwner: {
-        userId: String((caseData.claimOwner && (caseData.claimOwner as Record<string, unknown>).userId) || caseData.userId || 'unknown') as UserId,
-        role: (caseData.claimOwner && (caseData.claimOwner as Record<string, unknown>).role) || 'STAFF'
+        userId: String((caseData.claimOwner && (caseData.claimOwner as Record<string, unknown>).userId) ?? caseData.userId ?? 'unknown') as UserId,
+        role: (caseData.claimOwner && (caseData.claimOwner as Record<string, unknown>).role) ?? 'STAFF'
       },
       coverageAmount: Number(caseData.coverageAmount) || 0,
       claimsStatus: String(caseData.claimsStatus) || 'FULL_COVER',

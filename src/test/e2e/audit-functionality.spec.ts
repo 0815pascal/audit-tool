@@ -199,7 +199,7 @@ test.describe('IKS Audit Tool - Auto-Select and Verification', () => {
     expect(responses[0].status).toBe(200);
     
     // Parse and validate the request payload structure
-    const requestBody = JSON.parse(completionRequests[0].body || '{}');
+    const requestBody = JSON.parse(completionRequests[0].body ?? '{}');
     
     // 1. Validate required top-level properties exist
     expect(requestBody).toHaveProperty('auditor');

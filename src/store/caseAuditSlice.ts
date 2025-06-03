@@ -139,29 +139,29 @@ export const auditApi = createApi({
     }),
 
     // Get audits by quarter
-    getAuditsByQuarter: builder.query<CaseAudit[], QuarterPeriod>({
+    getAuditsByQuarter: builder.query<CaseAudit[], string>({
       query: (quarter) => `/audits/quarter/${quarter}`,
-      transformResponse: (response: CaseAudit[]) => response || [],
-      providesTags: (result, _, quarter) =>
+      transformResponse: (response: CaseAudit[]) => response ?? [],
+      providesTags: (result) =>
         result
           ? [
               ...result.map(({ id }) => ({ type: 'Audit' as const, id })),
-              { type: 'Audit', id: `QUARTER-${quarter}` },
+              { type: 'Audit', id: 'LIST' },
             ]
-          : [{ type: 'Audit', id: `QUARTER-${quarter}` }],
+          : [{ type: 'Audit', id: 'LIST' }],
     }),
 
     // Get audits by auditor
     getAuditsByAuditor: builder.query<CaseAudit[], string>({
       query: (auditorId) => `/audits/auditor/${auditorId}`,
-      transformResponse: (response: CaseAudit[]) => response || [],
-      providesTags: (result, _, auditorId) =>
+      transformResponse: (response: CaseAudit[]) => response ?? [],
+      providesTags: (result) =>
         result
           ? [
               ...result.map(({ id }) => ({ type: 'Audit' as const, id })),
-              { type: 'Audit', id: `AUDITOR-${auditorId}` },
+              { type: 'Audit', id: 'LIST' },
             ]
-          : [{ type: 'Audit', id: `AUDITOR-${auditorId}` }],
+          : [{ type: 'Audit', id: 'LIST' }],
     }),
 
     // Select quarterly audits
@@ -215,7 +215,7 @@ export const auditApi = createApi({
       }),
       transformResponse: (response: AuditCompletionResponse) => {
         if (!response.success) {
-          throw new Error(response.message || 'Failed to complete audit');
+          throw new Error(response.message ?? 'Failed to complete audit');
         }
         return response;
       },
@@ -243,7 +243,7 @@ export const auditApi = createApi({
       }),
       transformResponse: (response: AuditCompletionResponse) => {
         if (!response.success) {
-          throw new Error(response.message || 'Failed to save audit completion');
+          throw new Error(response.message ?? 'Failed to save audit completion');
         }
         return response;
       },
@@ -280,7 +280,7 @@ export const auditApi = createApi({
     // Get audit findings
     getAuditFindings: builder.query<FindingsRecord[], string>({
       query: (auditId) => `/audits/${auditId}/findings`,
-      transformResponse: (response: FindingsRecord[]) => response || [],
+      transformResponse: (response: FindingsRecord[]) => response ?? [],
       providesTags: (_, __, auditId) => [
         { type: 'Audit', id: `${auditId}-findings` },
       ],
@@ -316,7 +316,21 @@ export const auditApi = createApi({
       notifiedCurrency: string;
     }>, void>({
       query: () => '/pre-loaded-cases',
-      transformResponse: (response: any) => response.data || [],
+      transformResponse: (response: { data?: Array<{
+        id: string;
+        userId: string;
+        auditor: string;
+        isCompleted: boolean;
+        comment: string;
+        rating: string;
+        specialFindings: FindingsRecord;
+        detailedFindings: FindingsRecord;
+        coverageAmount: number;
+        claimsStatus: string;
+        quarter: string;
+        isAkoReviewed: boolean;
+        notifiedCurrency: string;
+      }> }) => response.data ?? [],
     }),
   }),
 });
@@ -434,8 +448,8 @@ const auditUISlice = createSlice({
       state.auditData[auditId].auditor = auditor;
       state.auditData[auditId].comment = comment;
       state.auditData[auditId].rating = rating;
-      state.auditData[auditId].specialFindings = specialFindings || createEmptyFindings();
-      state.auditData[auditId].detailedFindings = detailedFindings || createEmptyFindings();
+      state.auditData[auditId].specialFindings = specialFindings ?? createEmptyFindings();
+      state.auditData[auditId].detailedFindings = detailedFindings ?? createEmptyFindings();
       state.auditData[auditId].status = mapAuditStatusToCaseAuditStatus(AUDIT_STATUS_ENUM.IN_PROGRESS);
     },
 
@@ -448,10 +462,10 @@ const auditUISlice = createSlice({
         auditData.isCompleted = true;
         auditData.status = mapAuditStatusToCaseAuditStatus(AUDIT_STATUS_ENUM.COMPLETED);
         auditData.auditor = ensureUserId(auditor.toString());
-        auditData.comment = comment || '';
-        auditData.rating = rating || '';
-        auditData.specialFindings = specialFindings || createEmptyFindings();
-        auditData.detailedFindings = detailedFindings || createEmptyFindings();
+        auditData.comment = comment ?? '';
+        auditData.rating = rating ?? '';
+        auditData.specialFindings = specialFindings ?? createEmptyFindings();
+        auditData.detailedFindings = detailedFindings ?? createEmptyFindings();
         auditData.completionDate = createISODateString(new Date());
         
         const quarterKey = auditData.quarter;
@@ -535,17 +549,17 @@ const auditUISlice = createSlice({
           year: parseInt(audit.quarter.split('-')[1]),
           steps: {},
           auditor: ensureUserId(audit.auditor),
-          comment: audit.comment || '',
-          rating: (audit.rating || '') as RatingValue,
-          specialFindings: audit.specialFindings || createEmptyFindings(),
-          detailedFindings: audit.detailedFindings || createEmptyFindings(),
+          comment: audit.comment ?? '',
+          rating: (audit.rating ?? '') as RatingValue,
+          specialFindings: audit.specialFindings ?? createEmptyFindings(),
+          detailedFindings: audit.detailedFindings ?? createEmptyFindings(),
           status: mapAuditStatusToCaseAuditStatus(audit.status as AUDIT_STATUS_ENUM),
           caseType: audit.caseType as CASE_TYPE_ENUM,
           coverageAmount: audit.coverageAmount,
           claimsStatus: audit.claimsStatus as CLAIMS_STATUS_ENUM,
           isAkoReviewed: audit.isAkoReviewed,
-          dossierName: `Case ${audit.id}`,
-          notifiedCurrency: audit.notifiedCurrency || 'CHF'
+          dossierName: 'Generated Audit',
+          notifiedCurrency: audit.notifiedCurrency ?? 'CHF'
         };
       });
     },
@@ -599,7 +613,7 @@ const auditUISlice = createSlice({
           claimsStatus: caseData.claimsStatus as CLAIMS_STATUS_ENUM,
           isAkoReviewed: false,
           dossierName: `Case ${caseData.id}`,
-          notifiedCurrency: caseData.notifiedCurrency || 'CHF'
+          notifiedCurrency: caseData.notifiedCurrency ?? 'CHF'
         };
       });
     },
@@ -658,17 +672,17 @@ const auditUISlice = createSlice({
           year: parseInt(caseData.quarter.split('-')[1]),
           steps: {},
           auditor: ensureUserId(caseData.auditor),
-          comment: caseData.comment || '',
-          rating: (caseData.rating || '') as RatingValue,
-          specialFindings: caseData.specialFindings || createEmptyFindings(),
-          detailedFindings: caseData.detailedFindings || createEmptyFindings(),
+          comment: caseData.comment ?? '',
+          rating: (caseData.rating ?? '') as RatingValue,
+          specialFindings: caseData.specialFindings ?? createEmptyFindings(),
+          detailedFindings: caseData.detailedFindings ?? createEmptyFindings(),
           status: status,
           caseType: CASE_TYPE_ENUM.PRE_LOADED,
           coverageAmount: caseData.coverageAmount,
           claimsStatus: caseData.claimsStatus as CLAIMS_STATUS_ENUM,
           isAkoReviewed: caseData.isAkoReviewed,
           dossierName: `Case ${caseData.id}`,
-          notifiedCurrency: caseData.notifiedCurrency || 'CHF'
+          notifiedCurrency: caseData.notifiedCurrency ?? 'CHF'
         };
       });
     },
@@ -697,7 +711,7 @@ const getCurrentUserQuerySelector = auditApi.endpoints.getCurrentUser.select();
 
 export const selectCurrentUser = createSelector(
   [getCurrentUserQuerySelector],
-  (currentUserResult) => currentUserResult.data || null
+  (currentUserResult) => currentUserResult.data ?? null
 );
 
 export const selectCurrentUserId = (state: RootState) => state.auditUI.currentUserId;
@@ -713,7 +727,7 @@ export const selectAuditUIError = (state: RootState) => state.auditUI.error;
 export const selectUserRole = createSelector(
   [selectUserRoles, (_state: RootState, userId: string) => userId],
   (userRoles, userId) => {
-    return userRoles[userId] || { role: USER_ROLE_ENUM.STAFF, department: '' };
+    return userRoles[userId] ?? { role: USER_ROLE_ENUM.STAFF, department: '' };
   }
 );
 

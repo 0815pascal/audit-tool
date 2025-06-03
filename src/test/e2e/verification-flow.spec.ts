@@ -166,7 +166,7 @@ test.describe('IKS Audit Tool - Verification Data Persistence', () => {
         // On later attempts, try to debug what we actually see
         if (attempts > 5) {
           try {
-            const specificRow = page.locator('tbody tr').filter({ hasText: auditId || '' });
+            const specificRow = page.locator('tbody tr').filter({ hasText: auditId ?? '' });
             const specificRowText = await specificRow.textContent();
             console.log(`Attempt ${attempts + 1}: Specific audit ${auditId} row content:`, specificRowText);
           } catch {
