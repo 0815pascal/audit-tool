@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import {expect, test} from '@playwright/test';
 
 test.describe('IKS Audit Tool - Auto-Select and Verification', () => {
   test.beforeEach(async ({ page }) => {
@@ -636,7 +636,7 @@ test.describe('IKS Audit Tool - Auto-Select and Verification', () => {
 
   test('should display valid user names for all cases (no "Unknown" users)', async ({ page }) => {
     // This test prevents regressions where user IDs don't map to actual users
-    // All cases should show real user names, never "Unknown"
+    // All cases should show real usernames, never "Unknown"
     
     // Ensure we're logged in as a team leader who can auto-select
     const userSelect = page.locator('#user-select');
@@ -661,14 +661,14 @@ test.describe('IKS Audit Tool - Auto-Select and Verification', () => {
       userNames.push(userName?.trim());
     }
     
-    // Verify no user name is "Unknown"
+    // Verify no username is "Unknown"
     const unknownUsers = userNames.filter(name => name === 'Unknown');
     expect(unknownUsers.length).toBe(0);
     
-    // Verify all user names are non-empty
+    // Verify all usernames are non-empty
     expect(userNames.every(name => name && name.length > 0)).toBe(true);
     
-    // Verify we have expected user names from our mock data
+    // Verify we have expected usernames from our mock data
     const validUserNames = [
       'John Smith',      // User 1
       'Jane Doe',        // User 2  

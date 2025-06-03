@@ -16,9 +16,8 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, title, onClose, children }
       className="modal__overlay"
       onClick={onClose}
     >
-      <div
+      <dialog
         className="modal"
-        role="dialog"
         aria-modal="true"
         aria-labelledby="modal-title"
         onClick={(e) => e.stopPropagation()}
@@ -39,7 +38,7 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, title, onClose, children }
         <div className="modal__content">
           {children}
         </div>
-      </div>
+      </dialog>
     </div>
   );
 }; 

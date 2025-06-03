@@ -1,16 +1,8 @@
 import {http, HttpResponse} from 'msw';
-import {
-  ClaimsStatus,
-  QuarterNumber,
-  QuarterPeriod
-} from '../types/types';
-import {
-  createUserId,
-  createCaseId,
-  isQuarterPeriod,
-} from '../types/typeHelpers';
-import {CASE_STATUS_MAPPING, CLAIMS_STATUS, QUARTER_CALCULATIONS, API_BASE_PATH} from '../constants';
-import {DEFAULT_VALUE_ENUM, USER_ROLE_ENUM, AUDIT_STATUS_ENUM, CASE_STATUS_ENUM} from '../enums';
+import {ClaimsStatus, QuarterNumber, QuarterPeriod} from '../types/types';
+import {createCaseId, createUserId, isQuarterPeriod,} from '../types/typeHelpers';
+import {API_BASE_PATH, CASE_STATUS_MAPPING, CLAIMS_STATUS, QUARTER_CALCULATIONS} from '../constants';
+import {AUDIT_STATUS_ENUM, CASE_STATUS_ENUM, DEFAULT_VALUE_ENUM, USER_ROLE_ENUM} from '../enums';
 import {generateRealisticCaseNumber} from '../utils/statusUtils';
 import {ApiAuditRequestPayload, ApiAuditResponse, ApiCaseResponse} from './mockTypes';
 import {
@@ -514,7 +506,7 @@ export const handlers = [
     try {
       const { quarter } = params;
       const url = new URL(request.url);
-      const preLoadedCount = parseInt(url.searchParams.get('preLoadedCount') || '0');
+      const preLoadedCount = parseInt(url.searchParams.get('preLoadedCount') ?? '0');
       
       const quarterValue = Array.isArray(quarter) ? quarter[0] : quarter ?? '';
       const parsedQuarter = parseQuarter(quarterValue);
@@ -913,12 +905,12 @@ export const handlers = [
       const completionResponse = {
         success: true,
         auditId: numericAuditId,
-        auditor: requestData.auditor || '',
-        rating: requestData.rating || '',
-        comment: requestData.comment || '',
+        auditor: requestData.auditor ?? '',
+        rating: requestData.rating ?? '',
+        comment: requestData.comment ?? '',
         specialFindings: requestData.specialFindings || {},
         detailedFindings: requestData.detailedFindings || {},
-        status: requestData.status || 'completed',
+        status: requestData.status ?? 'completed',
         isCompleted: requestData.isCompleted ?? true,
         completionDate: new Date().toISOString(),
         message: 'Audit completed successfully'

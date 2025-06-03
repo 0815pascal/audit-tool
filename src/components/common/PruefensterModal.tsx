@@ -3,32 +3,25 @@ import {Modal} from './Modal';
 import {
   CaseAudit,
   CaseAuditData,
-  CaseAuditStatus,
   FindingsRecord,
   FindingType,
   RatingOption,
   RatingValue,
   SelectOption
 } from '../../types/types';
+import {CaseAuditId} from '../../types/brandedTypes';
+import {createCaseAuditId, createEmptyFindings, ensureUserId} from '../../types/typeHelpers';
 import {
-  CaseAuditId
-} from '../../types/brandedTypes';
-import {
-  ensureUserId,
-  createEmptyFindings,
-  createCaseAuditId
-} from '../../types/typeHelpers';
-import {
-  SPECIAL_FINDING_ENUM,
-  DETAILED_FINDING_ENUM,
-  RATING_VALUE_ENUM,
   AUDIT_STATUS_ENUM,
   BUTTON_COLOR,
-  BUTTON_SIZE
+  BUTTON_SIZE,
+  DETAILED_FINDING_ENUM,
+  RATING_VALUE_ENUM,
+  SPECIAL_FINDING_ENUM
 } from '../../enums';
 import {Button, Checkbox, Select, TextArea} from './FormControls';
 import {useAppDispatch, useAppSelector} from '../../store/hooks';
-import {useSaveAuditCompletionMutation, updateAuditInProgress} from '../../store/caseAuditSlice';
+import {updateAuditInProgress, useSaveAuditCompletionMutation} from '../../store/caseAuditSlice';
 import {convertStatusToAuditStatus} from '../../utils/statusUtils';
 import {useUsers} from '../../hooks/useUsers';
 import './PruefensterModal.css';
@@ -57,7 +50,7 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
   
   const [currentStatus, setCurrentStatus] = useState<AUDIT_STATUS_ENUM>(
     audit.status ? 
-      convertStatusToAuditStatus(audit.status as CaseAuditStatus | AUDIT_STATUS_ENUM) :
+      convertStatusToAuditStatus(audit.status) :
       (audit.isCompleted ? AUDIT_STATUS_ENUM.COMPLETED : AUDIT_STATUS_ENUM.PENDING)
   );
 
@@ -160,7 +153,7 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
         // If an auditor is already assigned to this audit, use their initials
         const existingAuditor = allUsers.find(user => user.id === audit.auditor);
         if (existingAuditor) {
-          setVerifier(existingAuditor.initials || 'XX');
+          setVerifier(existingAuditor.initials ?? 'XX');
         }
       } else {
         // No auditor assigned yet, use current user
@@ -170,7 +163,7 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
       
       // Update the current status based on audit
       setCurrentStatus(audit.status ? 
-        convertStatusToAuditStatus(audit.status as CaseAuditStatus | AUDIT_STATUS_ENUM) :
+        convertStatusToAuditStatus(audit.status) :
         (audit.isCompleted ? AUDIT_STATUS_ENUM.COMPLETED : AUDIT_STATUS_ENUM.PENDING));
       
       // Update findings with all options set to false by default
@@ -248,7 +241,7 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
     } else {
       // Only reset to NOT_VERIFIED if the audit wasn't already verified
       const auditCompletionStatus = audit.status ? 
-        convertStatusToAuditStatus(audit.status as CaseAuditStatus | AUDIT_STATUS_ENUM) :
+        convertStatusToAuditStatus(audit.status) :
         (audit.isCompleted ? AUDIT_STATUS_ENUM.COMPLETED : AUDIT_STATUS_ENUM.PENDING);
       if (auditCompletionStatus !== AUDIT_STATUS_ENUM.COMPLETED) {
         setCurrentStatus(audit.isCompleted ? AUDIT_STATUS_ENUM.COMPLETED : AUDIT_STATUS_ENUM.PENDING);
@@ -287,7 +280,7 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
       userId: ensureUserId(currentUserId),
       auditor: ensureUserId(auditorId),
       comment: comment,
-      rating: rating as RatingValue,
+      rating: rating,
       specialFindings: selectedFindings,
       detailedFindings: selectedDetailedFindings
     }));
@@ -337,7 +330,7 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
     // Prepare the current form data
     const currentFormData: CaseAuditData = {
       comment,
-      rating: rating as RatingValue,
+      rating: rating,
       specialFindings: selectedFindings,
       detailedFindings: selectedDetailedFindings
     };

@@ -5,8 +5,8 @@
  * Since both enums now use the same underlying string values, mapping is simplified.
  */
 
-import { AUDIT_STATUS_ENUM } from '../enums';
-import { CaseAuditStatus } from '../types/types';
+import {AUDIT_STATUS_ENUM} from '../enums';
+import {CaseAuditStatus} from '../types';
 
 /**
  * Generates a realistic 8-digit case number starting with 4 (like 40001912)
