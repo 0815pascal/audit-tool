@@ -13,7 +13,7 @@
   margin-bottom: var(--spacing-2xl);
 }
 
-.selection-controls {
+.quarterly-selection__controls {
   display: flex;
   flex-wrap: wrap;
   gap: var(--spacing-xl);
@@ -21,18 +21,18 @@
   align-items: center;
 }
 
-.control-group {
+.quarterly-selection__control-group {
   display: flex;
   flex-direction: column;
 }
 
-.control-group label {
+.quarterly-selection__control-group label {
   font-weight: var(--font-weight-bold);
   margin-bottom: var(--spacing-sm);
   color: var(--text-muted);
 }
 
-.control-group select {
+.quarterly-selection__control-group select {
   padding: var(--spacing-md);
   border: var(--border-thin) var(--border-color);
   border-radius: var(--border-radius);
@@ -43,7 +43,7 @@
   width: var(--width-sm);
 }
 
-.button-group {
+.quarterly-selection__button-group {
   display: flex;
   gap: var(--spacing-lg);
   align-items: flex-end;
@@ -68,7 +68,7 @@
   background-color: var(--secondary-hover);
 }
 
-.error-message {
+.quarterly-selection__error-message {
   background-color: var(--error-bg);
   color: var(--error-text);
   padding: var(--spacing-lg);
@@ -80,25 +80,25 @@
   border: var(--border-thin) var(--error-border);
 }
 
-.error-text {
+.quarterly-selection__error-text {
   flex: 1;
 }
 
-.error-message .close-button {
+.quarterly-selection__error-message .close-button {
   color: var(--error-text);
 }
 
-.error-message .close-button:hover {
+.quarterly-selection__error-message .close-button:hover {
   background-color: var(--hover-error);
   color: var(--error-dark);
 }
 
-.error-message .close-button:focus {
+.quarterly-selection__error-message .close-button:focus {
   outline: var(--outline-focus) var(--error-text);
   outline-offset: var(--outline-offset);
 }
 
-.success-message {
+.quarterly-selection__success-message {
   background-color: var(--success-bg);
   color: var(--success-text);
   padding: var(--spacing-lg);
@@ -110,11 +110,11 @@
   border: var(--border-thin) var(--success-border);
 }
 
-.success-text {
+.quarterly-selection__success-text {
   flex: 1;
 }
 
-.close-button {
+.quarterly-selection__close-button {
   background: none;
   border: none;
   color: var(--success-text);
@@ -132,12 +132,12 @@
   margin-left: var(--spacing-lg);
 }
 
-.close-button:hover {
+.quarterly-selection__close-button:hover {
   background-color: var(--hover-success);
   color: var(--success-hover-dark);
 }
 
-.close-button:focus {
+.quarterly-selection__close-button:focus {
   outline: var(--outline-focus) var(--success-text);
   outline-offset: var(--outline-offset);
 }

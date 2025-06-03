@@ -326,8 +326,8 @@ const QuarterlySelectionComponent: React.FC = () => {
     <div className="quarterly-selection">
       <h2>IKS Quarterly Audit Selection</h2>
       
-      <div className="selection-controls">
-        <div className="control-group">
+      <div className="quarterly-selection__controls">
+        <div className="quarterly-selection__control-group">
           <select 
             id="year-select"
             value={filteredYear || ''}
@@ -341,7 +341,7 @@ const QuarterlySelectionComponent: React.FC = () => {
           </select>
         </div>
         
-        <div className="control-group">
+        <div className="quarterly-selection__control-group">
           <select
             id="quarter-select"
             value={selectedQuarter || ''}
@@ -362,7 +362,7 @@ const QuarterlySelectionComponent: React.FC = () => {
           </select>
         </div>
         
-        <div className="control-group">
+        <div className="quarterly-selection__control-group">
           <select
             id="user-select"
             value={currentUserId}
@@ -377,7 +377,7 @@ const QuarterlySelectionComponent: React.FC = () => {
             ))}
           </select>
         </div>
-        <div className="button-group">
+        <div className="quarterly-selection__button-group">
         <button 
           onClick={handleAutoSelect}
           disabled={loading || !isTeamLeader}
@@ -399,10 +399,10 @@ const QuarterlySelectionComponent: React.FC = () => {
       
       
       {errorMessage && (
-        <div className="error-message">
-          <span className="error-text">{errorMessage}</span>
+        <div className="quarterly-selection__error-message">
+          <span className="quarterly-selection__error-text">{errorMessage}</span>
           <button 
-            className="close-button" 
+            className="quarterly-selection__close-button" 
             onClick={handleCloseErrorMessage}
             aria-label="Close error message"
             title="Close"
@@ -412,10 +412,10 @@ const QuarterlySelectionComponent: React.FC = () => {
         </div>
       )}
       {successMessage && (
-        <div className="success-message">
-          <span className="success-text">{successMessage}</span>
+        <div className="quarterly-selection__success-message">
+          <span className="quarterly-selection__success-text">{successMessage}</span>
           <button 
-            className="close-button" 
+            className="quarterly-selection__close-button" 
             onClick={handleCloseSuccessMessage}
             aria-label="Close success message"
             title="Close"
