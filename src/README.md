@@ -2,6 +2,11 @@
 
 This document outlines the type improvements made to strengthen the TypeScript typing system in the Audit Tool application.
 
+## Project Documentation
+
+### 📚 Architecture Documentation
+- **[CSS Architecture](../CSS_ARCHITECTURE.md)** - Comprehensive guide to our three-layer CSS architecture (Design Tokens + BEM + Utilities)
+
 ## Core Type Improvements
 
 1. **Simplified Component Hierarchy**

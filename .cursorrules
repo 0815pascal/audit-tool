@@ -1,5 +1,144 @@
 # Cursor Rules for audit-tool Project
 
+## CSS Architecture Guidelines
+
+This project uses a **three-layer CSS architecture**. When writing styles, follow these rules:
+
+### Layer 1: Design Tokens (CSS Custom Properties)
+**Always use design tokens instead of hardcoded values:**
+
+```css
+/* ✅ GOOD - Use design tokens */
+padding: var(--spacing-md);
+color: var(--primary-color);
+font-size: var(--font-size-sm);
+
+/* ❌ BAD - Hardcoded values */
+padding: 8px;
+color: #00008f;
+font-size: 14px;
+```
+
+**When to create new design tokens:**
+- Any color, spacing, or typography value used more than once
+- Values that need to be consistent across components
+- Any value that might need theming (dark mode, brand variants)
+
+### Layer 2: BEM Component Classes
+**Use BEM (Block Element Modifier) for component styling:**
+
+```css
+/* ✅ GOOD - Semantic BEM classes */
+.modal { }
+.modal__header { }
+.modal__close-button { }
+.button--primary { }
+.status-badge--completed { }
+
+/* ❌ BAD - Non-semantic or inconsistent naming */
+.redButton { }
+.modalCloseBtn { }
+.completed_status { }
+```
+
+**When to use BEM:**
+- Creating new UI components
+- Styling complex interactive elements
+- When you need semantic meaning in class names
+- Component has multiple states or variations
+
+### Layer 3: Utility Classes
+**Use utility classes for layout and common modifications:**
+
+```tsx
+{/* ✅ GOOD - Utilities for layout/spacing/typography */}
+<div className="modal__header flex justify-between items-center">
+<span className="field-label text-left text-uppercase">
+
+{/* ❌ BAD - Custom CSS for common patterns */}
+<div className="custom-header-layout">
+<span className="custom-label-style">
+```
+
+**When to use utilities:**
+- Layout (flexbox, grid)
+- Margins and padding
+- Text alignment and typography
+- Quick styling that doesn't need semantic meaning
+
+### Combining the Layers
+**The proper way to combine all three layers:**
+
+```tsx
+<div className="case-info-grid text-left mb-8">
+  {/* ^BEM component ^utility classes */}
+  
+  <span className="field-label text-uppercase">
+    {/* ^BEM element ^utility modifier */}
+  </span>
+</div>
+```
+
+### CSS File Organization
+- **Global tokens**: `src/index.css` (`:root` section)
+- **Component styles**: `src/components/ComponentName.css` (BEM classes)
+- **Utilities**: Defined in `src/index.css` (atomic classes)
+
+### Naming Conventions
+
+**Design Tokens:**
+```css
+--{category}-{property}-{variant}: value;
+--spacing-margin-large: 2rem;
+--color-status-success: #4caf50;
+```
+
+**BEM Classes:**
+```css
+.{block} { }                    /* .modal */
+.{block}__{element} { }         /* .modal__header */
+.{block}--{modifier} { }        /* .button--primary */
+.{block}__{element}--{modifier} { } /* .button__text--disabled */
+```
+
+**Utility Classes:**
+```css
+.{property}-{value} { }         /* .text-center, .mb-4, .flex-col */
+```
+
+### Common Pitfalls to Avoid
+- ❌ **Don't** mix utility classes with custom CSS properties in the same element
+- ❌ **Don't** use arbitrary values (always use design tokens)
+- ❌ **Don't** over-nest BEM elements (keep structure flat)
+- ❌ **Don't** use utilities for complex component-specific logic
+- ❌ **Don't** create new utility classes without checking if design tokens exist
+- ❌ **Don't** use inline styles (use utility classes instead)
+
+### Examples from Codebase
+
+**Modal Component (Good Pattern):**
+```tsx
+<div className="modal__overlay">
+  <dialog className="modal">
+    <div className="modal__header flex justify-between items-center">
+      <h3 className="modal__title">{title}</h3>
+      <button className="modal__close-button">×</button>
+    </div>
+    <div className="modal__content">
+      {children}
+    </div>
+  </dialog>
+</div>
+```
+
+**Form Field (Good Pattern):**
+```tsx
+<div className="info-field flex flex-col">
+  <span className="field-label text-left text-uppercase">Label</span>
+  <span className="field-value text-left mt-micro">{value}</span>
+</div>
+```
+
 ## Commit Message Guidelines
 
 When generating commit messages, follow these rules:
@@ -41,4 +180,6 @@ When writing code:
 - Use TypeScript strict typing
 - Add appropriate error handling
 - Include relevant comments for business logic
-- Follow the established naming conventions (camelCase for variables/functions, PascalCase for components) 
+- Follow the established naming conventions (camelCase for variables/functions, PascalCase for components)
+- Apply CSS architecture principles for any styling work
+- Reference CSS_ARCHITECTURE.md for detailed styling guidelines 
