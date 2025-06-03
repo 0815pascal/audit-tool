@@ -1,20 +1,14 @@
+import {createCaseId, createValidYear, QuarterNumber, QuarterPeriod} from '../types';
+
 import {
-  QuarterPeriod,
-  QuarterNumber
-} from '../types/types';
-import {
-  createCaseId,
-  createValidYear
-} from '../types/typeHelpers';
-import { 
-  CLAIMS_STATUS, 
   CASE_STATUS_MAPPING,
+  CLAIMS_STATUS,
   DETAILED_FINDING_TYPES,
-  SPECIAL_FINDING_TYPES,
-  QUARTER_CALCULATIONS
+  QUARTER_CALCULATIONS,
+  SPECIAL_FINDING_TYPES
 } from '../constants';
-import { Finding, createFindingId } from '../services/apiUtils';
-import { USER_ROLE_ENUM } from '../enums';
+import {createFindingId, Finding} from '../services';
+import {USER_ROLE_ENUM} from '../enums';
 import {ApiAuditResponse, ApiCaseResponse} from './mockTypes';
 
 // In-memory storage for created audits

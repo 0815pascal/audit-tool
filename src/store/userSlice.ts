@@ -1,10 +1,10 @@
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import { createSlice, PayloadAction, createSelector } from '@reduxjs/toolkit';
-import { User, UserRole, ApiResponse, ApiSuccessResponse } from '../types/types';
-import { UserId } from '../types/brandedTypes';
-import { RootState } from './index';
-import { USER_ROLE_ENUM, Department } from '../enums';
-import { API_BASE_PATH } from '../constants';
+import {createApi, fetchBaseQuery} from '@reduxjs/toolkit/query/react';
+import {createSelector, createSlice, PayloadAction} from '@reduxjs/toolkit';
+import {ApiResponse, User, UserRole} from '../types/types';
+import {UserId} from '../types/brandedTypes';
+import {RootState} from './index';
+import {Department, USER_ROLE_ENUM} from '../enums';
+import {API_BASE_PATH} from '../constants';
 
 // RTK Query API slice for user operations
 export const userApi = createApi({
@@ -23,9 +23,9 @@ export const userApi = createApi({
       query: () => '',
       transformResponse: (response: ApiResponse<User[]>) => {
         if (!response.success) {
-          throw new Error((response as ApiResponse<User[]> & { error?: string }).error || 'Failed to fetch users');
+          throw new Error((response as ApiResponse<User[]> & { error?: string }).error ?? 'Failed to fetch users');
         }
-        return (response as ApiSuccessResponse<User[]>).data;
+        return (response).data;
       },
       providesTags: (result) =>
         result
@@ -41,9 +41,9 @@ export const userApi = createApi({
       query: (id) => `/${id}`,
       transformResponse: (response: ApiResponse<User>) => {
         if (!response.success) {
-          throw new Error((response as ApiResponse<User> & { error?: string }).error || 'Failed to fetch user');
+          throw new Error((response as ApiResponse<User> & { error?: string }).error ?? 'Failed to fetch user');
         }
-        return (response as ApiSuccessResponse<User>).data;
+        return (response).data;
       },
       providesTags: (_, __, id) => [{ type: 'User', id }],
     }),
@@ -57,9 +57,9 @@ export const userApi = createApi({
       }),
       transformResponse: (response: ApiResponse<User>) => {
         if (!response.success) {
-          throw new Error((response as ApiResponse<User> & { error?: string }).error || 'Failed to create user');
+          throw new Error((response as ApiResponse<User> & { error?: string }).error ?? 'Failed to create user');
         }
-        return (response as ApiSuccessResponse<User>).data;
+        return (response).data;
       },
       invalidatesTags: [{ type: 'User', id: 'LIST' }],
     }),
@@ -73,9 +73,9 @@ export const userApi = createApi({
       }),
       transformResponse: (response: ApiResponse<User>) => {
         if (!response.success) {
-          throw new Error((response as ApiResponse<User> & { error?: string }).error || 'Failed to update user');
+          throw new Error((response as ApiResponse<User> & { error?: string }).error ?? 'Failed to update user');
         }
-        return (response as ApiSuccessResponse<User>).data;
+        return (response).data;
       },
       invalidatesTags: (_, __, { id }) => [
         { type: 'User', id },
@@ -91,7 +91,7 @@ export const userApi = createApi({
       }),
       transformResponse: (response: ApiResponse<{ success: boolean }>, _, id) => {
         if (!response.success) {
-          throw new Error((response as ApiResponse<{ success: boolean }> & { error?: string }).error || 'Failed to delete user');
+          throw new Error((response as ApiResponse<{ success: boolean }> & { error?: string }).error ?? 'Failed to delete user');
         }
         return { success: true, id };
       },
@@ -110,9 +110,9 @@ export const userApi = createApi({
       }),
       transformResponse: (response: ApiResponse<User>) => {
         if (!response.success) {
-          throw new Error((response as ApiResponse<User> & { error?: string }).error || 'Failed to update user status');
+          throw new Error((response as ApiResponse<User> & { error?: string }).error ?? 'Failed to update user status');
         }
-        return (response as ApiSuccessResponse<User>).data;
+        return (response).data;
       },
       invalidatesTags: (_, __, { userId }) => [
         { type: 'User', id: userId },
@@ -129,9 +129,9 @@ export const userApi = createApi({
       }),
       transformResponse: (response: ApiResponse<User>) => {
         if (!response.success) {
-          throw new Error((response as ApiResponse<User> & { error?: string }).error || 'Failed to update user role');
+          throw new Error((response as ApiResponse<User> & { error?: string }).error ?? 'Failed to update user role');
         }
-        return (response as ApiSuccessResponse<User>).data;
+        return (response).data;
       },
       invalidatesTags: (_, __, { userId }) => [
         { type: 'User', id: userId },

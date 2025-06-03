@@ -1,16 +1,7 @@
-import { 
-  User
-} from '../types/types';
-import {
-  createUserId,
-  createEmptyDetailedFindings,
-  createEmptySpecialFindings
-} from '../types/typeHelpers';
-import { 
-  CASE_TYPES
-} from '../constants';
-import { USER_ROLE_ENUM, Department, CLAIMS_STATUS_ENUM, RATING_VALUE_ENUM, CASE_TYPE_ENUM } from '../enums';
-import { MockCaseData } from './mockTypes';
+import {createEmptyDetailedFindings, createEmptySpecialFindings, createUserId, User} from '../types';
+import {CASE_TYPES} from '../constants';
+import {CASE_TYPE_ENUM, CLAIMS_STATUS_ENUM, Department, RATING_VALUE_ENUM, USER_ROLE_ENUM} from '../enums';
+import {MockCaseData} from './mockTypes';
 
 // Mock users data
 export const users: User[] = [
@@ -308,7 +299,7 @@ export const mockCases: MockCaseData[] = [
   },
   {
     id: '14',
-    userId: '2',
+    userId: '4',
     notificationDate: '2025-06-20', // Q2 2025  
     clientName: 'Trinity Moss',
     policyNumber: 24680,
@@ -331,7 +322,7 @@ export const mockCases: MockCaseData[] = [
     caseType: CASE_TYPE_ENUM.PRE_LOADED,
     notifiedCurrency: 'EUR'
   },
-  // Add a third pre-loaded case for Emily's in-progress work (for E2E test)
+  // Add a third preloaded case for Emily's in-progress work (for E2E test)
   {
     id: '15',
     userId: '3', // Robert Johnson's case
@@ -358,6 +349,3 @@ export const mockCases: MockCaseData[] = [
     notifiedCurrency: 'CHF'
   }
 ];
-
-// Export the existing array as the main case audits data
-export const MOCK_CASE_AUDITS = mockCases; 

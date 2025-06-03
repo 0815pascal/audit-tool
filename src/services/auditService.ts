@@ -1,10 +1,10 @@
-import { QuarterPeriod, CaseAuditData, UserAuditForSelection, AuditForSelection } from '../types/types';
-import { UserId, CaseAuditId } from '../types/brandedTypes';
-import { createCaseAuditId } from '../types/typeHelpers';
+import {AuditForSelection, CaseAuditData, QuarterPeriod, UserAuditForSelection} from '../types/types';
+import {CaseAuditId, UserId} from '../types/brandedTypes';
+import {createCaseAuditId} from '../types/typeHelpers';
 import axios from 'axios';
-import { CaseObj } from './apiUtils';
-import { AUDIT_STATUS_ENUM } from '../enums';
-import { API_BASE_PATH } from '../constants';
+import {CaseObj} from './apiUtils';
+import {AUDIT_STATUS_ENUM} from '../enums';
+import {API_BASE_PATH} from '../constants';
 
 /**
  * Fetch audits for a specific quarter
@@ -25,11 +25,11 @@ export const getAuditsByQuarter = async (quarter: QuarterPeriod): Promise<UserAu
       quarter: item.quarter,
       status: item.status,
       auditor: item.auditor || '',
-      coverageAmount: item.coverageAmount || 0,
+      coverageAmount: item.coverageAmount ?? 0,
       isCompleted: Boolean(item.isCompleted),
       isAkoReviewed: Boolean(item.isAkoReviewed),
-      claimsStatus: item.claimsStatus || 'FULL_COVER',
-      notifiedCurrency: item.notifiedCurrency || 'CHF'
+      claimsStatus: item.claimsStatus ?? 'FULL_COVER',
+      notifiedCurrency: item.notifiedCurrency ?? 'CHF'
     }));
   } catch (error) {
     console.error(`Error fetching audits for quarter ${quarter}:`, error);

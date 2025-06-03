@@ -24,8 +24,6 @@
         // Parse query parameter to handle redirects
         var p = window.location.search.match(/p=\/([^&]*)/);
         var q = window.location.search.match(/q=([^&]*)/);
-        var h = window.location.hash;
-  
         if (p) {
           window.history.replaceState(null, null,
             (p[1] || '') +

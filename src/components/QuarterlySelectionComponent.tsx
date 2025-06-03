@@ -1,33 +1,32 @@
-import React, { useState } from 'react';
-import { 
-  ClaimsStatus, CaseType, RatingValue, QuarterNumber, 
-  QuarterPeriod,
-  User, FindingsRecord,
-  CaseAuditStatus,
+import React, {useState} from 'react';
+import {
   CaseAudit,
-  CaseAuditData
+  CaseAuditData,
+  CaseAuditStatus,
+  CaseType,
+  ClaimsStatus,
+  FindingsRecord,
+  QuarterNumber,
+  QuarterPeriod,
+  RatingValue,
+  User
 } from '../types/types';
 import {
-  ensureUserId, 
-  createISODateString,
-  createPolicyId, 
+  createCaseAuditId,
   createCaseId,
   createEmptyFindings,
+  createISODateString,
+  createPolicyId,
+  ensureUserId,
   isQuarterPeriod,
-  createCaseAuditId,
 } from '../types/typeHelpers';
-import { USER_ROLE_ENUM, CASE_TYPE_ENUM, AUDIT_STATUS_ENUM, DEFAULT_VALUE_ENUM, CLAIMS_STATUS_ENUM } from '../enums';
-import { useCaseAuditHandlers } from '../hooks/useCaseAuditHandlers';
-import { PruefensterModal } from './common';
+import {AUDIT_STATUS_ENUM, CASE_TYPE_ENUM, CLAIMS_STATUS_ENUM, DEFAULT_VALUE_ENUM, USER_ROLE_ENUM} from '../enums';
+import {useCaseAuditHandlers} from '../hooks/useCaseAuditHandlers';
+import {PruefensterModal} from './common';
 import './QuarterlySelectionComponent.css';
-import { useAppDispatch, useAppSelector } from '../store/hooks';
-import { 
-  selectUserRole,
-  setCurrentUser,
-  selectAuditData,
-  formatQuarterYear
-} from '../store/caseAuditSlice';
-import { QUARTER_CALCULATIONS } from '../constants';
+import {useAppDispatch, useAppSelector} from '../store/hooks';
+import {formatQuarterYear, selectAuditData, selectUserRole, setCurrentUser} from '../store/caseAuditSlice';
+import {QUARTER_CALCULATIONS} from '../constants';
 
 // Define an interface for what we actually get from the API/store
 // This interface is compatible with both CaseAuditStatus and AUDIT_STATUS_ENUM
@@ -254,10 +253,10 @@ const QuarterlySelectionComponent: React.FC = () => {
         year: audit.year ?? parseInt(selectedQuarter?.split('-')[1] || String(new Date().getFullYear())),
         claimsStatus: (audit.claimsStatus as ClaimsStatus) || CLAIMS_STATUS_ENUM.FULL_COVER,
         auditor: audit.auditor ? ensureUserId(audit.auditor) : ensureUserId(currentUserId),
-        status: audit.status ? (audit.status as CaseAuditStatus) : (audit.isCompleted ? AUDIT_STATUS_ENUM.COMPLETED : AUDIT_STATUS_ENUM.PENDING),
+        status: audit.status ? (audit.status) : (audit.isCompleted ? AUDIT_STATUS_ENUM.COMPLETED : AUDIT_STATUS_ENUM.PENDING),
         // Use latest data from Redux if available, otherwise fall back to audit data
-        comment: latestAuditData?.comment || audit.comment || '',
-        rating: (latestAuditData?.rating || audit.rating || '') as RatingValue,
+        comment: (latestAuditData?.comment || audit.comment) ?? '',
+        rating: ((latestAuditData?.rating || audit.rating) ?? '') as RatingValue,
         specialFindings: latestAuditData?.specialFindings || audit.specialFindings || createEmptyFindings(),
         detailedFindings: latestAuditData?.detailedFindings || audit.detailedFindings || createEmptyFindings(),
         caseType: CASE_TYPE_ENUM.USER_QUARTERLY as CaseType,
@@ -506,7 +505,7 @@ const QuarterlySelectionComponent: React.FC = () => {
                             <td>{caseItem.id}</td>
                             <td>{caseItem.quarter}</td>
                             <td>{user ? user.displayName : 'Unknown'}</td>
-                            <td>{caseItem.coverageAmount?.toLocaleString()} {caseItem.notifiedCurrency || 'CHF'}</td>
+                            <td>{caseItem.coverageAmount?.toLocaleString()} {caseItem.notifiedCurrency ?? 'CHF'}</td>
                             <td>{caseItem.claimsStatus}</td>
                           </tr>
                         );
@@ -532,7 +531,7 @@ const QuarterlySelectionComponent: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {/* Pre-loaded Cases (verified and in-progress cases) */}
+                {/* Preloaded Cases (verified and in-progress cases) */}
                 {quarterlyDossiers.preLoadedCases && quarterlyDossiers.preLoadedCases.map((audit: AuditItem) => {
                   const user = findUserById(audit.userId);
                   // Get the latest audit data from Redux to ensure we show current status
