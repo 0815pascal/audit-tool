@@ -308,7 +308,7 @@ export const mockCases: MockCaseData[] = [
   },
   {
     id: '14',
-    userId: '2',
+    userId: '4',
     notificationDate: '2025-06-20', // Q2 2025  
     clientName: 'Trinity Moss',
     policyNumber: 24680,
@@ -320,7 +320,7 @@ export const mockCases: MockCaseData[] = [
     claimsStatus: CLAIMS_STATUS_ENUM.PARTIAL_COVER,
     coverageAmount: 775,
     auditor: '6', // In progress by Sarah Wilson (User ID 6, Specialist)
-    comment: 'Audit in progress - reviewing documentation and coverage details.',
+    comment: 'Audit in progress - Emily Davis case being reviewed by Sarah Wilson.',
     rating: '',
     specialFindings: createEmptySpecialFindings(),
     detailedFindings: createEmptyDetailedFindings(),

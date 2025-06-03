@@ -959,4 +959,77 @@ test.describe('IKS Audit Tool - Auto-Select and Verification', () => {
     
     console.log(`✅ Quarter replacement test passed: ${q1Count} Q1-2025 cases, ${q2CountAfter} Q2-2025 cases after quarter change`);
   });
+
+  test('should correctly block TEAM_LEADER from auditing their own case in pre-loaded data', async ({ page }) => {
+    // Load the page to see pre-loaded cases
+    await page.goto('/');
+    await page.waitForSelector('[data-testid="app-container"]', { timeout: 10000 });
+    
+    // Switch to IKS tab if not already active
+    const iksTab = page.locator('button:has-text("IKS")');
+    if (await iksTab.isVisible()) {
+      await iksTab.click();
+    }
+
+    // Wait for pre-loaded cases to be visible
+    await page.waitForSelector('.audit-table tbody tr', { timeout: 10000 });
+
+    // Find case 14 in the pre-loaded cases table
+    const case14Row = page.locator('tbody tr').filter({
+      has: page.locator('td:first-child:has-text("14")')
+    });
+    
+    // Verify case 14 is visible and shows Emily Davis as the case owner
+    await expect(case14Row).toBeVisible();
+    
+    // Check that the case owner column shows "Emily Davis"
+    const caseOwnerCell = case14Row.locator('td:nth-child(3)'); // 3rd column is case owner
+    await expect(caseOwnerCell).toContainText('Emily Davis');
+    
+    // Check that the status shows "In Bearbeitung" (IN_PROGRESS)
+    const statusCell = case14Row.locator('td:nth-child(4)'); // 4th column is status
+    await expect(statusCell).toContainText('In Bearbeitung');
+    
+    // Check that the Prüfer column shows "SW" (Sarah Wilson's initials)
+    const prueferCell = case14Row.locator('td:nth-child(5)'); // 5th column is Prüfer
+    await expect(prueferCell).toContainText('SW');
+
+    // Now login as Emily Davis (TEAM_LEADER)
+    const userSelect = page.locator('#user-select');
+    await userSelect.selectOption('4'); // Emily Davis (TEAM_LEADER)
+    await page.waitForTimeout(1000);
+
+    // The Prüfen button for case 14 should be DISABLED because Emily is the case owner
+    const pruefenButton = case14Row.locator('button:has-text("Prüfen")');
+    await expect(pruefenButton).toBeDisabled();
+    
+    console.log('✅ Case 14: Emily (TEAM_LEADER case owner) correctly blocked from auditing her own case');
+
+    // Now switch to Sarah Wilson (SPECIALIST, current auditor)
+    await userSelect.selectOption('6'); // Sarah Wilson (SPECIALIST)
+    await page.waitForTimeout(1000);
+
+    // The Prüfen button should now be ENABLED because Sarah is the current auditor
+    await expect(pruefenButton).toBeEnabled();
+    
+    console.log('✅ Case 14: Sarah (current auditor) can continue working on the case');
+
+    // Now switch to another user (Jane Doe - STAFF)
+    await userSelect.selectOption('2'); // Jane Doe (STAFF)
+    await page.waitForTimeout(1000);
+
+    // The Prüfen button should be DISABLED because STAFF cannot interfere with IN_PROGRESS cases
+    await expect(pruefenButton).toBeDisabled();
+    
+    console.log('✅ Case 14: Jane (STAFF) correctly blocked from interfering with IN_PROGRESS case');
+
+    // Finally, switch to John Smith (SPECIALIST)
+    await userSelect.selectOption('1'); // John Smith (SPECIALIST)
+    await page.waitForTimeout(1000);
+
+    // The Prüfen button should be ENABLED because SPECIALISTs can take over IN_PROGRESS cases
+    await expect(pruefenButton).toBeEnabled();
+    
+    console.log('✅ Case 14: John (SPECIALIST) can take over the IN_PROGRESS case');
+  });
 }); 

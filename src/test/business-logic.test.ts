@@ -42,6 +42,37 @@ const canUserCompleteAudit = (auditUserId: string, currentUserId: string, curren
   return currentUserRole === USER_ROLE_ENUM.TEAM_LEADER || currentUserRole === USER_ROLE_ENUM.SPECIALIST;
 }
 
+// Extended business logic function to test IN_PROGRESS case handling
+const canUserCompleteInProgressAudit = (
+  auditUserId: string, 
+  currentUserId: string, 
+  currentUserRole: string,
+  currentAuditor?: string,
+  isInProgress: boolean = false
+) => {
+  // Team leaders can't complete their own audits (IKS requirement)
+  if (currentUserRole === USER_ROLE_ENUM.TEAM_LEADER && auditUserId === currentUserId) {
+    return false;
+  }
+
+  // Special case: If audit is IN_PROGRESS
+  if (isInProgress && currentAuditor) {
+    if (currentAuditor === currentUserId) {
+      // The assigned auditor can continue working → allowed
+      return true;
+    } else if (auditUserId === currentUserId) {
+      // Case owners (even non-TEAM_LEADERs) cannot audit their own IN_PROGRESS cases → blocked
+      return false;
+    } else {
+      // Other users (who are neither the case owner nor the current auditor) can interfere → allowed
+      return currentUserRole === USER_ROLE_ENUM.TEAM_LEADER || currentUserRole === USER_ROLE_ENUM.SPECIALIST;
+    }
+  }
+
+  // Standard logic for non-IN_PROGRESS cases
+  return currentUserRole === USER_ROLE_ENUM.TEAM_LEADER || currentUserRole === USER_ROLE_ENUM.SPECIALIST;
+}
+
 describe('IKS Audit Business Logic', () => {
   describe('getActiveUsersForAudit', () => {
     it('should return only active users excluding readers', () => {
@@ -103,6 +134,96 @@ describe('IKS Audit Business Logic', () => {
     it('should prevent readers from completing audits', () => {
       const result = canUserCompleteAudit('1', '6', USER_ROLE_ENUM.READER)
       expect(result).toBe(false)
+    })
+  })
+
+  describe('canUserCompleteInProgressAudit - IN_PROGRESS Case Handling', () => {
+    it('should allow assigned auditor to continue their own IN_PROGRESS audit', () => {
+      const result = canUserCompleteInProgressAudit(
+        '2', // case owner (Jane Doe)
+        '6', // current user (Sarah Wilson - Specialist) 
+        USER_ROLE_ENUM.SPECIALIST,
+        '6', // current auditor (Sarah Wilson)
+        true // is IN_PROGRESS
+      )
+      expect(result).toBe(true)
+    })
+
+    it('should prevent case owners from auditing their own IN_PROGRESS cases (non-TEAM_LEADER)', () => {
+      const result = canUserCompleteInProgressAudit(
+        '2', // case owner (Jane Doe - STAFF)
+        '2', // current user (Jane Doe)
+        USER_ROLE_ENUM.STAFF,
+        '6', // current auditor (Sarah Wilson)
+        true // is IN_PROGRESS
+      )
+      expect(result).toBe(false)
+    })
+
+    it('should prevent TEAM_LEADER case owners from auditing their own IN_PROGRESS cases', () => {
+      const result = canUserCompleteInProgressAudit(
+        '4', // case owner (Emily Davis - TEAM_LEADER)
+        '4', // current user (Emily Davis)
+        USER_ROLE_ENUM.TEAM_LEADER,
+        '6', // current auditor (Sarah Wilson)
+        true // is IN_PROGRESS
+      )
+      expect(result).toBe(false)
+    })
+
+    it('should allow other users to interfere with IN_PROGRESS cases (TEAM_LEADER)', () => {
+      const result = canUserCompleteInProgressAudit(
+        '2', // case owner (Jane Doe)
+        '4', // current user (Emily Davis - TEAM_LEADER)
+        USER_ROLE_ENUM.TEAM_LEADER,
+        '6', // current auditor (Sarah Wilson)
+        true // is IN_PROGRESS
+      )
+      expect(result).toBe(true)
+    })
+
+    it('should allow other users to interfere with IN_PROGRESS cases (SPECIALIST)', () => {
+      const result = canUserCompleteInProgressAudit(
+        '2', // case owner (Jane Doe)
+        '1', // current user (John Smith - SPECIALIST)
+        USER_ROLE_ENUM.SPECIALIST,
+        '6', // current auditor (Sarah Wilson)
+        true // is IN_PROGRESS
+      )
+      expect(result).toBe(true)
+    })
+
+    it('should prevent STAFF from interfering with IN_PROGRESS cases', () => {
+      const result = canUserCompleteInProgressAudit(
+        '4', // case owner (Emily Davis)
+        '3', // current user (Robert Johnson - STAFF)
+        USER_ROLE_ENUM.STAFF,
+        '6', // current auditor (Sarah Wilson)
+        true // is IN_PROGRESS
+      )
+      expect(result).toBe(false)
+    })
+
+    it('should handle non-IN_PROGRESS cases normally', () => {
+      // TEAM_LEADER should be able to audit other's cases when not IN_PROGRESS
+      const result1 = canUserCompleteInProgressAudit(
+        '2', // case owner (Jane Doe)
+        '4', // current user (Emily Davis - TEAM_LEADER)
+        USER_ROLE_ENUM.TEAM_LEADER,
+        '', // no current auditor
+        false // not IN_PROGRESS
+      )
+      expect(result1).toBe(true)
+
+      // SPECIALIST should be able to audit cases when not IN_PROGRESS
+      const result2 = canUserCompleteInProgressAudit(
+        '2', // case owner (Jane Doe)
+        '1', // current user (John Smith - SPECIALIST)
+        USER_ROLE_ENUM.SPECIALIST,
+        '', // no current auditor
+        false // not IN_PROGRESS
+      )
+      expect(result2).toBe(true)
     })
   })
 

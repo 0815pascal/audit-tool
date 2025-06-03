@@ -301,26 +301,29 @@ export const useCaseAuditHandlers = () => {
       if (!currentUserRole) {
         return false;
       }
-      
-      // Special case: If audit is IN_PROGRESS and current user is the auditor, allow them to continue
+
+      // Team leaders can't complete their own audits - must be completed by a specialist
+      if (currentUserRole.role === USER_ROLE_ENUM.TEAM_LEADER && audit.userId === currentUserId) {
+        return false;
+      }
+
+      // Special case: If audit is IN_PROGRESS
       if (audit.status === mapAuditStatusToCaseAuditStatus(AUDIT_STATUS_ENUM.IN_PROGRESS)) {
         // Convert auditor to string for comparison
         const auditorString = audit.auditor ? String(audit.auditor) : '';
         const currentUserString = String(currentUserId);
         
         if (auditorString === currentUserString) {
-          // User can continue their own in-progress audit
+          // The assigned auditor can continue working → allowed
           return true;
-        } else if (auditorString && auditorString !== currentUserString) {
-          // Another user is working on this audit - current user cannot perform it
+        } else if (audit.userId === currentUserId) {
+          // Case owners (even non-TEAM_LEADERs) cannot work on their own IN_PROGRESS cases → blocked
           return false;
+        } else {
+          // Other users (who are neither the case owner nor the current auditor) can interfere → allowed
+          // But only if they have sufficient role (TEAM_LEADER or SPECIALIST)
+          return currentUserRole.role === USER_ROLE_ENUM.TEAM_LEADER || currentUserRole.role === USER_ROLE_ENUM.SPECIALIST;
         }
-        // If no auditor is set yet, continue with normal rules below
-      }
-      
-      // Team leaders can't complete their own audits - must be completed by a specialist
-      if (currentUserRole.role === USER_ROLE_ENUM.TEAM_LEADER && audit.userId === currentUserId) {
-        return false;
       }
       
       // Make sure coverageAmount is defined before comparing
