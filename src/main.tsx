@@ -40,7 +40,7 @@ const startApp = async () => {
   ReactDOM.createRoot(document.getElementById('root')!).render(
     <React.StrictMode>
       <Provider store={store}>
-        <App />
+          <App />
       </Provider>
     </React.StrictMode>,
   );

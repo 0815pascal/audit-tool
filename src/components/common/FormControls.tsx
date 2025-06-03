@@ -126,10 +126,10 @@ export const Card: React.FC<CardProps> = ({
   
   return (
     <div className={cardClassName}>
-      {title && <h2 className={centerTitle ? "text-center" : "text-left"}>{title}</h2>}
-      {children}
-    </div>
-  );
+    {title && <h2 className={centerTitle ? "text-center" : "text-left"}>{title}</h2>}
+    {children}
+  </div>
+);
 };
 
 // Select dropdown component

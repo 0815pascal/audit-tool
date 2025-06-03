@@ -486,34 +486,34 @@ const QuarterlySelectionComponent: React.FC = () => {
               
               {/* Show quarter display cases if available */}
               {quarterlyDossiers.quarterDisplayCases && quarterlyDossiers.quarterDisplayCases.length > 0 && (
-                <div>
-                  <h3>All Cases for {selectedQuarter}</h3>
-                  <table>
-                    <thead>
-                      <tr>
-                        <th data-testid="case-id-header">CaseID</th>
-                        <th data-testid="quarter-header">Quartal</th>
-                        <th data-testid="responsible-user-header">Verantwortlicher Fallbearbeiter</th>
-                        <th data-testid="coverage-amount-header">Schadenssumme</th>
-                        <th data-testid="claims-status-header">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {quarterlyDossiers.quarterDisplayCases.map((caseItem: AuditItem) => {
-                        const user = findUserById(caseItem.userId);
-                        return (
-                          <tr key={caseItem.id}>
-                            <td>{caseItem.id}</td>
-                            <td>{caseItem.quarter}</td>
-                            <td>{user ? user.displayName : 'Unknown'}</td>
-                            <td>{caseItem.coverageAmount?.toLocaleString()} {caseItem.notifiedCurrency || 'CHF'}</td>
-                            <td>{caseItem.claimsStatus}</td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
+              <div>
+                <h3>All Cases for {selectedQuarter}</h3>
+                <table>
+                  <thead>
+                    <tr>
+                      <th data-testid="case-id-header">CaseID</th>
+                      <th data-testid="quarter-header">Quartal</th>
+                      <th data-testid="responsible-user-header">Verantwortlicher Fallbearbeiter</th>
+                      <th data-testid="coverage-amount-header">Schadenssumme</th>
+                      <th data-testid="claims-status-header">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {quarterlyDossiers.quarterDisplayCases.map((caseItem: AuditItem) => {
+                      const user = findUserById(caseItem.userId);
+                      return (
+                        <tr key={caseItem.id}>
+                          <td>{caseItem.id}</td>
+                          <td>{caseItem.quarter}</td>
+                          <td>{user ? user.displayName : 'Unknown'}</td>
+                          <td>{caseItem.coverageAmount?.toLocaleString()} {caseItem.notifiedCurrency || 'CHF'}</td>
+                          <td>{caseItem.claimsStatus}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
               )}
               
               {/* Always show this message when no quarterly audits have been selected */}
