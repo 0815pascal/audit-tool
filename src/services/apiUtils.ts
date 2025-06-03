@@ -4,6 +4,7 @@ import type {
   FindingCategory,
   QuarterPeriod
 } from '../types/types';
+import type { ValidCurrency } from '../types/currencyTypes';
 import type { 
   CacheKey, 
   FindingId,
@@ -54,7 +55,7 @@ export interface CaseObj {
   coverageAmount: number;
   caseStatus: CaseStatus;
   notificationDate: string; // Date when the case was notified, used for quarter calculation
-  notifiedCurrency: string; // Currency code for the case (e.g., CHF, EUR, USD)
+  notifiedCurrency: ValidCurrency; // Currency code for the case (e.g., CHF, EUR, USD)
 }
 
 export interface Auditor {

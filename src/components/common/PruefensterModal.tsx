@@ -25,6 +25,7 @@ import {updateAuditInProgress, useSaveAuditCompletionMutation} from '../../store
 import {convertStatusToAuditStatus} from '../../utils/statusUtils';
 import {useUsers} from '../../hooks/useUsers';
 import './PruefensterModal.css';
+import { CURRENCY } from '../../types/currencyTypes';
 
 interface PruefensterModalProps {
   isOpen: boolean;
@@ -387,7 +388,7 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
             <span className="field-value text-left field-value--currency mt-micro">
               {new Intl.NumberFormat('de-CH', { 
                 style: 'currency', 
-                currency: audit.notifiedCurrency ?? 'CHF'
+                currency: audit.notifiedCurrency ?? CURRENCY.CHF
               }).format(audit.coverageAmount)}
             </span>
           </div>

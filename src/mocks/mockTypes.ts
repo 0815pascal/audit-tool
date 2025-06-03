@@ -9,6 +9,7 @@ import {
   ISODateString,
   UserRole
 } from '../types/types';
+import { ValidCurrency } from '../types/currencyTypes';
 import {
   UserId,
   CaseId
@@ -43,7 +44,7 @@ export interface MockCaseData extends Record<string, unknown> {
   isAkoReviewed: boolean;
   isSpecialist: boolean;
   caseType: CaseType;
-  notifiedCurrency: string;
+  notifiedCurrency: ValidCurrency;
 }
 
 // API response format for case selection endpoints
@@ -57,7 +58,7 @@ export interface ApiCaseResponse {
   coverageAmount: number;
   caseStatus: CASE_STATUS_ENUM;
   notificationDate: string;
-  notifiedCurrency: string;
+  notifiedCurrency: ValidCurrency;
 }
 
 // API response format for audit endpoints

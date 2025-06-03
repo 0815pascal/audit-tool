@@ -57,7 +57,7 @@ export interface StoredCaseAuditData extends CaseAuditData {
   dossierName: string;
   isAkoReviewed?: boolean;
   lastUpdated?: string;
-  notifiedCurrency?: string; // Currency code for the case (e.g., CHF, EUR, USD)
+  notifiedCurrency?: ValidCurrency; // Currency code for the case (e.g., CHF, EUR, USD)
 }
 
 // Action payload for case audit operations
@@ -91,7 +91,7 @@ export interface CaseAudit extends CaseAuditCore, CaseAuditData {
   auditor: UserId;
   status?: CaseAuditStatus;
   notificationDate?: string; // Date when the case was notified, used for quarter calculation
-  notifiedCurrency?: string; // Currency code for the case (e.g., CHF, EUR, USD)
+  notifiedCurrency?: ValidCurrency; // Currency code for the case (e.g., CHF, EUR, USD)
 }
 
 // Redux state for case audits
@@ -248,6 +248,7 @@ export type RatingOption = SelectOption<RatingValue>;
 
 // Common React component prop types
 import type { ReactNode, HTMLAttributes } from 'react';
+import type { ValidCurrency } from './currencyTypes';
 
 // Custom prop types for consistent component APIs
 export interface PropsWithChildren {
@@ -281,7 +282,7 @@ export interface AuditItem {
   claimsStatus: string;
   quarter: string;
   isAkoReviewed: boolean;
-  notifiedCurrency?: string;
+  notifiedCurrency?: ValidCurrency;
   caseType: string;
   comment?: string;
   rating?: string;
@@ -305,7 +306,7 @@ export interface QuarterCaseItem {
   coverageAmount: number;
   claimsStatus: string;
   quarter: string;
-  notifiedCurrency?: string;
+  notifiedCurrency?: ValidCurrency;
 }
 
 /**
@@ -332,7 +333,7 @@ export interface PreLoadedCaseItem {
   claimsStatus: string;
   quarter: string;
   isAkoReviewed: boolean;
-  notifiedCurrency: string;
+  notifiedCurrency: ValidCurrency;
 }
 
 /**

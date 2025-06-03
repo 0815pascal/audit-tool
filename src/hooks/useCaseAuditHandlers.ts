@@ -51,6 +51,7 @@ import {
 import { CLAIMS_STATUS_ENUM, CASE_TYPE_ENUM, DEFAULT_VALUE_ENUM, USER_ROLE_ENUM, AUDIT_STATUS_ENUM } from '../enums';
 import { mapAuditStatusToCaseAuditStatus } from '../utils/statusUtils';
 import { selectCasesForAudit, getAllCasesByQuarter } from '../services';
+import { CURRENCY } from '../types/currencyTypes';
 
 /**
  * Hook for handling case audit operations
@@ -186,7 +187,7 @@ export const useCaseAuditHandlers = () => {
           coverageAmount: caseObj.coverageAmount,
           claimsStatus: String(caseObj.claimsStatus),
           quarter: actualQuarter,
-          notifiedCurrency: caseObj.notifiedCurrency ?? 'CHF'
+          notifiedCurrency: caseObj.notifiedCurrency ?? CURRENCY.CHF
         };
       });
       
@@ -412,7 +413,7 @@ export const useCaseAuditHandlers = () => {
           claimsStatus: String(caseObj.claimsStatus), // Convert to string
           quarter: actualQuarter, // Use the actual quarter from notification date for display
           isAkoReviewed: false,
-          notifiedCurrency: caseObj.notifiedCurrency ?? 'CHF', // Include the currency from API response
+          notifiedCurrency: caseObj.notifiedCurrency ?? CURRENCY.CHF, // Include the currency from API response
           caseType: String(caseType) // Set caseType based on whether it's current or previous quarter
         };
         

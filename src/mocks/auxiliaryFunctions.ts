@@ -1,5 +1,5 @@
 import {createCaseId, createValidYear, QuarterNumber, QuarterPeriod} from '../types';
-
+import { CURRENCY, ValidCurrency } from '../types/currencyTypes';
 import {
   CASE_STATUS_MAPPING,
   CLAIMS_STATUS,
@@ -94,7 +94,7 @@ export const caseToCaseObj = (caseItem: Record<string, unknown>): ApiCaseRespons
     coverageAmount: (caseItem.coverageAmount as number) || 10000.00,
     caseStatus: CASE_STATUS_MAPPING.COMPENSATED,
     notificationDate,
-    notifiedCurrency: (caseItem.notifiedCurrency as string) || 'CHF'
+    notifiedCurrency: (caseItem.notifiedCurrency as ValidCurrency) || CURRENCY.CHF
   };
 };
 
@@ -110,7 +110,7 @@ export const caseToAudit = (caseObj: ApiCaseResponse, quarter: QuarterPeriod): A
       claimsStatus: caseObj.claimsStatus || CLAIMS_STATUS.FULL_COVER,
       coverageAmount: caseObj.coverageAmount || 10000.00,
       notificationDate: caseObj.notificationDate,
-      notifiedCurrency: caseObj.notifiedCurrency || 'CHF'
+      notifiedCurrency: caseObj.notifiedCurrency || CURRENCY.CHF
     },
     auditor: {
       userId: typeof caseObj.claimOwner?.userId === 'number' ? caseObj.claimOwner.userId : 2,

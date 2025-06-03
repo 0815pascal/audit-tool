@@ -1,6 +1,7 @@
 import { createSlice, createSelector, type PayloadAction } from '@reduxjs/toolkit';
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import type { RootState } from './index';
+import { ValidCurrency, CURRENCY } from '../types/currencyTypes';
 import {
   CaseAudit,
   CaseAuditStatus,
@@ -248,7 +249,7 @@ export const auditApi = createApi({
       claimsStatus: string;
       quarter: string;
       isAkoReviewed: boolean;
-      notifiedCurrency: string;
+      notifiedCurrency: ValidCurrency;
     }>, void>({
       query: () => '/pre-loaded-cases',
       transformResponse: (response: { data?: Array<{
@@ -264,7 +265,7 @@ export const auditApi = createApi({
         claimsStatus: string;
         quarter: string;
         isAkoReviewed: boolean;
-        notifiedCurrency: string;
+        notifiedCurrency: ValidCurrency;
       }> }) => response.data ?? [],
     }),
   }),
@@ -320,7 +321,8 @@ const createDefaultCaseAuditData = (userId: string): StoredCaseAuditData => {
     coverageAmount: 0,
     claimsStatus: CLAIMS_STATUS_ENUM.FULL_COVER,
     isAkoReviewed: false,
-    dossierName: 'Default Dossier'
+    dossierName: 'Default Dossier',
+    notifiedCurrency: CURRENCY.CHF
   };
 };
 
@@ -476,7 +478,7 @@ const auditUISlice = createSlice({
           claimsStatus: audit.claimsStatus as CLAIMS_STATUS_ENUM,
           isAkoReviewed: audit.isAkoReviewed,
           dossierName: 'Generated Audit',
-          notifiedCurrency: audit.notifiedCurrency ?? 'CHF'
+          notifiedCurrency: audit.notifiedCurrency ?? CURRENCY.CHF
         };
       });
     },
@@ -520,7 +522,7 @@ const auditUISlice = createSlice({
           claimsStatus: caseData.claimsStatus as CLAIMS_STATUS_ENUM,
           isAkoReviewed: false,
           dossierName: `Case ${caseData.id}`,
-          notifiedCurrency: caseData.notifiedCurrency ?? 'CHF'
+          notifiedCurrency: caseData.notifiedCurrency ?? CURRENCY.CHF
         };
       });
     },
@@ -575,7 +577,7 @@ const auditUISlice = createSlice({
           claimsStatus: caseData.claimsStatus as CLAIMS_STATUS_ENUM,
           isAkoReviewed: caseData.isAkoReviewed,
           dossierName: `Case ${caseData.id}`,
-          notifiedCurrency: caseData.notifiedCurrency ?? 'CHF'
+          notifiedCurrency: caseData.notifiedCurrency ?? CURRENCY.CHF
         };
       });
     },

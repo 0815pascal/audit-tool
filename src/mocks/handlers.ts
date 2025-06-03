@@ -1,4 +1,5 @@
 import {http, HttpResponse} from 'msw';
+import { CURRENCY, ValidCurrency } from '../types/currencyTypes';
 import {ClaimsStatus, QuarterNumber, QuarterPeriod} from '../types/types';
 import {createCaseId, createUserId, isQuarterPeriod,} from '../types/typeHelpers';
 import {API_BASE_PATH, CASE_STATUS_MAPPING, CLAIMS_STATUS, QUARTER_CALCULATIONS} from '../constants';
@@ -241,7 +242,7 @@ export const handlers = [
           coverageAmount: requestData.caseObj?.coverageAmount ?? 10000.00,
           caseStatus: (requestData.caseObj?.caseStatus as CASE_STATUS_ENUM) || CASE_STATUS_MAPPING.COMPENSATED,
           notificationDate: new Date().toISOString().split('T')[0],
-          notifiedCurrency: 'CHF'
+          notifiedCurrency: CURRENCY.CHF
         },
         auditor: {
           userId: requestData.auditor?.userId !== undefined 
@@ -273,7 +274,7 @@ export const handlers = [
           coverageAmount: 10000.00,
           caseStatus: CASE_STATUS_MAPPING.COMPENSATED,
           notificationDate: new Date().toISOString().split('T')[0],
-          notifiedCurrency: 'CHF'
+          notifiedCurrency: CURRENCY.CHF
         },
         auditor: {
           userId: 2,
@@ -346,7 +347,7 @@ export const handlers = [
             coverageAmount: 10000.00,
             caseStatus: CASE_STATUS_MAPPING.COMPENSATED,
             notificationDate: new Date().toISOString().split('T')[0],
-            notifiedCurrency: 'CHF'
+            notifiedCurrency: CURRENCY.CHF
           },
           auditor: {
             userId: 2,
@@ -390,7 +391,7 @@ export const handlers = [
                 caseStatus: requestData.caseObj.caseStatus
               }),
               ...(requestData.caseObj.notifiedCurrency && {
-                notifiedCurrency: requestData.caseObj.notifiedCurrency
+                notifiedCurrency: requestData.caseObj.notifiedCurrency as ValidCurrency
               })
             } : {})
         }}),
@@ -427,7 +428,7 @@ export const handlers = [
           coverageAmount: 10000.00,
           caseStatus: CASE_STATUS_MAPPING.COMPENSATED,
           notificationDate: new Date().toISOString().split('T')[0],
-          notifiedCurrency: 'CHF'
+          notifiedCurrency: CURRENCY.CHF
         },
         auditor: {
           userId: 2,
@@ -566,7 +567,7 @@ export const handlers = [
         const currentQuarterDate = new Date(parsedQuarter.year, (parsedQuarter.quarterNum - 1) * 3 + Math.floor(Math.random() * 3), Math.floor(Math.random() * 28) + 1);
         
         // Random currency selection
-        const currencies = ['CHF', 'EUR', 'USD'];
+        const currencies = [CURRENCY.CHF, CURRENCY.EUR, CURRENCY.USD];
         const randomCurrency = currencies[Math.floor(Math.random() * currencies.length)];
         
         const mockCase: ApiCaseResponse = {
@@ -591,7 +592,7 @@ export const handlers = [
         const previousQuarterDate = new Date(prevYear, (prevQuarterNum - 1) * 3 + Math.floor(Math.random() * 3), Math.floor(Math.random() * 28) + 1);
         
         // Random currency selection
-        const currencies = ['CHF', 'EUR', 'USD'];
+        const currencies = [CURRENCY.CHF, CURRENCY.EUR, CURRENCY.USD];
         const randomCurrency = currencies[Math.floor(Math.random() * currencies.length)];
         
         const mockCase: ApiCaseResponse = {
@@ -699,7 +700,7 @@ export const handlers = [
               const notificationDate = new Date(year, randomMonth, randomDay);
               return notificationDate.toISOString().split('T')[0]; // Return YYYY-MM-DD format
             })(),
-            notifiedCurrency: index % 3 === 0 ? 'EUR' : index % 3 === 1 ? 'USD' : 'CHF' // Mix of currencies
+            notifiedCurrency: index % 3 === 0 ? CURRENCY.EUR : index % 3 === 1 ? CURRENCY.USD : CURRENCY.CHF // Mix of currencies
           };
         });
       

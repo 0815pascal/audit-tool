@@ -2,6 +2,7 @@ import {createEmptyDetailedFindings, createEmptySpecialFindings, createUserId, U
 import {CASE_TYPES} from '../constants';
 import {CASE_TYPE_ENUM, CLAIMS_STATUS_ENUM, Department, RATING_VALUE_ENUM, USER_ROLE_ENUM} from '../enums';
 import {MockCaseData} from './mockTypes';
+import { CURRENCY } from '../types/currencyTypes';
 
 // Mock users data
 export const users: User[] = [
@@ -40,7 +41,7 @@ export const mockCases: MockCaseData[] = [
     isAkoReviewed: false,
     isSpecialist: true,
     caseType: CASE_TYPES.USER_QUARTERLY,
-    notifiedCurrency: 'CHF'
+    notifiedCurrency: CURRENCY.CHF
   },
   {
     id: '2',
@@ -65,7 +66,7 @@ export const mockCases: MockCaseData[] = [
     isAkoReviewed: false,
     isSpecialist: false,
     caseType: CASE_TYPES.USER_QUARTERLY,
-    notifiedCurrency: 'EUR'
+    notifiedCurrency: CURRENCY.EUR
   },
   {
     id: '3',
@@ -90,7 +91,7 @@ export const mockCases: MockCaseData[] = [
     isAkoReviewed: false,
     isSpecialist: false,
     caseType: CASE_TYPES.USER_QUARTERLY,
-    notifiedCurrency: 'USD'
+    notifiedCurrency: CURRENCY.USD
   },
   {
     id: '4',
@@ -115,7 +116,7 @@ export const mockCases: MockCaseData[] = [
     isAkoReviewed: false,
     isSpecialist: true,
     caseType: CASE_TYPES.USER_QUARTERLY,
-    notifiedCurrency: 'CHF'
+    notifiedCurrency: CURRENCY.CHF
   },
   {
     id: '5',
@@ -140,7 +141,7 @@ export const mockCases: MockCaseData[] = [
     isAkoReviewed: false,
     isSpecialist: false,
     caseType: CASE_TYPES.USER_QUARTERLY,
-    notifiedCurrency: 'EUR'
+    notifiedCurrency: CURRENCY.EUR
   },
   {
     id: '6',
@@ -165,7 +166,7 @@ export const mockCases: MockCaseData[] = [
     isAkoReviewed: false,
     isSpecialist: true,
     caseType: CASE_TYPES.USER_QUARTERLY,
-    notifiedCurrency: 'USD'
+    notifiedCurrency: CURRENCY.USD
   },
   {
     id: '7',
@@ -190,7 +191,7 @@ export const mockCases: MockCaseData[] = [
     isAkoReviewed: false,
     isSpecialist: false,
     caseType: CASE_TYPES.USER_QUARTERLY,
-    notifiedCurrency: 'CHF'
+    notifiedCurrency: CURRENCY.CHF
   },
   {
     id: '8',
@@ -215,7 +216,7 @@ export const mockCases: MockCaseData[] = [
     isAkoReviewed: false,
     isSpecialist: false,
     caseType: CASE_TYPES.USER_QUARTERLY,
-    notifiedCurrency: 'EUR'
+    notifiedCurrency: CURRENCY.EUR
   },
   {
     id: '11',
@@ -240,7 +241,7 @@ export const mockCases: MockCaseData[] = [
     isAkoReviewed: false,
     isSpecialist: false,
     caseType: CASE_TYPES.USER_QUARTERLY,
-    notifiedCurrency: 'CHF'
+    notifiedCurrency: CURRENCY.CHF
   },
   {
     id: '12',
@@ -265,7 +266,7 @@ export const mockCases: MockCaseData[] = [
     isAkoReviewed: false,
     isSpecialist: true,
     caseType: CASE_TYPES.USER_QUARTERLY,
-    notifiedCurrency: 'USD'
+    notifiedCurrency: CURRENCY.USD
   },
   // PRE-LOADED CASES: These will be shown in the table upon component loading
   {
@@ -295,7 +296,7 @@ export const mockCases: MockCaseData[] = [
     isAkoReviewed: true,
     isSpecialist: true,
     caseType: CASE_TYPE_ENUM.PRE_LOADED,
-    notifiedCurrency: 'CHF'
+    notifiedCurrency: CURRENCY.CHF
   },
   {
     id: '14',
@@ -320,7 +321,7 @@ export const mockCases: MockCaseData[] = [
     isAkoReviewed: false,
     isSpecialist: false,
     caseType: CASE_TYPE_ENUM.PRE_LOADED,
-    notifiedCurrency: 'EUR'
+    notifiedCurrency: CURRENCY.EUR
   },
   // Add a third preloaded case for Emily's in-progress work (for E2E test)
   {
@@ -346,6 +347,6 @@ export const mockCases: MockCaseData[] = [
     isAkoReviewed: false,
     isSpecialist: false,
     caseType: CASE_TYPE_ENUM.PRE_LOADED,
-    notifiedCurrency: 'CHF'
+    notifiedCurrency: CURRENCY.CHF
   }
 ];

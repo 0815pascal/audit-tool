@@ -1,10 +1,16 @@
-import {AuditForSelection, CaseAuditData, QuarterPeriod, UserAuditForSelection} from '../types/types';
+import axios from 'axios';
+import { API_BASE_PATH } from '../constants';
+import { CURRENCY } from '../types/currencyTypes';
+import type { 
+  AuditForSelection, 
+  UserAuditForSelection, 
+  QuarterPeriod,
+  CaseAuditData
+} from '../types/types';
 import {CaseAuditId, UserId} from '../types/brandedTypes';
 import {createCaseAuditId} from '../types/typeHelpers';
-import axios from 'axios';
 import {CaseObj} from './apiUtils';
 import {AUDIT_STATUS_ENUM} from '../enums';
-import {API_BASE_PATH} from '../constants';
 
 /**
  * Fetch audits for a specific quarter
@@ -29,7 +35,7 @@ export const getAuditsByQuarter = async (quarter: QuarterPeriod): Promise<UserAu
       isCompleted: Boolean(item.isCompleted),
       isAkoReviewed: Boolean(item.isAkoReviewed),
       claimsStatus: item.claimsStatus ?? 'FULL_COVER',
-      notifiedCurrency: item.notifiedCurrency ?? 'CHF'
+      notifiedCurrency: item.notifiedCurrency ?? CURRENCY.CHF
     }));
   } catch (error) {
     console.error(`Error fetching audits for quarter ${quarter}:`, error);
@@ -61,7 +67,7 @@ export const getAllCasesByQuarter = async (quarter: QuarterPeriod): Promise<Case
       coverageAmount: Number(caseData.coverageAmount) || 0,
       claimsStatus: String(caseData.claimsStatus) || 'FULL_COVER',
       notificationDate: String(caseData.notificationDate),
-      notifiedCurrency: String(caseData.notifiedCurrency) || 'CHF'
+      notifiedCurrency: String(caseData.notifiedCurrency) || CURRENCY.CHF
     }));
   } catch (error) {
     console.error(`Error fetching all cases for quarter ${quarter}:`, error);
@@ -92,7 +98,7 @@ export const getAuditsByAuditor = async (auditorId: UserId): Promise<UserAuditFo
       isCompleted: Boolean(item.isCompleted),
       isAkoReviewed: Boolean(item.isAkoReviewed),
       claimsStatus: item.claimsStatus ?? 'FULL_COVER',
-      notifiedCurrency: item.notifiedCurrency ?? 'CHF'
+      notifiedCurrency: item.notifiedCurrency ?? CURRENCY.CHF
     }));
   } catch (error) {
     console.error(`Error fetching audits for auditor ${auditorId}:`, error);
@@ -125,7 +131,7 @@ export const createAudit = async (payload: Record<string, unknown>): Promise<Aud
       isCompleted: Boolean(data.isCompleted),
       isAkoReviewed: Boolean(data.isAkoReviewed),
       claimsStatus: data.claimsStatus ?? 'FULL_COVER',
-      notifiedCurrency: data.notifiedCurrency ?? 'CHF'
+      notifiedCurrency: data.notifiedCurrency ?? CURRENCY.CHF
     };
   } catch (error) {
     console.error('Error creating audit:', error);
@@ -158,7 +164,7 @@ export const updateAudit = async (caseAuditId: CaseAuditId, payload: Record<stri
       isCompleted: Boolean(data.isCompleted),
       isAkoReviewed: Boolean(data.isAkoReviewed),
       claimsStatus: data.claimsStatus ?? 'FULL_COVER',
-      notifiedCurrency: data.notifiedCurrency ?? 'CHF'
+      notifiedCurrency: data.notifiedCurrency ?? CURRENCY.CHF
     };
   } catch (error) {
     console.error(`Error updating audit ${caseAuditId}:`, error);
@@ -230,7 +236,7 @@ export const selectCasesForAudit = async (quarterPeriod: QuarterPeriod, preLoade
       claimsStatus: String(caseData.claimsStatus) || 'FULL_COVER',
       caseStatus: String(caseData.caseStatus) || 'COMPENSATED',
       notificationDate: String(caseData.notificationDate),
-      notifiedCurrency: String(caseData.notifiedCurrency) || 'CHF'
+      notifiedCurrency: String(caseData.notifiedCurrency) || CURRENCY.CHF
     }));
   } catch (error) {
     console.error(`Error selecting cases for audit in quarter ${quarterPeriod}:`, error);

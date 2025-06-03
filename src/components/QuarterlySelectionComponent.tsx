@@ -27,6 +27,7 @@ import './QuarterlySelectionComponent.css';
 import {useAppDispatch, useAppSelector} from '../store/hooks';
 import {formatQuarterYear, selectAuditData, selectUserRole, setCurrentUser, setUserRole} from '../store/caseAuditSlice';
 import {QUARTER_CALCULATIONS} from '../constants';
+import { ValidCurrency, CURRENCY } from '../types/currencyTypes';
 
 // Define an interface for what we actually get from the API/store
 // This interface is compatible with both CaseAuditStatus and AUDIT_STATUS_ENUM
@@ -46,7 +47,7 @@ interface AuditItem {
   quarter?: string;
   year?: number;
   caseType?: string;
-  notifiedCurrency?: string;
+  notifiedCurrency?: ValidCurrency;
 }
 
 const QuarterlySelectionComponent: React.FC = () => {
@@ -275,7 +276,7 @@ const QuarterlySelectionComponent: React.FC = () => {
         caseType: CASE_TYPE_ENUM.USER_QUARTERLY as CaseType,
         notificationDate,
         // Use the notified currency from the audit data, fallback to CHF
-        notifiedCurrency: audit.notifiedCurrency ?? 'CHF'
+        notifiedCurrency: audit.notifiedCurrency ?? CURRENCY.CHF
       };
       
       // Set audit and open modal with slight delay to ensure DOM is ready
@@ -518,7 +519,7 @@ const QuarterlySelectionComponent: React.FC = () => {
                             <td>{caseItem.id}</td>
                             <td>{caseItem.quarter}</td>
                             <td>{user ? user.displayName : 'Unknown'}</td>
-                            <td>{caseItem.coverageAmount?.toLocaleString()} {caseItem.notifiedCurrency ?? 'CHF'}</td>
+                            <td>{caseItem.coverageAmount?.toLocaleString()} {caseItem.notifiedCurrency ?? CURRENCY.CHF}</td>
                             <td>{caseItem.claimsStatus}</td>
                           </tr>
                         );
