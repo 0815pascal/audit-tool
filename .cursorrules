@@ -1,0 +1,44 @@
+# Cursor Rules for audit-tool Project
+
+## Commit Message Guidelines
+
+When generating commit messages, follow these rules:
+
+### Format
+- Use conventional commit format: `type: brief description`
+- Keep the entire message under 72 characters
+- Use imperative mood (e.g., "fix", "add", "update", not "fixed", "added", "updated")
+- No periods at the end of the subject line
+
+### Types
+- `feat`: new feature
+- `fix`: bug fix
+- `refactor`: code refactoring
+- `test`: adding or updating tests
+- `docs`: documentation changes
+- `style`: formatting, missing semicolons, etc.
+- `chore`: maintenance tasks
+
+### Content
+- Focus on WHAT changed, not WHY (save details for description if needed)
+- Be specific but concise
+- Examples of good messages:
+  - `fix: disable Prüfen button for team leaders' own cases`
+  - `test: add IN_PROGRESS case handling tests`
+  - `refactor: simplify user role validation logic`
+  - `feat: add case owner audit restriction`
+
+### What to Avoid
+- Vague messages like "fix bug" or "update code"
+- Technical implementation details in the subject line
+- Multiple changes in one commit message
+- Overly verbose descriptions
+
+## Code Generation Guidelines
+
+When writing code:
+- Follow existing patterns in the codebase
+- Use TypeScript strict typing
+- Add appropriate error handling
+- Include relevant comments for business logic
+- Follow the established naming conventions (camelCase for variables/functions, PascalCase for components) 
