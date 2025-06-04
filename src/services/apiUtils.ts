@@ -108,8 +108,3 @@ export interface AuditPayload {
   };
   findings?: Array<Omit<Finding, 'findingId'>>;
 }
-
-// Response types
-// Pagination types for API responses
-// API query parameters
-// Auth-related types

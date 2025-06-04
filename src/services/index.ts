@@ -44,4 +44,4 @@ export type {
   CompletionData,
   UpdateCompletionRequest,
   CompletionResponse
-} from './auditService';
+} from './auditService.types';

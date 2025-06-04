@@ -1,7 +1,6 @@
 import React, {useCallback, useEffect, useState} from 'react';
 import {Modal} from './Modal';
 import {
-  CaseAudit,
   CaseAuditData,
   FindingsRecord,
   FindingType,
@@ -9,7 +8,6 @@ import {
   RatingValue,
   SelectOption
 } from '../../types/types';
-import {CaseAuditId} from '../../types/brandedTypes';
 import {createCaseAuditId, createEmptyFindings, ensureUserId} from '../../types/typeHelpers';
 import {
   AUDIT_STATUS_ENUM,
@@ -26,13 +24,7 @@ import {convertStatusToAuditStatus} from '../../utils/statusUtils';
 import {useUsers} from '../../hooks/useUsers';
 import './PruefensterModal.css';
 import { CURRENCY } from '../../types/currencyTypes';
-
-interface PruefensterModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  audit: CaseAudit;
-  onVerify?: (auditId: string | CaseAuditId, auditorId: string, caseAuditData: CaseAuditData) => void;
-}
+import { PruefensterModalProps } from './PruefensterModal.types';
 
 export const PruefensterModal: React.FC<PruefensterModalProps> = ({
   isOpen,

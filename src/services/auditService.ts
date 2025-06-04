@@ -11,6 +11,7 @@ import {CaseAuditId, UserId} from '../types/brandedTypes';
 import {createCaseAuditId} from '../types/typeHelpers';
 import {CaseObj} from './apiUtils';
 import {AUDIT_STATUS_ENUM} from '../enums';
+import { CompletionData, CompletionResponse } from './auditService.types';
 
 /**
  * Fetch audits for a specific quarter
@@ -263,28 +264,6 @@ export const exportAuditsForQuarter = async (quarter: QuarterPeriod): Promise<Bl
 };
 
 // ===== AUDIT COMPLETION FUNCTIONS =====
-
-export interface CompletionData {
-  auditorId: number;
-  status: AUDIT_STATUS_ENUM;
-  rating?: string;
-  comment?: string;
-  isCompleted?: boolean;
-}
-
-export interface UpdateCompletionRequest {
-  auditId: CaseAuditId;
-  auditor: UserId;
-  status: AUDIT_STATUS_ENUM;
-  auditorId: number;
-  rating?: string;
-  comment?: string;
-}
-
-export interface CompletionResponse {
-  success: boolean;
-  data: CompletionData;
-}
 
 export const completeAuditAPI = async (
   caseAuditId: CaseAuditId | string,

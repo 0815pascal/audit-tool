@@ -5,7 +5,6 @@ import {
   CaseAuditStatus,
   CaseType,
   ClaimsStatus,
-  FindingsRecord,
   QuarterNumber,
   QuarterPeriod,
   RatingValue,
@@ -18,6 +17,7 @@ import {
   createISODateString,
   createPolicyId,
   ensureUserId,
+  formatQuarterPeriod,
   isQuarterPeriod,
 } from '../types/typeHelpers';
 import {AUDIT_STATUS_ENUM, CASE_TYPE_ENUM, CLAIMS_STATUS_ENUM, DEFAULT_VALUE_ENUM, USER_ROLE_ENUM} from '../enums';
@@ -25,29 +25,10 @@ import {useCaseAuditHandlers} from '../hooks/useCaseAuditHandlers';
 import {PruefensterModal} from './common';
 import './QuarterlySelectionComponent.css';
 import {useAppDispatch, useAppSelector} from '../store/hooks';
-import {formatQuarterYear, selectAuditData, selectUserRole, setCurrentUser, setUserRole} from '../store/caseAuditSlice';
+import {selectAuditData, selectUserRole, setCurrentUser, setUserRole} from '../store/caseAuditSlice';
 import {QUARTER_CALCULATIONS} from '../constants';
-import { ValidCurrency, CURRENCY } from '../types/currencyTypes';
-
-// Define an interface for what we actually get from the API/store
-// This interface is compatible with both CaseAuditStatus and AUDIT_STATUS_ENUM
-interface AuditItem {
-  id: string;
-  userId: string;
-  status: CaseAuditStatus | AUDIT_STATUS_ENUM;
-  auditor?: string;
-  coverageAmount: number;
-  isCompleted: boolean;
-  claimsStatus?: ClaimsStatus;
-  comment?: string;
-  rating?: string;
-  specialFindings?: FindingsRecord;
-  detailedFindings?: FindingsRecord;  
-  quarter?: string;
-  year?: number;
-  caseType?: string;
-  notifiedCurrency?: ValidCurrency;
-}
+import { CURRENCY } from '../types/currencyTypes';
+import { AuditItem } from './QuarterlySelectionComponent.types';
 
 const QuarterlySelectionComponent: React.FC = () => {
   const {
@@ -97,7 +78,7 @@ const QuarterlySelectionComponent: React.FC = () => {
   
         // Generate quarter options
   const quarterOptions = quarters.map(q => ({
-    value: formatQuarterYear(q as QuarterNumber, filteredYear),
+    value: formatQuarterPeriod(q as QuarterNumber, filteredYear),
     label: `Q${q}-${filteredYear}`
   }));
   

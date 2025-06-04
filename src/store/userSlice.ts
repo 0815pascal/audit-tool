@@ -5,6 +5,7 @@ import {UserId} from '../types/brandedTypes';
 import {RootState} from './index';
 import {Department, USER_ROLE_ENUM} from '../enums';
 import {API_BASE_PATH} from '../constants';
+import type { UserUIState } from './userSlice.types';
 
 // RTK Query API slice for user operations
 export const userApi = createApi({
@@ -153,10 +154,6 @@ export const {
 } = userApi;
 
 // Separate slice for UI state (like selected user)
-interface UserUIState {
-  selectedUserId: UserId | null;
-}
-
 const initialUIState: UserUIState = {
   selectedUserId: null,
 };

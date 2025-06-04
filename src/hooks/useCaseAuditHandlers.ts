@@ -21,11 +21,9 @@ import {
 import {
   CaseAuditStatus,
   QuarterPeriod,
-  FindingsRecord,
   CaseAuditData,
   RatingValue,
-  CaseAudit,
-  ClaimsStatus
+  CaseAudit
 } from '../types/types';
 import {
   CaseAuditId,
@@ -52,6 +50,7 @@ import { CLAIMS_STATUS_ENUM, CASE_TYPE_ENUM, DEFAULT_VALUE_ENUM, USER_ROLE_ENUM,
 import { mapAuditStatusToCaseAuditStatus } from '../utils/statusUtils';
 import { selectCasesForAudit, getAllCasesByQuarter } from '../services';
 import { CURRENCY } from '../types/currencyTypes';
+import { ExternalAuditData } from './useCaseAuditHandlers.types';
 
 /**
  * Hook for handling case audit operations
@@ -438,22 +437,6 @@ export const useCaseAuditHandlers = () => {
     // For now, this is a placeholder function
   };
   
-  // Define a more specific type for external audit data
-  interface ExternalAuditData {
-    id: string;
-    userId?: string;
-    status?: string;
-    auditor?: string;
-    coverageAmount?: number;
-    claimsStatus?: ClaimsStatus;
-    comment?: string;
-    rating?: string;
-    specialFindings?: FindingsRecord;
-    detailedFindings?: FindingsRecord;
-    isCompleted?: boolean;
-    [key: string]: unknown; // Allow additional properties
-  }
-
   // Convert external audit format to our CaseAudit type
   const auditToCaseAudit = (audit: ExternalAuditData): CaseAudit => {
     // Create a base CaseAudit object with defaults

@@ -1,21 +1,13 @@
 import React from 'react';
 import './FormControls.css';
-import { SelectOption } from '../../types/types';
 import { BUTTON_COLOR, BUTTON_SIZE, INPUT_TYPE_ENUM } from '../../enums';
+import { ButtonProps, CheckboxProps, TextAreaProps, CardProps, SelectProps } from './FormControls.types';
 
 /**
  * Common form controls that can be reused across the application
  */
 
 // Basic button component with configurable style
-interface ButtonProps {
-  onClick: () => void;
-  children: React.ReactNode;
-  color?: BUTTON_COLOR;
-  disabled?: boolean;
-  size?: BUTTON_SIZE;
-}
-
 export const Button: React.FC<ButtonProps> = ({
   onClick,
   children,
@@ -48,14 +40,6 @@ export const Button: React.FC<ButtonProps> = ({
 };
 
 // Checkbox with label
-interface CheckboxProps {
-  id: string;
-  label: string;
-  checked: boolean;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  disabled?: boolean;
-}
-
 export const Checkbox: React.FC<CheckboxProps> = ({
   id,
   label,
@@ -76,15 +60,6 @@ export const Checkbox: React.FC<CheckboxProps> = ({
 );
 
 // Text area with label
-interface TextAreaProps {
-  id: string;
-  label?: string;
-  value: string;
-  onChange: (value: string) => void;
-  placeholder?: string;
-  rows?: number;
-}
-
 export const TextArea: React.FC<TextAreaProps> = ({
   id,
   label,
@@ -106,14 +81,6 @@ export const TextArea: React.FC<TextAreaProps> = ({
 );
 
 // Card container component
-interface CardProps {
-  title?: string;
-  children: React.ReactNode;
-  className?: string;
-  fullWidth?: boolean;
-  centerTitle?: boolean;
-}
-
 export const Card: React.FC<CardProps> = ({ 
   title, 
   children, 
@@ -133,14 +100,6 @@ export const Card: React.FC<CardProps> = ({
 };
 
 // Select dropdown component
-interface SelectProps<T = string> {
-  id: string;
-  label?: string;
-  options: SelectOption<T>[];
-  value: T;
-  onChange: (value: T) => void;
-}
-
 export const Select = <T extends string>({
   id,
   label,
