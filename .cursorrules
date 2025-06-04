@@ -183,3 +183,153 @@ When writing code:
 - Follow the established naming conventions (camelCase for variables/functions, PascalCase for components)
 - Apply CSS architecture principles for any styling work
 - Reference CSS_ARCHITECTURE.md for detailed styling guidelines 
+
+## TypeScript Folder and File Structure Guidelines
+
+This project enforces **strict separation of types/interfaces from implementation code**. Follow these rules:
+
+### Rule 1: Shared Types → `types/` Folder
+**If a type/interface is used by MORE THAN ONE file:**
+
+```typescript
+// ✅ GOOD - Place in src/types/types.ts
+export interface UserRoleInfo {
+  role: UserRole;
+  department: string;
+}
+
+// ✅ GOOD - Import in multiple files
+import { UserRoleInfo } from '../types/types';
+```
+
+**Examples of shared types:**
+- API response interfaces
+- Redux state interfaces
+- Common entity types (User, CaseAudit, etc.)
+- Utility types used across components
+
+### Rule 2: Local Types → `.types.ts` Files
+**If a type/interface is used by ONLY ONE file:**
+
+```typescript
+// ✅ GOOD - Create caseAuditSlice.types.ts
+export interface AuditCacheEntry {
+  timestamp: number;
+  data: StoredCaseAuditData;
+}
+
+export type AuditSliceHelpers = {
+  clearExpiredEntries: () => void;
+  validateAuditData: (data: unknown) => boolean;
+};
+
+// ✅ GOOD - Import in caseAuditSlice.ts
+import { AuditCacheEntry, AuditSliceHelpers } from './caseAuditSlice.types';
+```
+
+### File Naming Convention
+- **Implementation file**: `fileName.ts` / `fileName.tsx`
+- **Local types file**: `fileName.types.ts`
+- **Shared types**: `src/types/types.ts` or `src/types/specificDomain.ts`
+
+### Examples from Codebase
+
+**❌ BAD - Types mixed with implementation:**
+```typescript
+// caseAuditSlice.ts
+interface AuditUIState {  // Local interface in implementation file
+  currentUserId: string;
+  // ...
+}
+
+const auditSlice = createSlice({
+  // implementation...
+});
+```
+
+**✅ GOOD - Types separated:**
+```typescript
+// caseAuditSlice.types.ts
+export interface AuditUIState {
+  currentUserId: string;
+  // ...
+}
+
+// caseAuditSlice.ts
+import { AuditUIState } from './caseAuditSlice.types';
+
+const auditSlice = createSlice({
+  // implementation...
+});
+```
+
+### When to Create New Type Files
+
+**Create `.types.ts` file when:**
+- File has more than 2-3 local interfaces/types
+- Types are complex (>5 properties)
+- File becomes harder to read due to type definitions
+- Types are likely to grow or change frequently
+
+**Keep types in implementation file when:**
+- Simple one-liner type aliases
+- Temporary/experimental types
+- Very tightly coupled to a specific function
+
+### Folder Structure Examples
+
+```
+src/
+├── types/
+│   ├── types.ts              # Shared across multiple files
+│   ├── brandedTypes.ts       # Domain-specific shared types
+│   └── currencyTypes.ts      # Currency-related shared types
+├── store/
+│   ├── caseAuditSlice.ts     # Implementation
+│   ├── caseAuditSlice.types.ts # Local types for slice
+│   └── index.ts
+├── components/
+│   ├── Modal.tsx             # Implementation
+│   ├── Modal.types.ts        # Local types for Modal
+│   └── QuarterlySelection.tsx
+└── services/
+    ├── auditService.ts       # Implementation
+    └── auditService.types.ts # Local types for service
+```
+
+### Import Guidelines
+
+**✅ GOOD - Clear import sources:**
+```typescript
+// Shared types
+import { User, CaseAudit } from '../types/types';
+
+// Local types
+import { ModalState, ModalActions } from './Modal.types';
+
+// External libraries
+import type { PayloadAction } from '@reduxjs/toolkit';
+```
+
+**❌ BAD - Mixed imports:**
+```typescript
+// Don't mix local and shared types in same import
+import { User, ModalState } from '../types/types'; // ModalState is local!
+```
+
+### Benefits of This Structure
+
+✅ **Cleaner Implementation Files** - Focus on logic, not type definitions  
+✅ **Better Code Review** - Types changes are isolated and easier to review  
+✅ **Improved Reusability** - Shared types are discoverable in `types/` folder  
+✅ **Enhanced Maintainability** - Type changes don't clutter implementation diffs  
+✅ **Better IDE Performance** - Smaller files load faster in TypeScript language service  
+
+### Migration Strategy
+
+When refactoring existing files:
+1. Identify local vs shared types
+2. Move shared types to `src/types/types.ts`
+3. Create `.types.ts` file for local types
+4. Update all imports
+5. Verify no circular dependencies exist 
