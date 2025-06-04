@@ -52,3 +52,22 @@ export default tseslint.config({
   },
 })
 ```
+
+## Export Functionality
+
+The application supports exporting audit results in Excel format:
+
+### Excel Export (ExcelJS)
+- **Professional formatting** with headers, borders, and conditional formatting
+- **Multiple columns** including Case ID, Quarter, Responsible User, Status, Auditor, Coverage Amount, Currency, Claims Status, Rating, Comment, and Completion Date
+- **Summary information** at the top of the sheet (Quarter, Export Date, Total Cases)
+- **Styled output** with alternating row colors and status-based color coding
+- **Automatic filename generation** using current date and quarter
+
+### Usage
+Click the "Export Results" button after auto-selecting audits to download an Excel file with all audit data.
+
+### Dependencies
+- **ExcelJS**: Modern, actively maintained Excel library (replaces the unmaintained `xlsx` package)
+
+## Technology Stack Update

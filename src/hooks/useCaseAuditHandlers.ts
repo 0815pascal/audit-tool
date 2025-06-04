@@ -432,9 +432,159 @@ export const useCaseAuditHandlers = () => {
   };
   
   // Export quarterly results
-  const exportQuarterlyResults = (): void => {
-    // In a real implementation, this would handle the export logic
-    // For now, this is a placeholder function
+  const exportQuarterlyResults = async (): Promise<void> => {
+    try {
+      const ExcelJS = (await import('exceljs')).default;
+      
+      // Create a new workbook and worksheet
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet('Quarterly Audit Results');
+      
+      // Set up the worksheet properties
+      worksheet.properties.defaultRowHeight = 20;
+      
+      // Define the columns with proper widths
+      worksheet.columns = [
+        { header: 'Case ID', key: 'caseId', width: 12 },
+        { header: 'Quarter', key: 'quarter', width: 12 },
+        { header: 'Responsible User', key: 'responsibleUser', width: 20 },
+        { header: 'Status', key: 'status', width: 15 },
+        { header: 'Auditor', key: 'auditor', width: 15 },
+        { header: 'Coverage Amount', key: 'coverageAmount', width: 18 },
+        { header: 'Currency', key: 'currency', width: 10 },
+        { header: 'Claims Status', key: 'claimsStatus', width: 15 },
+        { header: 'Rating', key: 'rating', width: 20 },
+        { header: 'Comment', key: 'comment', width: 30 },
+        { header: 'Completion Date', key: 'completionDate', width: 18 }
+      ];
+      
+      // Style the header row
+      const headerRow = worksheet.getRow(1);
+      headerRow.font = { bold: true, color: { argb: 'FFFFFF' } };
+      headerRow.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: '4472C4' }
+      };
+      headerRow.alignment = { horizontal: 'center', vertical: 'middle' };
+      
+      // Get all audit data from Redux
+      const allAudits = [
+        ...quarterlyAudits.userQuarterlyAudits,
+        ...quarterlyAudits.previousQuarterRandomAudits,
+        ...(quarterlyAudits.preLoadedCases || [])
+      ];
+      
+      // Add data rows
+      allAudits.forEach((audit, index) => {
+        const user = usersList.find(u => u.id === audit.userId);
+        const latestAuditData = auditData[audit.id];
+        const currentStatus = latestAuditData?.status || audit.status;
+        const currentAuditor = latestAuditData?.auditor || audit.auditor;
+        const auditorUser = currentAuditor ? usersList.find(u => u.id === currentAuditor) : null;
+        
+        // Convert status to human-readable format
+        const statusText = currentStatus === 'completed' ? 'Geprüft' :
+                          currentStatus === 'in_progress' ? 'In Bearbeitung' : 'Nicht geprüft';
+        
+        // Convert rating to human-readable format
+        const ratingText = latestAuditData?.rating ? 
+          latestAuditData.rating.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase()) : 
+          '';
+        
+        const row = worksheet.addRow({
+          caseId: audit.id,
+          quarter: audit.quarter,
+          responsibleUser: user ? user.displayName : 'Unknown',
+          status: statusText,
+          auditor: auditorUser ? auditorUser.displayName : (currentAuditor ? currentAuditor : '-'),
+          coverageAmount: audit.coverageAmount ? audit.coverageAmount.toLocaleString('de-CH') : '-',
+          currency: audit.notifiedCurrency ?? 'CHF',
+          claimsStatus: audit.claimsStatus ?? '-',
+          rating: ratingText,
+          comment: latestAuditData?.comment || audit.comment || '',
+          completionDate: latestAuditData?.completionDate ? 
+            new Date(latestAuditData.completionDate).toLocaleDateString('de-CH') : '-'
+        });
+        
+        // Alternate row colors for better readability
+        if (index % 2 === 1) {
+          row.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'F8F9FA' }
+          };
+        }
+        
+        // Add conditional formatting for status
+        const statusCell = row.getCell('status');
+        if (statusText === 'Geprüft') {
+          statusCell.font = { color: { argb: '28A745' }, bold: true };
+        } else if (statusText === 'In Bearbeitung') {
+          statusCell.font = { color: { argb: 'FFC107' }, bold: true };
+        } else {
+          statusCell.font = { color: { argb: '6C757D' } };
+        }
+      });
+      
+      // Add summary information at the top
+      worksheet.insertRow(1, ['']); // Empty row
+      const summaryRow = worksheet.insertRow(1, [
+        'Quarterly Audit Export',
+        '',
+        `Quarter: ${selectedQuarter}`,
+        '',
+        `Export Date: ${new Date().toLocaleDateString('de-CH')}`,
+        '',
+        `Total Cases: ${allAudits.length}`
+      ]);
+      
+      // Style the summary row
+      summaryRow.font = { bold: true, size: 14 };
+      summaryRow.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'E9ECEF' }
+      };
+      
+      // Add borders to all cells with data
+      const dataRange = worksheet.getRows(3, allAudits.length + 1);
+      dataRange?.forEach(row => {
+        row.eachCell((cell) => {
+          cell.border = {
+            top: { style: 'thin' },
+            left: { style: 'thin' },
+            bottom: { style: 'thin' },
+            right: { style: 'thin' }
+          };
+        });
+      });
+      
+      // Generate filename with current date and quarter
+      const timestamp = new Date().toISOString().split('T')[0];
+      const filename = `audit-results-${selectedQuarter}-${timestamp}.xlsx`;
+      
+      // Generate Excel file and trigger download
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], { 
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+      });
+      
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      
+      console.log(`✅ Successfully exported ${allAudits.length} audit results to ${filename}`);
+    } catch (error) {
+      console.error('Error exporting quarterly results:', error);
+      throw error;
+    }
   };
   
   // Convert external audit format to our CaseAudit type

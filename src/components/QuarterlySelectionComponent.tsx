@@ -139,12 +139,12 @@ const QuarterlySelectionComponent: React.FC = () => {
   };
   
   // Handle export of completion results
-  const handleExport = () => {
+  const handleExport = async () => {
     setErrorMessage('');
     setSuccessMessage('');
     
     try {
-      exportQuarterlyResults();
+      await exportQuarterlyResults();
       setSuccessMessage(`Successfully exported results for ${selectedQuarter}`);
     } catch (error) {
       console.error('Error exporting results:', error);
