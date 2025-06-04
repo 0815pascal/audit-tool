@@ -34,6 +34,9 @@ test.describe('IKS Audit Tool - Auto-Select and Verification', () => {
     const userSelect = page.locator('#user-select');
     await userSelect.selectOption('4'); // Select Emily Davis (team leader)
     
+    // Wait for the user selection to be processed and Redux state to update
+    await page.waitForTimeout(1000);
+    
     // Select year and quarter first
     const yearSelect = page.locator('#year-select');
     await yearSelect.selectOption('2025');
@@ -44,8 +47,12 @@ test.describe('IKS Audit Tool - Auto-Select and Verification', () => {
     // Wait for the quarter selection to be processed
     await page.waitForTimeout(500);
     
-    // Click the Auto-Select Audits button
+    // Wait for the Auto-Select button to be enabled (indicating user role is properly set)
     const autoSelectButton = page.locator('button:has-text("Auto-Select Audits")');
+    await expect(autoSelectButton).toBeVisible();
+    await expect(autoSelectButton).toBeEnabled();
+    
+    // Click the Auto-Select Audits button
     await autoSelectButton.click();
     
     // Wait for the selection to complete
@@ -61,7 +68,14 @@ test.describe('IKS Audit Tool - Auto-Select and Verification', () => {
     const userSelect = page.locator('#user-select');
     await userSelect.selectOption('4'); // Select Emily Davis (team leader)
     
+    // Wait for the user selection to be processed and Redux state to update
+    await page.waitForTimeout(1000);
+    
+    // Wait for the Auto-Select button to be enabled before clicking
     const autoSelectButton = page.locator('button:has-text("Auto-Select Audits")');
+    await expect(autoSelectButton).toBeVisible();
+    await expect(autoSelectButton).toBeEnabled();
+    
     await autoSelectButton.click();
     await page.waitForTimeout(2000);
     
@@ -90,7 +104,14 @@ test.describe('IKS Audit Tool - Auto-Select and Verification', () => {
     const userSelect = page.locator('#user-select');
     await userSelect.selectOption('4'); // Select Emily Davis (team leader)
     
+    // Wait for the user selection to be processed and Redux state to update
+    await page.waitForTimeout(1000);
+    
+    // Wait for the Auto-Select button to be enabled before clicking
     const autoSelectButton = page.locator('button:has-text("Auto-Select Audits")');
+    await expect(autoSelectButton).toBeVisible();
+    await expect(autoSelectButton).toBeEnabled();
+    
     await autoSelectButton.click();
     await page.waitForTimeout(2000);
     
@@ -125,7 +146,14 @@ test.describe('IKS Audit Tool - Auto-Select and Verification', () => {
     const userSelect = page.locator('#user-select');
     await userSelect.selectOption('4'); // Select Emily Davis (team leader)
     
+    // Wait for the user selection to be processed and Redux state to update
+    await page.waitForTimeout(1000);
+    
+    // Wait for the Auto-Select button to be enabled before clicking
     const autoSelectButton = page.locator('button:has-text("Auto-Select Audits")');
+    await expect(autoSelectButton).toBeVisible();
+    await expect(autoSelectButton).toBeEnabled();
+    
     await autoSelectButton.click();
     await page.waitForTimeout(2000);
     
