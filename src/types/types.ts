@@ -19,6 +19,12 @@ import type {
   ValidYear
 } from './brandedTypes';
 
+// Import currency types
+import type { ValidCurrency } from './currencyTypes';
+
+// Common React component prop types
+import type { ReactNode, HTMLAttributes } from 'react';
+
 // CaseAudit types moved from caseAuditTypes.ts
 
 // Use centralized AUDIT_STATUS_ENUM instead of duplicate enum
@@ -243,10 +249,6 @@ export interface SelectOption<T = string> {
 // Type for rating dropdown options - using the SelectOption generic
 export type RatingOption = SelectOption<RatingValue>;
 
-// Common React component prop types
-import type { ReactNode, HTMLAttributes } from 'react';
-import type { ValidCurrency } from './currencyTypes';
-
 // Custom prop types for consistent component APIs
 export interface PropsWithChildren {
   children: ReactNode;
@@ -393,4 +395,101 @@ export interface AuditCompletionParams {
   detailedFindings: Record<string, boolean>;
   status: string;
   isCompleted: boolean;
+}
+
+// =============================================
+// Redux UI State and Action Payload Types
+// =============================================
+
+/**
+ * Interface for user role information stored in Redux
+ */
+export interface UserRoleInfo {
+  role: UserRole;
+  department: string;
+}
+
+/**
+ * Interface for quarterly completion status tracking
+ */
+export interface QuarterlyCompletionStatus {
+  completed: boolean;
+  lastCompleted?: string;
+}
+
+/**
+ * Interface for the audit UI slice state
+ */
+export interface AuditUIState {
+  currentUserId: string;
+  selectedQuarter: QuarterPeriod | null;
+  filteredYear: number;
+  auditData: Record<string, StoredCaseAuditData>;
+  userQuarterlyStatus: Record<string, Record<string, QuarterlyCompletionStatus>>;
+  userRoles: Record<string, UserRoleInfo>;
+  loading: boolean;
+  error: string | null;
+}
+
+/**
+ * Payload for updating audit status
+ */
+export interface UpdateAuditStatusPayload {
+  auditId: string;
+  status: AUDIT_STATUS_ENUM;
+  userId: string;
+}
+
+/**
+ * Payload for setting user role
+ */
+export interface SetUserRolePayload {
+  userId: string;
+  role: UserRole;
+  department: string;
+}
+
+/**
+ * RTK Query response for pre-loaded cases endpoint
+ */
+export interface PreLoadedCase {
+  id: string;
+  userId: string;
+  auditor: string;
+  isCompleted: boolean;
+  comment: string;
+  rating: string;
+  specialFindings: FindingsRecord;
+  detailedFindings: FindingsRecord;
+  coverageAmount: number;
+  claimsStatus: string;
+  quarter: string;
+  notifiedCurrency: ValidCurrency;
+}
+
+/**
+ * API response wrapper for pre-loaded cases
+ */
+export interface PreLoadedCasesResponse {
+  data?: PreLoadedCase[];
+}
+
+/**
+ * RTK Query mutation parameters for add audit finding
+ */
+export interface AddAuditFindingParams {
+  auditId: string;
+  findingType: string;
+  findingDescription: string;
+}
+
+/**
+ * Return type for quarterly audits selector
+ */
+export interface QuarterlyAuditsSelector {
+  userQuarterlyAudits: Array<StoredCaseAuditData & { id: string }>;
+  previousQuarterRandomAudits: Array<StoredCaseAuditData & { id: string }>;
+  quarterDisplayCases: Array<StoredCaseAuditData & { id: string }>;
+  preLoadedCases: Array<StoredCaseAuditData & { id: string }>;
+  lastSelectionDate: string | null;
 }

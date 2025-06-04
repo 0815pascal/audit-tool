@@ -1,7 +1,7 @@
 import { createSlice, createSelector, type PayloadAction } from '@reduxjs/toolkit';
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import type { RootState } from './index';
-import { ValidCurrency, CURRENCY } from '../types/currencyTypes';
+import { CURRENCY } from '../types/currencyTypes';
 import {
   CaseAudit,
   CaseAuditStatus,
@@ -13,7 +13,6 @@ import {
   QuarterPeriod,
   RatingValue,
   User,
-  UserRole,
   StoreQuarterlyAuditsPayload,
   StoreAllCasesForQuarterPayload,
   LoadPreLoadedCasesPayload,
@@ -21,7 +20,14 @@ import {
   QuarterlyAuditsResponse,
   AuditCompletionResponse,
   CurrentUserResponse,
-  AuditCompletionParams
+  AuditCompletionParams,
+  AuditUIState,
+  UpdateAuditStatusPayload,
+  SetUserRolePayload,
+  PreLoadedCase,
+  PreLoadedCasesResponse,
+  AddAuditFindingParams,
+  QuarterlyAuditsSelector
 } from '../types/types';
 import { CASE_TYPE_ENUM, CLAIMS_STATUS_ENUM, USER_ROLE_ENUM, AUDIT_STATUS_ENUM } from '../enums';
 import { QUARTER_CALCULATIONS, API_BASE_PATH } from '../constants';
@@ -223,11 +229,7 @@ export const auditApi = createApi({
     }),
 
     // Add finding to audit
-    addAuditFinding: builder.mutation<FindingsRecord, {
-      auditId: string;
-      findingType: string;
-      findingDescription: string;
-    }>({
+    addAuditFinding: builder.mutation<FindingsRecord, AddAuditFindingParams>({
       query: ({ auditId, findingType, findingDescription }) => ({
         url: `/audit-findings/${auditId}`,
         method: 'POST',
@@ -236,35 +238,9 @@ export const auditApi = createApi({
     }),
 
     // Get pre-loaded cases (verified and in-progress)
-    getPreLoadedCases: builder.query<Array<{
-      id: string;
-      userId: string;
-      auditor: string;
-      isCompleted: boolean;
-      comment: string;
-      rating: string;
-      specialFindings: FindingsRecord;
-      detailedFindings: FindingsRecord;
-      coverageAmount: number;
-      claimsStatus: string;
-      quarter: string;
-      notifiedCurrency: ValidCurrency;
-    }>, void>({
+    getPreLoadedCases: builder.query<PreLoadedCase[], void>({
       query: () => '/pre-loaded-cases',
-      transformResponse: (response: { data?: Array<{
-        id: string;
-        userId: string;
-        auditor: string;
-        isCompleted: boolean;
-        comment: string;
-        rating: string;
-        specialFindings: FindingsRecord;
-        detailedFindings: FindingsRecord;
-        coverageAmount: number;
-        claimsStatus: string;
-        quarter: string;
-        notifiedCurrency: ValidCurrency;
-      }> }) => response.data ?? [],
+      transformResponse: (response: PreLoadedCasesResponse) => response.data ?? [],
     }),
   }),
 });
@@ -284,18 +260,6 @@ export const {
   useAddAuditFindingMutation,
   useGetPreLoadedCasesQuery,
 } = auditApi;
-
-// UI State interface for local state management
-interface AuditUIState {
-  currentUserId: string;
-  selectedQuarter: QuarterPeriod | null;
-  filteredYear: number;
-  auditData: Record<string, StoredCaseAuditData>;
-  userQuarterlyStatus: Record<string, Record<string, { completed: boolean; lastCompleted?: string }>>;
-  userRoles: Record<string, { role: UserRole; department: string }>;
-  loading: boolean;
-  error: string | null;
-}
 
 // Create a default StoredCaseAuditData object with standard values
 const createDefaultCaseAuditData = (userId: string): StoredCaseAuditData => {
@@ -356,11 +320,7 @@ const auditUISlice = createSlice({
     },
 
     // Update audit status locally
-    updateAuditStatus: (state, action: PayloadAction<{
-      auditId: string;
-      status: AUDIT_STATUS_ENUM;
-      userId: string;
-    }>) => {
+    updateAuditStatus: (state, action: PayloadAction<UpdateAuditStatusPayload>) => {
       const { auditId, status, userId } = action.payload;
       
       if (!state.auditData[auditId]) {
@@ -419,11 +379,7 @@ const auditUISlice = createSlice({
     },
 
     // Set user role
-    setUserRole: (state, action: PayloadAction<{
-      userId: string;
-      role: UserRole;
-      department: string;
-    }>) => {
+    setUserRole: (state, action: PayloadAction<SetUserRolePayload>) => {
       const { userId, role, department } = action.payload;
       state.userRoles[userId] = { role, department };
     },
@@ -650,7 +606,7 @@ export const canUserCompleteAudit = (
 // Quarterly audits selector
 export const selectQuarterlyAuditsForPeriod = createSelector(
   [selectAuditData, (_state: RootState, quarterKey: string) => quarterKey],
-  (auditData, quarterKey) => {
+  (auditData, quarterKey): QuarterlyAuditsSelector => {
     if (!quarterKey?.includes('-')) {
       return {
         userQuarterlyAudits: [],
