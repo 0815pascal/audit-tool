@@ -55,7 +55,6 @@ export interface StoredCaseAuditData extends CaseAuditData {
   coverageAmount: number;
   claimsStatus: ClaimsStatus;
   dossierName: string;
-  isAkoReviewed?: boolean;
   lastUpdated?: string;
   notifiedCurrency?: ValidCurrency; // Currency code for the case (e.g., CHF, EUR, USD)
 }
@@ -78,7 +77,6 @@ export interface CaseAuditCore extends BaseEntity<CaseAuditId> {
   totalAmount: number;
   coverageAmount: number;
   isCompleted: boolean;
-  isAkoReviewed: boolean;
   isSpecialist: boolean;
   claimsStatus: ClaimsStatus;
   quarter: QuarterPeriod;
@@ -209,7 +207,6 @@ export interface AuditForSelection extends BaseEntity<CaseAuditId> {
   specialFindings?: FindingsRecord;
   detailedFindings?: FindingsRecord;
   isCompleted?: boolean;
-  isAkoReviewed?: boolean;
   quarter?: string; // Quarter calculated from notification date
   notifiedCurrency?: string; // Currency code for the case (e.g., CHF, EUR, USD)
 }
@@ -281,7 +278,6 @@ export interface AuditItem {
   isCompleted: boolean;
   claimsStatus: string;
   quarter: string;
-  isAkoReviewed: boolean;
   notifiedCurrency?: ValidCurrency;
   caseType: string;
   comment?: string;
@@ -332,7 +328,6 @@ export interface PreLoadedCaseItem {
   coverageAmount: number;
   claimsStatus: string;
   quarter: string;
-  isAkoReviewed: boolean;
   notifiedCurrency: ValidCurrency;
 }
 

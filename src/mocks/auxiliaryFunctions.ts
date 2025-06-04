@@ -115,8 +115,7 @@ export const caseToAudit = (caseObj: ApiCaseResponse, quarter: QuarterPeriod): A
     auditor: {
       userId: typeof caseObj.claimOwner?.userId === 'number' ? caseObj.claimOwner.userId : 2,
       role: caseObj.claimOwner?.role || USER_ROLE_ENUM.SPECIALIST
-    },
-    isAkoReviewed: false
+    }
   };
 };
 

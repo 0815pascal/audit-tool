@@ -38,7 +38,6 @@ export const mockCases: MockCaseData[] = [
     detailedFindings: createEmptyDetailedFindings(),
     quarter: '2',
     year: 2025,
-    isAkoReviewed: false,
     isSpecialist: true,
     caseType: CASE_TYPES.USER_QUARTERLY,
     notifiedCurrency: CURRENCY.CHF
@@ -63,7 +62,6 @@ export const mockCases: MockCaseData[] = [
     detailedFindings: createEmptyDetailedFindings(),
     quarter: '2',
     year: 2025,
-    isAkoReviewed: false,
     isSpecialist: false,
     caseType: CASE_TYPES.USER_QUARTERLY,
     notifiedCurrency: CURRENCY.EUR
@@ -88,7 +86,6 @@ export const mockCases: MockCaseData[] = [
     detailedFindings: createEmptyDetailedFindings(),
     quarter: '2',
     year: 2025,
-    isAkoReviewed: false,
     isSpecialist: false,
     caseType: CASE_TYPES.USER_QUARTERLY,
     notifiedCurrency: CURRENCY.USD
@@ -113,7 +110,6 @@ export const mockCases: MockCaseData[] = [
     detailedFindings: createEmptyDetailedFindings(),
     quarter: '2',
     year: 2025,
-    isAkoReviewed: false,
     isSpecialist: true,
     caseType: CASE_TYPES.USER_QUARTERLY,
     notifiedCurrency: CURRENCY.CHF
@@ -138,7 +134,6 @@ export const mockCases: MockCaseData[] = [
     detailedFindings: createEmptyDetailedFindings(),
     quarter: '1',
     year: 2025,
-    isAkoReviewed: false,
     isSpecialist: false,
     caseType: CASE_TYPES.USER_QUARTERLY,
     notifiedCurrency: CURRENCY.EUR
@@ -163,7 +158,6 @@ export const mockCases: MockCaseData[] = [
     detailedFindings: createEmptyDetailedFindings(),
     quarter: '1',
     year: 2025,
-    isAkoReviewed: false,
     isSpecialist: true,
     caseType: CASE_TYPES.USER_QUARTERLY,
     notifiedCurrency: CURRENCY.USD
@@ -188,7 +182,6 @@ export const mockCases: MockCaseData[] = [
     detailedFindings: createEmptyDetailedFindings(),
     quarter: '1',
     year: 2025,
-    isAkoReviewed: false,
     isSpecialist: false,
     caseType: CASE_TYPES.USER_QUARTERLY,
     notifiedCurrency: CURRENCY.CHF
@@ -213,7 +206,6 @@ export const mockCases: MockCaseData[] = [
     detailedFindings: createEmptyDetailedFindings(),
     quarter: '1',
     year: 2025,
-    isAkoReviewed: false,
     isSpecialist: false,
     caseType: CASE_TYPES.USER_QUARTERLY,
     notifiedCurrency: CURRENCY.EUR
@@ -238,7 +230,6 @@ export const mockCases: MockCaseData[] = [
     detailedFindings: createEmptyDetailedFindings(),
     quarter: '2',
     year: 2025,
-    isAkoReviewed: false,
     isSpecialist: false,
     caseType: CASE_TYPES.USER_QUARTERLY,
     notifiedCurrency: CURRENCY.CHF
@@ -263,7 +254,6 @@ export const mockCases: MockCaseData[] = [
     detailedFindings: createEmptyDetailedFindings(),
     quarter: '2',
     year: 2025,
-    isAkoReviewed: false,
     isSpecialist: true,
     caseType: CASE_TYPES.USER_QUARTERLY,
     notifiedCurrency: CURRENCY.USD
@@ -293,7 +283,6 @@ export const mockCases: MockCaseData[] = [
     detailedFindings: createEmptyDetailedFindings(),
     quarter: '2',
     year: 2025,
-    isAkoReviewed: true,
     isSpecialist: true,
     caseType: CASE_TYPE_ENUM.PRE_LOADED,
     notifiedCurrency: CURRENCY.CHF
@@ -318,7 +307,6 @@ export const mockCases: MockCaseData[] = [
     detailedFindings: createEmptyDetailedFindings(),
     quarter: '2',
     year: 2025,
-    isAkoReviewed: false,
     isSpecialist: false,
     caseType: CASE_TYPE_ENUM.PRE_LOADED,
     notifiedCurrency: CURRENCY.EUR
@@ -344,7 +332,6 @@ export const mockCases: MockCaseData[] = [
     detailedFindings: createEmptyDetailedFindings(),
     quarter: '2',
     year: 2025,
-    isAkoReviewed: false,
     isSpecialist: false,
     caseType: CASE_TYPE_ENUM.PRE_LOADED,
     notifiedCurrency: CURRENCY.CHF

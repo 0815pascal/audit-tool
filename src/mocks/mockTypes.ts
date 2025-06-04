@@ -41,7 +41,6 @@ export interface MockCaseData extends Record<string, unknown> {
   detailedFindings: DetailedFindingsRecord;
   quarter: string;
   year: number;
-  isAkoReviewed: boolean;
   isSpecialist: boolean;
   caseType: CaseType;
   notifiedCurrency: ValidCurrency;
@@ -70,7 +69,6 @@ export interface ApiAuditResponse {
     userId: UserId | number;
     role: UserRole;
   };
-  isAkoReviewed: boolean;
 }
 
 // API response format for finding endpoints

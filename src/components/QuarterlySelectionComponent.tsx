@@ -38,7 +38,6 @@ interface AuditItem {
   auditor?: string;
   coverageAmount: number;
   isCompleted: boolean;
-  isAkoReviewed?: boolean;
   claimsStatus?: ClaimsStatus;
   comment?: string;
   rating?: string;
@@ -220,9 +219,6 @@ const QuarterlySelectionComponent: React.FC = () => {
         return;
       }
 
-      // Check if isAkoReviewed exists in the audit and ensure it's a boolean
-      const isAkoReviewed = typeof audit.isAkoReviewed === 'boolean' ? audit.isAkoReviewed : false;
-      
       // Get the latest audit data from Redux (which may include saved form state)
       const latestAuditData = auditData[audit.id];
       
@@ -261,7 +257,6 @@ const QuarterlySelectionComponent: React.FC = () => {
         totalAmount: audit.coverageAmount || 0,
         coverageAmount: audit.coverageAmount || 0,
         isCompleted: Boolean(audit.isCompleted),
-        isAkoReviewed,
         isSpecialist: false,
         quarter: (audit.quarter as QuarterPeriod) || (selectedQuarter), // Use audit's quarter or fallback
         year: audit.year ?? parseInt(selectedQuarter?.split('-')[1] || String(new Date().getFullYear())),

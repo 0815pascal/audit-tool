@@ -229,7 +229,6 @@ export const useCaseAuditHandlers = () => {
             isCompleted: false,
             claimsStatus: 'FULL_COVER',
             quarter: selectedQuarter ?? 'Q1-2025',
-            isAkoReviewed: false,
             caseType: 'USER_QUARTERLY',
             comment: caseAuditData.comment,
             rating: caseAuditData.rating,
@@ -412,7 +411,6 @@ export const useCaseAuditHandlers = () => {
           isCompleted: false,
           claimsStatus: String(caseObj.claimsStatus), // Convert to string
           quarter: actualQuarter, // Use the actual quarter from notification date for display
-          isAkoReviewed: false,
           notifiedCurrency: caseObj.notifiedCurrency ?? CURRENCY.CHF, // Include the currency from API response
           caseType: String(caseType) // Set caseType based on whether it's current or previous quarter
         };
@@ -453,7 +451,6 @@ export const useCaseAuditHandlers = () => {
     specialFindings?: FindingsRecord;
     detailedFindings?: FindingsRecord;
     isCompleted?: boolean;
-    isAkoReviewed?: boolean;
     [key: string]: unknown; // Allow additional properties
   }
 
@@ -472,7 +469,6 @@ export const useCaseAuditHandlers = () => {
       totalAmount: audit.coverageAmount ?? 0,
       coverageAmount: audit.coverageAmount ?? 0,
       isCompleted: audit.isCompleted ?? false,
-      isAkoReviewed: audit.isAkoReviewed ?? false,
       isSpecialist: false,
       quarter: selectedQuarter ?? 'Q1-2025',
       year: filteredYear,

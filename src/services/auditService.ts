@@ -33,7 +33,6 @@ export const getAuditsByQuarter = async (quarter: QuarterPeriod): Promise<UserAu
       auditor: item.auditor ?? '',
       coverageAmount: item.coverageAmount ?? 0,
       isCompleted: Boolean(item.isCompleted),
-      isAkoReviewed: Boolean(item.isAkoReviewed),
       claimsStatus: item.claimsStatus ?? 'FULL_COVER',
       notifiedCurrency: item.notifiedCurrency ?? CURRENCY.CHF
     }));
@@ -96,7 +95,6 @@ export const getAuditsByAuditor = async (auditorId: UserId): Promise<UserAuditFo
       auditor: item.auditor ?? '',
       coverageAmount: item.coverageAmount ?? 0,
       isCompleted: Boolean(item.isCompleted),
-      isAkoReviewed: Boolean(item.isAkoReviewed),
       claimsStatus: item.claimsStatus ?? 'FULL_COVER',
       notifiedCurrency: item.notifiedCurrency ?? CURRENCY.CHF
     }));
@@ -129,7 +127,6 @@ export const createAudit = async (payload: Record<string, unknown>): Promise<Aud
       auditor: data.auditor ?? '',
       coverageAmount: data.coverageAmount ?? 0,
       isCompleted: Boolean(data.isCompleted),
-      isAkoReviewed: Boolean(data.isAkoReviewed),
       claimsStatus: data.claimsStatus ?? 'FULL_COVER',
       notifiedCurrency: data.notifiedCurrency ?? CURRENCY.CHF
     };
@@ -162,7 +159,6 @@ export const updateAudit = async (caseAuditId: CaseAuditId, payload: Record<stri
       auditor: data.auditor ?? '',
       coverageAmount: data.coverageAmount ?? 0,
       isCompleted: Boolean(data.isCompleted),
-      isAkoReviewed: Boolean(data.isAkoReviewed),
       claimsStatus: data.claimsStatus ?? 'FULL_COVER',
       notifiedCurrency: data.notifiedCurrency ?? CURRENCY.CHF
     };

@@ -249,8 +249,7 @@ export const handlers = [
             ? safeParseInt(requestData.auditor.userId)
             : 2,
           role: requestData.auditor?.role ?? USER_ROLE_ENUM.SPECIALIST
-        },
-        isAkoReviewed: false
+        }
       };
       
       // Store the audit
@@ -279,8 +278,7 @@ export const handlers = [
         auditor: {
           userId: 2,
           role: USER_ROLE_ENUM.SPECIALIST
-        },
-        isAkoReviewed: false
+        }
       };
       
       return HttpResponse.json(fallbackAudit, { status: 201 });
@@ -352,8 +350,7 @@ export const handlers = [
           auditor: {
             userId: 2,
             role: USER_ROLE_ENUM.SPECIALIST
-          },
-          isAkoReviewed: false
+          }
         };
       }
       
@@ -433,8 +430,7 @@ export const handlers = [
         auditor: {
           userId: 2,
           role: USER_ROLE_ENUM.SPECIALIST
-        },
-        isAkoReviewed: false
+        }
       };
       
       return HttpResponse.json(fallbackAudit, { status: 200 });
@@ -742,7 +738,6 @@ export const handlers = [
               Math.random() * (user.authorities === USER_ROLE_ENUM.STAFF ? 30000 : 150000)
             ),
             claimsStatus: CLAIMS_STATUS.FULL_COVER,
-            isAkoReviewed: false,
             quarter: quarterKey, // Add current quarter
             year: year, // Add current year
             caseType: 'USER_QUARTERLY' // Add case type
@@ -763,7 +758,6 @@ export const handlers = [
           userId: randomUser.id, // Assign to actual user
           coverageAmount: Math.floor(Math.random() * 100000),
           claimsStatus: CLAIMS_STATUS.FULL_COVER,
-          isAkoReviewed: false,
           quarter: `Q${prevQuarterNum}-${prevYear}`, // Add previous quarter
           year: prevYear, // Add previous quarter year
           caseType: 'PREVIOUS_QUARTER_RANDOM' // Add case type
@@ -947,7 +941,6 @@ export const handlers = [
       coverageAmount: caseItem.coverageAmount,
       claimsStatus: caseItem.claimsStatus,
       quarter: `Q${caseItem.quarter}-${caseItem.year}`,
-      isAkoReviewed: caseItem.isAkoReviewed,
       notifiedCurrency: caseItem.notifiedCurrency
     }));
 

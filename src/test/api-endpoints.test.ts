@@ -431,7 +431,6 @@ describe('API Endpoints - MSW Handler Coverage', () => {
           userId: 4,
           role: 'TEAM_LEADER'
         },
-        isAkoReviewed: false
       };
 
       const response = await fetch(`${API_BASE_PATH}/audits`, {
@@ -469,7 +468,6 @@ describe('API Endpoints - MSW Handler Coverage', () => {
       expect(typeof createAuditPayload.quarter).toBe('string');
       expect(typeof createAuditPayload.caseObj).toBe('object');
       expect(typeof createAuditPayload.auditor).toBe('object');
-      expect(typeof createAuditPayload.isAkoReviewed).toBe('boolean');
     });
 
     it('should validate audit update payload structure', async () => {

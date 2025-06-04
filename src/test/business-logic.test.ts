@@ -281,7 +281,6 @@ describe('IKS Audit Business Logic', () => {
           coverageAmount: 1500,
           claimsStatus: 'FULL_COVER',
           quarter: 'Q2-2025',
-          isAkoReviewed: true,
           notifiedCurrency: 'CHF'
         },
         {
@@ -296,7 +295,6 @@ describe('IKS Audit Business Logic', () => {
           coverageAmount: 775,
           claimsStatus: 'PARTIAL_COVER',
           quarter: 'Q2-2025',
-          isAkoReviewed: false,
           notifiedCurrency: 'EUR'
         },
         {
@@ -311,7 +309,6 @@ describe('IKS Audit Business Logic', () => {
           coverageAmount: 1200,
           claimsStatus: 'FULL_COVER',
           quarter: 'Q2-2025',
-          isAkoReviewed: false,
           notifiedCurrency: 'CHF'
         }
       ];

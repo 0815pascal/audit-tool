@@ -248,7 +248,6 @@ export const auditApi = createApi({
       coverageAmount: number;
       claimsStatus: string;
       quarter: string;
-      isAkoReviewed: boolean;
       notifiedCurrency: ValidCurrency;
     }>, void>({
       query: () => '/pre-loaded-cases',
@@ -264,7 +263,6 @@ export const auditApi = createApi({
         coverageAmount: number;
         claimsStatus: string;
         quarter: string;
-        isAkoReviewed: boolean;
         notifiedCurrency: ValidCurrency;
       }> }) => response.data ?? [],
     }),
@@ -320,7 +318,6 @@ const createDefaultCaseAuditData = (userId: string): StoredCaseAuditData => {
     caseType: CASE_TYPE_ENUM.USER_QUARTERLY,
     coverageAmount: 0,
     claimsStatus: CLAIMS_STATUS_ENUM.FULL_COVER,
-    isAkoReviewed: false,
     dossierName: 'Default Dossier',
     notifiedCurrency: CURRENCY.CHF
   };
@@ -476,7 +473,6 @@ const auditUISlice = createSlice({
           caseType: audit.caseType as CASE_TYPE_ENUM,
           coverageAmount: audit.coverageAmount,
           claimsStatus: audit.claimsStatus as CLAIMS_STATUS_ENUM,
-          isAkoReviewed: audit.isAkoReviewed,
           dossierName: 'Generated Audit',
           notifiedCurrency: audit.notifiedCurrency ?? CURRENCY.CHF
         };
@@ -520,7 +516,6 @@ const auditUISlice = createSlice({
           caseType: CASE_TYPE_ENUM.QUARTER_DISPLAY, // New case type for quarter display
           coverageAmount: caseData.coverageAmount,
           claimsStatus: caseData.claimsStatus as CLAIMS_STATUS_ENUM,
-          isAkoReviewed: false,
           dossierName: `Case ${caseData.id}`,
           notifiedCurrency: caseData.notifiedCurrency ?? CURRENCY.CHF
         };
@@ -575,7 +570,6 @@ const auditUISlice = createSlice({
           caseType: CASE_TYPE_ENUM.PRE_LOADED,
           coverageAmount: caseData.coverageAmount,
           claimsStatus: caseData.claimsStatus as CLAIMS_STATUS_ENUM,
-          isAkoReviewed: caseData.isAkoReviewed,
           dossierName: `Case ${caseData.id}`,
           notifiedCurrency: caseData.notifiedCurrency ?? CURRENCY.CHF
         };

@@ -83,7 +83,6 @@ export interface AuditRecord {
   quarter: QuarterPeriod;
   caseObj?: CaseObj;
   auditor: Auditor;
-  isAkoReviewed: boolean;
   dossierRisk?: number; 
 }
 
@@ -108,7 +107,6 @@ export interface AuditPayload {
     role?: UserRole;
   };
   findings?: Array<Omit<Finding, 'findingId'>>;
-  isAkoReviewed?: boolean;
 }
 
 // Response types
