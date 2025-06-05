@@ -60,12 +60,15 @@ The application supports exporting audit results in Excel format:
 ### Excel Export (ExcelJS)
 - **Professional formatting** with headers, borders, and conditional formatting
 - **Multiple columns** including Case ID, Quarter, Responsible User, Status, Auditor, Coverage Amount, Currency, Claims Status, Rating, Comment, and Completion Date
-- **Summary information** at the top of the sheet (Quarter, Export Date, Total Cases)
+- **Year-based filtering** - only exports audits from the year selected in the dropdown
+- **Summary information** at the top of the sheet (Year, Export Date, Total Cases)
 - **Styled output** with alternating row colors and status-based color coding
-- **Automatic filename generation** using current date and quarter
+- **Automatic filename generation** using current date and year
 
 ### Usage
-Click the "Export Results" button after auto-selecting audits to download an Excel file with all audit data.
+1. Select the desired year from the year dropdown
+2. Click the "Export Results" button to download an Excel file with all audit data from that year
+3. The filename will include the selected year (e.g., `audit-results-2025-2024-12-19.xlsx`)
 
 ### Dependencies
 - **ExcelJS**: Modern, actively maintained Excel library (replaces the unmaintained `xlsx` package)

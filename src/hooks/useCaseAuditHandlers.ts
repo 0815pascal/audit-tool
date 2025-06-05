@@ -475,8 +475,17 @@ export const useCaseAuditHandlers = () => {
         ...(quarterlyAudits.preLoadedCases || [])
       ];
       
+      // Filter audits by the selected year
+      const filteredAudits = allAudits.filter(audit => {
+        if (!audit.quarter) return false;
+        
+        // Extract year from quarter format (e.g., "Q1-2025" -> 2025)
+        const auditYear = audit.quarter.split('-')[1];
+        return auditYear && parseInt(auditYear) === filteredYear;
+      });
+      
       // Add data rows
-      allAudits.forEach((audit, index) => {
+      filteredAudits.forEach((audit, index) => {
         const user = usersList.find(u => u.id === audit.userId);
         const latestAuditData = auditData[audit.id];
         const currentStatus = latestAuditData?.status || audit.status;
@@ -532,11 +541,11 @@ export const useCaseAuditHandlers = () => {
       const summaryRow = worksheet.insertRow(1, [
         'Quarterly Audit Export',
         '',
-        `Quarter: ${selectedQuarter}`,
+        `Year: ${filteredYear}`,
         '',
         `Export Date: ${new Date().toLocaleDateString('de-CH')}`,
         '',
-        `Total Cases: ${allAudits.length}`
+        `Total Cases: ${filteredAudits.length}`
       ]);
       
       // Style the summary row
@@ -548,7 +557,7 @@ export const useCaseAuditHandlers = () => {
       };
       
       // Add borders to all cells with data
-      const dataRange = worksheet.getRows(3, allAudits.length + 1);
+      const dataRange = worksheet.getRows(3, filteredAudits.length + 1);
       dataRange?.forEach(row => {
         row.eachCell((cell) => {
           cell.border = {
@@ -560,9 +569,9 @@ export const useCaseAuditHandlers = () => {
         });
       });
       
-      // Generate filename with current date and quarter
+      // Generate filename with current date and year
       const timestamp = new Date().toISOString().split('T')[0];
-      const filename = `audit-results-${selectedQuarter}-${timestamp}.xlsx`;
+      const filename = `audit-results-${filteredYear}-${timestamp}.xlsx`;
       
       // Generate Excel file and trigger download
       const buffer = await workbook.xlsx.writeBuffer();
@@ -580,7 +589,7 @@ export const useCaseAuditHandlers = () => {
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
       
-      console.log(`✅ Successfully exported ${allAudits.length} audit results to ${filename}`);
+      console.log(`✅ Successfully exported ${filteredAudits.length} audit results to ${filename}`);
     } catch (error) {
       console.error('Error exporting quarterly results:', error);
       throw error;
