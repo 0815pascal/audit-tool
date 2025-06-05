@@ -2,7 +2,6 @@ import React, {useState} from 'react';
 import {
   CaseAudit,
   CaseAuditData,
-  CaseAuditStatus,
   CaseType,
   ClaimsStatus,
   QuarterNumber,
@@ -284,27 +283,6 @@ const QuarterlySelectionComponent: React.FC = () => {
     }
   };
   
-  const convertToAuditStatus = (status: CaseAuditStatus | AUDIT_STATUS_ENUM): AUDIT_STATUS_ENUM => {
-    // Handle both string statuses and enum values
-    const statusString = typeof status === 'string' ? status : String(status);
-    
-    // Check if it's already an AUDIT_STATUS_ENUM value
-    if (Object.values(AUDIT_STATUS_ENUM).includes(statusString as AUDIT_STATUS_ENUM)) {
-      return statusString as AUDIT_STATUS_ENUM;
-    }
-    
-    // Map CaseAuditStatus to AUDIT_STATUS_ENUM
-    switch (statusString) {
-      case AUDIT_STATUS_ENUM.COMPLETED:
-        return AUDIT_STATUS_ENUM.COMPLETED;
-      case AUDIT_STATUS_ENUM.IN_PROGRESS:
-        return AUDIT_STATUS_ENUM.IN_PROGRESS;
-      case AUDIT_STATUS_ENUM.PENDING:
-        return AUDIT_STATUS_ENUM.PENDING;
-      default:
-        return AUDIT_STATUS_ENUM.PENDING;
-    }
-  };
   
   return (
     <div className="quarterly-selection">
@@ -380,8 +358,6 @@ const QuarterlySelectionComponent: React.FC = () => {
       </div>
       </div>
       
-      
-      
       {errorMessage && (
         <div className="quarterly-selection__error-message">
           <span className="quarterly-selection__error-text">{errorMessage}</span>
@@ -447,8 +423,8 @@ const QuarterlySelectionComponent: React.FC = () => {
                             <td>{audit.id}</td>
                             <td>{audit.quarter}</td>
                             <td>{user ? user.displayName : 'Unknown'}</td>
-                            <td>{convertToAuditStatus(currentStatus) === AUDIT_STATUS_ENUM.COMPLETED ? 'Geprüft' : 
-                                 convertToAuditStatus(currentStatus) === AUDIT_STATUS_ENUM.IN_PROGRESS ? 'In Bearbeitung' : 'Nicht geprüft'}</td>
+                            <td>{currentStatus as AUDIT_STATUS_ENUM === AUDIT_STATUS_ENUM.COMPLETED ? 'Geprüft' : 
+                                 currentStatus as AUDIT_STATUS_ENUM === AUDIT_STATUS_ENUM.IN_PROGRESS ? 'In Bearbeitung' : 'Nicht geprüft'}</td>
                             <td>{getUserInitials(currentAuditor ?? '')}</td>
                             <td>
                               <button
@@ -456,7 +432,7 @@ const QuarterlySelectionComponent: React.FC = () => {
                                 onClick={() => handleOpenCompletion(audit.id)}
                                 disabled={!canComplete}
                               >
-                                {convertToAuditStatus(currentStatus) === AUDIT_STATUS_ENUM.COMPLETED ? 'Ansehen' : 'Prüfen'}
+                                {currentStatus as AUDIT_STATUS_ENUM === AUDIT_STATUS_ENUM.COMPLETED ? 'Ansehen' : 'Prüfen'}
                               </button>
                             </td>
                           </tr>
@@ -537,8 +513,8 @@ const QuarterlySelectionComponent: React.FC = () => {
                       <td>{audit.id}</td>
                       <td>{audit.quarter}</td>
                       <td>{user ? user.displayName : 'Unknown'}</td>
-                      <td>{convertToAuditStatus(currentStatus) === AUDIT_STATUS_ENUM.COMPLETED ? 'Geprüft' : 
-                           convertToAuditStatus(currentStatus) === AUDIT_STATUS_ENUM.IN_PROGRESS ? 'In Bearbeitung' : 'Nicht geprüft'}</td>
+                      <td>{currentStatus as AUDIT_STATUS_ENUM === AUDIT_STATUS_ENUM.COMPLETED ? 'Geprüft' : 
+                           currentStatus as AUDIT_STATUS_ENUM === AUDIT_STATUS_ENUM.IN_PROGRESS ? 'In Bearbeitung' : 'Nicht geprüft'}</td>
                       <td>{getUserInitials(currentAuditor ?? '')}</td>
                       <td>
                         <button
@@ -546,7 +522,7 @@ const QuarterlySelectionComponent: React.FC = () => {
                           onClick={() => handleOpenCompletion(audit.id)}
                           disabled={!canComplete}
                         >
-                          {convertToAuditStatus(currentStatus) === AUDIT_STATUS_ENUM.COMPLETED ? 'Ansehen' : 'Prüfen'}
+                          {currentStatus as AUDIT_STATUS_ENUM === AUDIT_STATUS_ENUM.COMPLETED ? 'Ansehen' : 'Prüfen'}
                         </button>
                       </td>
                     </tr>
@@ -575,8 +551,8 @@ const QuarterlySelectionComponent: React.FC = () => {
                       <td>{audit.id}</td>
                       <td>{audit.quarter}</td>
                       <td>{user ? user.displayName : 'Unknown'}</td>
-                      <td>{convertToAuditStatus(currentStatus) === AUDIT_STATUS_ENUM.COMPLETED ? 'Geprüft' : 
-                           convertToAuditStatus(currentStatus) === AUDIT_STATUS_ENUM.IN_PROGRESS ? 'In Bearbeitung' : 'Nicht geprüft'}</td>
+                      <td>{currentStatus as AUDIT_STATUS_ENUM === AUDIT_STATUS_ENUM.COMPLETED ? 'Geprüft' : 
+                           currentStatus as AUDIT_STATUS_ENUM === AUDIT_STATUS_ENUM.IN_PROGRESS ? 'In Bearbeitung' : 'Nicht geprüft'}</td>
                       <td>{getUserInitials(currentAuditor ?? '')}</td>
                       <td>
                         <button
@@ -584,7 +560,7 @@ const QuarterlySelectionComponent: React.FC = () => {
                           onClick={() => handleOpenCompletion(audit.id)}
                           disabled={!canComplete}
                         >
-                          {convertToAuditStatus(currentStatus) === AUDIT_STATUS_ENUM.COMPLETED ? 'Ansehen' : 'Prüfen'}
+                          {currentStatus as AUDIT_STATUS_ENUM === AUDIT_STATUS_ENUM.COMPLETED ? 'Ansehen' : 'Prüfen'}
                         </button>
                       </td>
                     </tr>
@@ -614,8 +590,8 @@ const QuarterlySelectionComponent: React.FC = () => {
                       <td>{audit.id}</td>
                       <td>{audit.quarter}</td>
                       <td>{user ? user.displayName : audit.userId}</td>
-                      <td>{convertToAuditStatus(currentStatus) === AUDIT_STATUS_ENUM.COMPLETED ? 'Geprüft' : 
-                           convertToAuditStatus(currentStatus) === AUDIT_STATUS_ENUM.IN_PROGRESS ? 'In Bearbeitung' : 'Nicht geprüft'}</td>
+                      <td>{currentStatus as AUDIT_STATUS_ENUM === AUDIT_STATUS_ENUM.COMPLETED ? 'Geprüft' : 
+                           currentStatus as AUDIT_STATUS_ENUM === AUDIT_STATUS_ENUM.IN_PROGRESS ? 'In Bearbeitung' : 'Nicht geprüft'}</td>
                       <td>{getUserInitials(currentAuditor ?? '')}</td>
                       <td>
                         <button
@@ -623,7 +599,7 @@ const QuarterlySelectionComponent: React.FC = () => {
                           onClick={() => handleOpenCompletion(audit.id)}
                           disabled={!canComplete}
                         >
-                          {convertToAuditStatus(currentStatus) === AUDIT_STATUS_ENUM.COMPLETED ? 'Ansehen' : 'Prüfen'}
+                          {currentStatus as AUDIT_STATUS_ENUM === AUDIT_STATUS_ENUM.COMPLETED ? 'Ansehen' : 'Prüfen'}
                         </button>
                       </td>
                     </tr>
@@ -648,5 +624,4 @@ const QuarterlySelectionComponent: React.FC = () => {
   );
 };
 
-// Wrap with React.memo to prevent unnecessary re-renders
 export default QuarterlySelectionComponent;

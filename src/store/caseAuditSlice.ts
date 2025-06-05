@@ -240,16 +240,8 @@ export const auditApi = api.injectEndpoints({
 // Export hooks for use in components
 export const {
   useGetCurrentUserQuery,
-  
-  
-  
-  
   useCompleteAuditMutation,
   useSaveAuditCompletionMutation,
-  
-  
-  
-  
   useGetPreLoadedCasesQuery,
 } = auditApi;
 
@@ -529,22 +521,16 @@ const auditUISlice = createSlice({
 // Export UI actions
 export const {
   setCurrentUser,
-  
-  
   updateAuditStatus,
   updateAuditInProgress,
   completeAudit,
   setUserRole,
   storeQuarterlyAudits,
   storeAllCasesForQuarter,
-  
-  
-  
   loadPreLoadedCases,
 } = auditUISlice.actions;
 
 // Enhanced selectors that work with RTK Query cache
-
 
 export const selectAuditData = (state: RootState) => state.auditUI.auditData;
 export const selectUserQuarterlyStatus = (state: RootState) => state.auditUI.userQuarterlyStatus;
@@ -557,8 +543,6 @@ export const selectUserRole = createSelector(
     return userRoles[userId] ?? { role: USER_ROLE_ENUM.STAFF, department: '' };
   }
 );
-
-
 
 // Quarterly audits selector
 export const selectQuarterlyAuditsForPeriod = createSelector(
