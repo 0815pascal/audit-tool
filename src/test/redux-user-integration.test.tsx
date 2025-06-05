@@ -1,9 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import { configureStore } from '@reduxjs/toolkit';
-import auditUISlice, { auditApi } from '../store/caseAuditSlice';
+import auditUISlice from '../store/caseAuditSlice';
 import { userApi, selectAllUsers } from '../store/userSlice';
 import userUISlice, { selectUser, clearSelectedUser } from '../store/userSlice';
+import { auditApi } from '../store/caseAuditSlice';
 import store from '../store';
+import api from '../store/api';
 import { createUserId } from '../types/typeHelpers';
 
 describe('Redux User Integration Tests', () => {
@@ -11,18 +13,17 @@ describe('Redux User Integration Tests', () => {
     // Test that our actual store includes the correct reducers
     const state = store.getState();
     
-    // Verify store structure matches RTK Query integration
+    // Verify store structure matches RTK Query integration with consolidated API
     expect(state).toHaveProperty('auditUI');
     expect(state).toHaveProperty('userUI');
-    expect(state).toHaveProperty('userApi');
-    expect(state).toHaveProperty('auditApi');
+    expect(state).toHaveProperty('api'); // Now using consolidated API
     
     // Verify userUI slice is working
     expect(state.userUI.selectedUserId).toBeNull();
   });
 
   it('should verify that RTK Query hooks are available', () => {
-    // Test that RTK Query hooks are properly exported
+    // Test that RTK Query hooks are properly exported from injected endpoints
     expect(userApi.endpoints.getUsers).toBeDefined();
     expect(userApi.endpoints.getUserById).toBeDefined();
     expect(userApi.endpoints.createUser).toBeDefined();
@@ -44,13 +45,11 @@ describe('Redux User Integration Tests', () => {
       reducer: {
         auditUI: auditUISlice,
         userUI: userUISlice,
-        [userApi.reducerPath]: userApi.reducer,
-        [auditApi.reducerPath]: auditApi.reducer,
+        [api.reducerPath]: api.reducer,
       },
       middleware: (getDefaultMiddleware) =>
         getDefaultMiddleware()
-          .concat(userApi.middleware)
-          .concat(auditApi.middleware),
+          .concat(api.middleware),
     });
 
     // Test initial state
@@ -97,10 +96,9 @@ describe('Redux User Integration Tests', () => {
     expect(state).not.toHaveProperty('user.loading');
     expect(state).not.toHaveProperty('caseAudit');
     
-    // Should have new RTK Query structure
-    expect(state).toHaveProperty('userApi');
+    // Should have new RTK Query structure with consolidated API
+    expect(state).toHaveProperty('api'); // Consolidated API slice
     expect(state).toHaveProperty('userUI');
-    expect(state).toHaveProperty('auditApi');
     expect(state).toHaveProperty('auditUI');
     expect(state.userUI).toHaveProperty('selectedUserId');
   });

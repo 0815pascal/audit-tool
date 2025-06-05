@@ -1,15 +1,15 @@
 import { configureStore } from '@reduxjs/toolkit';
-import auditUIReducer, { auditApi } from './caseAuditSlice';
-import userUIReducer, { userApi } from './userSlice';
+import auditUIReducer from './caseAuditSlice';
+import userUIReducer from './userSlice';
+import api from './api';
 
 // Configure the Redux store
 const store = configureStore({
   reducer: {
     auditUI: auditUIReducer,
     userUI: userUIReducer,
-    // Add the generated reducers as specific top-level slices
-    [auditApi.reducerPath]: auditApi.reducer,
-    [userApi.reducerPath]: userApi.reducer,
+    // Single API reducer for all endpoints
+    [api.reducerPath]: api.reducer,
   },
   // Enable Redux DevTools only in development
   devTools: process.env.NODE_ENV !== 'production',
@@ -18,9 +18,8 @@ const store = configureStore({
       // This helps with serialization issues
       serializableCheck: false,
     })
-    // Adding the api middleware enables caching, invalidation, polling, and other useful features of RTK Query
-    .concat(auditApi.middleware)
-    .concat(userApi.middleware),
+    // Single API middleware for optimal performance
+    .concat(api.middleware),
 });
 
 // Export the store instance

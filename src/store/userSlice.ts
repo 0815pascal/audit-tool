@@ -1,32 +1,22 @@
-import {createApi, fetchBaseQuery} from '@reduxjs/toolkit/query/react';
-import {createSelector, createSlice, PayloadAction} from '@reduxjs/toolkit';
-import {ApiResponse, User, UserRole} from '../types/types';
-import {UserId} from '../types/brandedTypes';
-import {RootState} from './index';
-import {Department, USER_ROLE_ENUM} from '../enums';
-import {API_BASE_PATH} from '../constants';
+import { createSelector, createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { ApiResponse, User, UserRole } from '../types/types';
+import { UserId } from '../types/brandedTypes';
+import { RootState } from './index';
+import { Department, USER_ROLE_ENUM, HTTP_METHOD } from '../enums';
 import type { UserUIState } from './userSlice.types';
+import api from './api';
 
-// RTK Query API slice for user operations
-export const userApi = createApi({
-  reducerPath: 'userApi',
-  baseQuery: fetchBaseQuery({
-    baseUrl: `${API_BASE_PATH}/users`,
-    prepareHeaders: (headers) => {
-      headers.set('Content-Type', 'application/json');
-      return headers;
-    },
-  }),
-  tagTypes: ['User'],
+// Inject user endpoints into the main API slice
+export const userApi = api.injectEndpoints({
   endpoints: (builder) => ({
     // Fetch all users
     getUsers: builder.query<User[], void>({
-      query: () => '',
+      query: () => '/users',
       transformResponse: (response: ApiResponse<User[]>) => {
         if (!response.success) {
           throw new Error((response as ApiResponse<User[]> & { error?: string }).error ?? 'Failed to fetch users');
         }
-        return (response).data;
+        return response.data;
       },
       providesTags: (result) =>
         result
@@ -39,12 +29,12 @@ export const userApi = createApi({
 
     // Get user by ID
     getUserById: builder.query<User, UserId>({
-      query: (id) => `/${id}`,
+      query: (id) => `/users/${id}`,
       transformResponse: (response: ApiResponse<User>) => {
         if (!response.success) {
           throw new Error((response as ApiResponse<User> & { error?: string }).error ?? 'Failed to fetch user');
         }
-        return (response).data;
+        return response.data;
       },
       providesTags: (_, __, id) => [{ type: 'User', id }],
     }),
@@ -52,15 +42,15 @@ export const userApi = createApi({
     // Create new user
     createUser: builder.mutation<User, Omit<User, 'id'>>({
       query: (newUser) => ({
-        url: '',
-        method: 'POST',
+        url: '/users',
+        method: HTTP_METHOD.POST,
         body: newUser,
       }),
       transformResponse: (response: ApiResponse<User>) => {
         if (!response.success) {
           throw new Error((response as ApiResponse<User> & { error?: string }).error ?? 'Failed to create user');
         }
-        return (response).data;
+        return response.data;
       },
       invalidatesTags: [{ type: 'User', id: 'LIST' }],
     }),
@@ -68,15 +58,15 @@ export const userApi = createApi({
     // Update existing user
     updateUser: builder.mutation<User, User>({
       query: ({ id, ...patch }) => ({
-        url: `/${id}`,
-        method: 'PUT',
+        url: `/users/${id}`,
+        method: HTTP_METHOD.PUT,
         body: patch,
       }),
       transformResponse: (response: ApiResponse<User>) => {
         if (!response.success) {
           throw new Error((response as ApiResponse<User> & { error?: string }).error ?? 'Failed to update user');
         }
-        return (response).data;
+        return response.data;
       },
       invalidatesTags: (_, __, { id }) => [
         { type: 'User', id },
@@ -87,8 +77,8 @@ export const userApi = createApi({
     // Delete user
     deleteUser: builder.mutation<{ success: boolean; id: UserId }, UserId>({
       query: (id) => ({
-        url: `/${id}`,
-        method: 'DELETE',
+        url: `/users/${id}`,
+        method: HTTP_METHOD.DELETE,
       }),
       transformResponse: (response: ApiResponse<{ success: boolean }>, _, id) => {
         if (!response.success) {
@@ -105,15 +95,15 @@ export const userApi = createApi({
     // Update user active status
     updateUserStatus: builder.mutation<User, { userId: UserId; isActive: boolean }>({
       query: ({ userId, isActive }) => ({
-        url: `/${userId}/status`,
-        method: 'PATCH',
+        url: `/users/${userId}/status`,
+        method: HTTP_METHOD.PATCH,
         body: { enabled: isActive },
       }),
       transformResponse: (response: ApiResponse<User>) => {
         if (!response.success) {
           throw new Error((response as ApiResponse<User> & { error?: string }).error ?? 'Failed to update user status');
         }
-        return (response).data;
+        return response.data;
       },
       invalidatesTags: (_, __, { userId }) => [
         { type: 'User', id: userId },
@@ -124,15 +114,15 @@ export const userApi = createApi({
     // Update user role
     updateUserRole: builder.mutation<User, { userId: UserId; role: UserRole }>({
       query: ({ userId, role }) => ({
-        url: `/${userId}/role`,
-        method: 'PATCH',
+        url: `/users/${userId}/role`,
+        method: HTTP_METHOD.PATCH,
         body: { authorities: role },
       }),
       transformResponse: (response: ApiResponse<User>) => {
         if (!response.success) {
           throw new Error((response as ApiResponse<User> & { error?: string }).error ?? 'Failed to update user role');
         }
-        return (response).data;
+        return response.data;
       },
       invalidatesTags: (_, __, { userId }) => [
         { type: 'User', id: userId },
@@ -140,6 +130,7 @@ export const userApi = createApi({
       ],
     }),
   }),
+  overrideExisting: false,
 });
 
 // Export hooks for use in components

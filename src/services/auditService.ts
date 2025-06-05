@@ -10,7 +10,7 @@ import type {
 import {CaseAuditId, UserId} from '../types/brandedTypes';
 import {createCaseAuditId} from '../types/typeHelpers';
 import {CaseObj} from './apiUtils';
-import {AUDIT_STATUS_ENUM} from '../enums';
+import {AUDIT_STATUS_ENUM, HTTP_METHOD} from '../enums';
 import { CompletionData, CompletionResponse } from './auditService.types';
 
 /**
@@ -272,7 +272,7 @@ export const completeAuditAPI = async (
 ): Promise<CompletionResponse> => {
   try {
     const response = await fetch(`${API_BASE_PATH}/audit/${caseAuditId}/complete`, {
-      method: 'POST',
+      method: HTTP_METHOD.POST,
       headers: {
         'Content-Type': 'application/json',
       },

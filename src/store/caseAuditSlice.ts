@@ -1,5 +1,4 @@
 import { createSlice, createSelector, type PayloadAction } from '@reduxjs/toolkit';
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import type { RootState } from './index';
 import { CURRENCY } from '../types/currencyTypes';
 import {
@@ -29,8 +28,8 @@ import {
   AddAuditFindingParams,
   QuarterlyAuditsSelector
 } from '../types/types';
-import { CASE_TYPE_ENUM, CLAIMS_STATUS_ENUM, USER_ROLE_ENUM, AUDIT_STATUS_ENUM } from '../enums';
-import { QUARTER_CALCULATIONS, API_BASE_PATH } from '../constants';
+import { CASE_TYPE_ENUM, CLAIMS_STATUS_ENUM, USER_ROLE_ENUM, AUDIT_STATUS_ENUM, HTTP_METHOD } from '../enums';
+import { QUARTER_CALCULATIONS } from '../constants';
 import { mapAuditStatusToCaseAuditStatus } from '../utils/statusUtils';
 import {
   createUserId,
@@ -41,6 +40,7 @@ import {
   createISODateString,
   convertToFindingsRecord
 } from '../types/typeHelpers';
+import api from './api';
 
 // Memoize the getCurrentQuarter function to avoid creating new objects on each call
 let cachedQuarter: Quarter | null = null;
@@ -74,17 +74,8 @@ export const formatQuarterYear = (quarter: QuarterNumber, year: number): Quarter
   return `Q${quarter}-${year}`;
 };
 
-// RTK Query API slice for audit operations
-export const auditApi = createApi({
-  reducerPath: 'auditApi',
-  baseQuery: fetchBaseQuery({
-    baseUrl: API_BASE_PATH,
-    prepareHeaders: (headers) => {
-      headers.set('Content-Type', 'application/json');
-      return headers;
-    },
-  }),
-  tagTypes: ['Audit', 'QuarterlyAudits', 'CurrentUser'],
+// Inject audit endpoints into the main API slice
+export const auditApi = api.injectEndpoints({
   endpoints: (builder) => ({
     // Get current user
     getCurrentUser: builder.query<User, void>({
@@ -128,7 +119,7 @@ export const auditApi = createApi({
     selectQuarterlyAudits: builder.mutation<QuarterlyAuditsData, QuarterPeriod>({
       query: (quarterPeriod) => ({
         url: '/audit-completion/select-quarterly',
-        method: 'POST',
+        method: HTTP_METHOD.POST,
         body: { quarterKey: quarterPeriod, userIds: [] },
       }),
       transformResponse: (response: QuarterlyAuditsResponse) => {
@@ -161,7 +152,7 @@ export const auditApi = createApi({
     completeAudit: builder.mutation<AuditCompletionResponse, AuditCompletionParams>({
       query: ({ auditId, ...completionData }) => ({
         url: `/audit/${auditId}/complete`,
-        method: 'POST',
+        method: HTTP_METHOD.POST,
         body: completionData,
       }),
       transformResponse: (response: AuditCompletionResponse) => {
@@ -180,7 +171,7 @@ export const auditApi = createApi({
     saveAuditCompletion: builder.mutation<AuditCompletionResponse, AuditCompletionParams>({
       query: ({ auditId, ...completionData }) => ({
         url: `/audit-completion/${auditId}`,
-        method: 'PUT',
+        method: HTTP_METHOD.PUT,
         body: completionData,
       }),
       transformResponse: (response: AuditCompletionResponse) => {
@@ -198,7 +189,7 @@ export const auditApi = createApi({
     createAudit: builder.mutation<CaseAudit, Partial<CaseAudit>>({
       query: (auditData) => ({
         url: '/audits',
-        method: 'POST',
+        method: HTTP_METHOD.POST,
         body: auditData,
       }),
       transformResponse: (response: CaseAudit) => response,
@@ -209,7 +200,7 @@ export const auditApi = createApi({
     updateAudit: builder.mutation<CaseAudit, CaseAudit>({
       query: ({ id, ...patch }) => ({
         url: `/audits/${id}`,
-        method: 'PUT',
+        method: HTTP_METHOD.PUT,
         body: patch,
       }),
       transformResponse: (response: CaseAudit) => response,
@@ -232,7 +223,7 @@ export const auditApi = createApi({
     addAuditFinding: builder.mutation<FindingsRecord, AddAuditFindingParams>({
       query: ({ auditId, findingType, findingDescription }) => ({
         url: `/audit-findings/${auditId}`,
-        method: 'POST',
+        method: HTTP_METHOD.POST,
         body: { findingType, findingDescription },
       }),
     }),
@@ -243,6 +234,7 @@ export const auditApi = createApi({
       transformResponse: (response: PreLoadedCasesResponse) => response.data ?? [],
     }),
   }),
+  overrideExisting: false,
 });
 
 // Export hooks for use in components
