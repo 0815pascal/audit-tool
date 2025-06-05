@@ -116,7 +116,7 @@ export const useCaseAuditHandlers = () => {
 
   useEffect(() => {
     if (preLoadedCases && preLoadedCases.length > 0) {
-      console.log(`Loading ${preLoadedCases.length} pre-loaded cases for immediate display...`);
+
       // Store pre-loaded cases in Redux and show them immediately
       // These represent already completed/in-progress work
       dispatch(loadPreLoadedCases(preLoadedCases));
@@ -535,7 +535,7 @@ export const useCaseAuditHandlers = () => {
         type: 'binary'
       });
 
-      console.log(`✅ Successfully exported ${allAudits.length} audit results to ${filename}`);
+      // Successfully exported audit results
     } catch (error) {
       console.error('Error exporting quarterly results:', error);
       throw error;

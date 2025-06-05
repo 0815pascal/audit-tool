@@ -4,8 +4,7 @@ import {
   ACTION_STATUS_ENUM, 
   USER_ROLE_ENUM,
   CASE_TYPE_ENUM,
-  DETAILED_FINDING_ENUM,
-  SPECIAL_FINDING_ENUM
+  DETAILED_FINDING_ENUM
 } from './enums';
 
 // API configuration
@@ -57,13 +56,16 @@ export const DETAILED_FINDING_TYPES: Record<DETAILED_FINDING_ENUM, string> = {
   [DETAILED_FINDING_ENUM.COMMUNICATION_POOR]: "Communication poor"
 };
 
-export const SPECIAL_FINDING_TYPES: Record<SPECIAL_FINDING_ENUM, string> = {
-  [SPECIAL_FINDING_ENUM.FEEDBACK]: "Feedback",
-  [SPECIAL_FINDING_ENUM.COMMUNICATION]: "Communication",
-  [SPECIAL_FINDING_ENUM.RECOURSE]: "Recourse",
-  [SPECIAL_FINDING_ENUM.NEGOTIATION]: "Negotiation",
-  [SPECIAL_FINDING_ENUM.PERFECT_TIMING]: "Perfect timing"
-};
+// Form field validation messages
+export const VALIDATION_MESSAGES = {
+  REQUIRED_FIELD: 'Dieses Feld ist erforderlich',
+  INVALID_EMAIL: 'Bitte geben Sie eine gültige E-Mail-Adresse ein',
+  INVALID_PASSWORD: 'Das Passwort muss mindestens 8 Zeichen haben',
+  PASSWORDS_MUST_MATCH: 'Die Passwörter müssen übereinstimmen',
+  INVALID_USER_ROLE: 'Ungültige Benutzerrolle',
+  CASE_NOT_FOUND: 'Fall nicht gefunden',
+  AUDIT_COMPLETION_FAILED: 'Prüfung konnte nicht abgeschlossen werden'
+} as const;
 
 // Coverage amount limits by user role
 export const COVERAGE_LIMITS = {

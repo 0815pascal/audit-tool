@@ -18,12 +18,12 @@ import { UserId } from '../types/brandedTypes';
 /**
  * Type for user creation without requiring an ID
  */
-export type NewUser = Omit<User, 'id'> & { id?: UserId };
+type NewUser = Omit<User, 'id'> & { id?: UserId };
 
 /**
  * Generate initials from a user's name
  */
-export function generateInitials(name: string): string {
+function generateInitials(name: string): string {
   return name
     .split(' ')
     .map(part => part[0])

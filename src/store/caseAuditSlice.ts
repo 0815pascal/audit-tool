@@ -240,16 +240,16 @@ export const auditApi = api.injectEndpoints({
 // Export hooks for use in components
 export const {
   useGetCurrentUserQuery,
-  useGetAuditsByQuarterQuery,
-  useGetAuditsByAuditorQuery,
-  useSelectQuarterlyAuditsMutation,
-  useGetQuarterlyAuditsQuery,
+  
+  
+  
+  
   useCompleteAuditMutation,
   useSaveAuditCompletionMutation,
-  useCreateAuditMutation,
-  useUpdateAuditMutation,
-  useGetAuditFindingsQuery,
-  useAddAuditFindingMutation,
+  
+  
+  
+  
   useGetPreLoadedCasesQuery,
 } = auditApi;
 
@@ -529,36 +529,26 @@ const auditUISlice = createSlice({
 // Export UI actions
 export const {
   setCurrentUser,
-  setSelectedQuarter,
-  setFilteredYear,
+  
+  
   updateAuditStatus,
   updateAuditInProgress,
   completeAudit,
   setUserRole,
   storeQuarterlyAudits,
   storeAllCasesForQuarter,
-  setLoading,
-  setError,
-  clearError,
+  
+  
+  
   loadPreLoadedCases,
 } = auditUISlice.actions;
 
 // Enhanced selectors that work with RTK Query cache
-const getCurrentUserQuerySelector = auditApi.endpoints.getCurrentUser.select();
 
-export const selectCurrentUser = createSelector(
-  [getCurrentUserQuerySelector],
-  (currentUserResult) => currentUserResult.data ?? null
-);
 
-export const selectCurrentUserId = (state: RootState) => state.auditUI.currentUserId;
-export const selectSelectedQuarter = (state: RootState) => state.auditUI.selectedQuarter;
-export const selectFilteredYear = (state: RootState) => state.auditUI.filteredYear;
 export const selectAuditData = (state: RootState) => state.auditUI.auditData;
 export const selectUserQuarterlyStatus = (state: RootState) => state.auditUI.userQuarterlyStatus;
-export const selectUserRoles = (state: RootState) => state.auditUI.userRoles;
-export const selectAuditUILoading = (state: RootState) => state.auditUI.loading;
-export const selectAuditUIError = (state: RootState) => state.auditUI.error;
+const selectUserRoles = (state: RootState) => state.auditUI.userRoles;
 
 // Selector to get user role
 export const selectUserRole = createSelector(
@@ -568,32 +558,7 @@ export const selectUserRole = createSelector(
   }
 );
 
-// Check if a user can complete a specific audit
-export const canUserCompleteAudit = (
-  state: RootState,
-  auditId: string
-): boolean => {
-  try {
-    const currentUserId = state.auditUI.currentUserId.toString();
-    const currentUserRole = state.auditUI.userRoles[currentUserId]?.role;
-    const auditData = state.auditUI.auditData[auditId];
-    
-    if (!auditData || !currentUserRole) {
-      return false;
-    }
-    
-    // Team leaders can't complete their own audits - must be completed by a specialist
-    if (currentUserRole === USER_ROLE_ENUM.TEAM_LEADER && auditData.userId === currentUserId) {
-      return false;
-    }
-    
-    // Only team leaders and specialists can complete audits
-    return currentUserRole === USER_ROLE_ENUM.TEAM_LEADER || currentUserRole === USER_ROLE_ENUM.SPECIALIST;
-  } catch (error) {
-    console.error('Error in canUserCompleteAudit:', error);
-    return false;
-  }
-};
+
 
 // Quarterly audits selector
 export const selectQuarterlyAuditsForPeriod = createSelector(

@@ -1,14 +1,10 @@
 import type { 
-  CachedItem,
   FindingType, 
-  FindingCategory,
-  QuarterPeriod
+  FindingCategory
 } from '../types/types';
 import type { ValidCurrency } from '../types/currencyTypes';
 import type { 
-  CacheKey, 
   FindingId,
-  CaseAuditId,
   UserId,
   CaseId
 } from '../types/brandedTypes';
@@ -19,18 +15,11 @@ type UserRole = USER_ROLE_ENUM;
 type ClaimsStatus = CLAIMS_STATUS_ENUM;
 type CaseStatus = CASE_STATUS_ENUM;
 
-// Cache-related branded types for stronger typings
-export const createCacheKey = (prefix: string, identifier: string): CacheKey => 
-  `${prefix}-${identifier}` as CacheKey;
-
 // Finding ID branded type
 export const createFindingId = (id: number): FindingId => id as FindingId;
 
-// Create an API cache type for consistent usage
-export type ApiCache<T> = Map<CacheKey, CachedItem<T>>;
-
 // Data types for API responses
-export interface ClaimOwner {
+interface ClaimOwner {
   userId: UserId;
   role: UserRole;
 }
@@ -58,10 +47,7 @@ export interface CaseObj {
   notifiedCurrency: ValidCurrency; // Currency code for the case (e.g., CHF, EUR, USD)
 }
 
-export interface Auditor {
-  userId: UserId;
-  role: UserRole;
-}
+
 
 /**
  * Represents an audit record from the external system
@@ -78,13 +64,7 @@ export interface Auditor {
  * - They are transformed into Dossiers for audit workflow
  * - Dossiers are then stored in the application state
  */
-export interface AuditRecord {
-  auditId: CaseAuditId;
-  quarter: QuarterPeriod;
-  caseObj?: CaseObj;
-  auditor: Auditor;
-  dossierRisk?: number; 
-}
+
 
 export interface Finding {
   findingId: FindingId;
@@ -93,18 +73,3 @@ export interface Finding {
   category?: FindingCategory;
 }
 
-// Payload for creating or updating an audit
-export interface AuditPayload {
-  quarter: QuarterPeriod; 
-  caseObj: { 
-    caseNumber: CaseId;
-    claimsStatus?: ClaimsStatus;
-    coverageAmount?: number;
-    caseStatus?: CaseStatus;
-  }; 
-  auditor: { 
-    userId: UserId;
-    role?: UserRole;
-  };
-  findings?: Array<Omit<Finding, 'findingId'>>;
-}

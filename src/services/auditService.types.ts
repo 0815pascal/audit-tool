@@ -1,4 +1,3 @@
-import { CaseAuditId, UserId } from '../types/brandedTypes';
 import { AUDIT_STATUS_ENUM } from '../enums';
 
 /**
@@ -10,18 +9,6 @@ export interface CompletionData {
   rating?: string;
   comment?: string;
   isCompleted?: boolean;
-}
-
-/**
- * Interface for update completion request payload
- */
-export interface UpdateCompletionRequest {
-  auditId: CaseAuditId;
-  auditor: UserId;
-  status: AUDIT_STATUS_ENUM;
-  auditorId: number;
-  rating?: string;
-  comment?: string;
 }
 
 /**

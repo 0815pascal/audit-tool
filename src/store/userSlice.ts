@@ -2,7 +2,7 @@ import { createSelector, createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { ApiResponse, User, UserRole } from '../types/types';
 import { UserId } from '../types/brandedTypes';
 import { RootState } from './index';
-import { Department, USER_ROLE_ENUM, HTTP_METHOD } from '../enums';
+import { HTTP_METHOD } from '../enums';
 import type { UserUIState } from './userSlice.types';
 import api from './api';
 
@@ -136,7 +136,7 @@ export const userApi = api.injectEndpoints({
 // Export hooks for use in components
 export const {
   useGetUsersQuery,
-  useGetUserByIdQuery,
+  
   useCreateUserMutation,
   useUpdateUserMutation,
   useDeleteUserMutation,
@@ -179,75 +179,11 @@ export const selectActiveUsers = createSelector(
   (users) => users.filter(user => user.enabled)
 );
 
-export const selectUsersByRole = createSelector(
-  [selectAllUsers, (_state: RootState, role: UserRole) => role],
-  (users, role) => users.filter(user => user.authorities === role)
-);
-
-export const selectSelectedUserId = (state: RootState) => state.userUI.selectedUserId;
+const selectSelectedUserId = (state: RootState) => state.userUI.selectedUserId;
 
 export const selectSelectedUser = createSelector(
   [selectAllUsers, selectSelectedUserId],
   (users, selectedId) => selectedId ? users.find(user => user.id === selectedId) ?? null : null
-);
-
-// Loading and error selectors for the users query
-export const selectUsersLoading = createSelector(
-  [getUsersQuerySelector],
-  (usersResult) => usersResult.isLoading
-);
-
-export const selectUsersError = createSelector(
-  [getUsersQuerySelector],
-  (usersResult) => usersResult.error ?? null
-);
-
-export const selectUsersFetching = createSelector(
-  [getUsersQuerySelector],
-  (usersResult) => usersResult.isLoading
-);
-
-// Role-specific selectors
-export const selectTeamLeaders = createSelector(
-  [selectAllUsers],
-  (users) => users.filter(user => user.authorities === USER_ROLE_ENUM.TEAM_LEADER)
-);
-
-export const selectSpecialists = createSelector(
-  [selectAllUsers],
-  (users) => users.filter(user => user.authorities === USER_ROLE_ENUM.SPECIALIST)
-);
-
-export const selectStaffUsers = createSelector(
-  [selectAllUsers],
-  (users) => users.filter(user => user.authorities === USER_ROLE_ENUM.STAFF)
-);
-
-export const selectReaderUsers = createSelector(
-  [selectAllUsers],
-  (users) => users.filter(user => user.authorities === USER_ROLE_ENUM.READER)
-);
-
-// Count selectors
-export const selectUserCount = createSelector(
-  [selectAllUsers],
-  (users) => users.length
-);
-
-export const selectUserCountByRole = createSelector(
-  [selectAllUsers, (_state: RootState, role: UserRole) => role],
-  (users, role) => users.filter(user => user.authorities === role).length
-);
-
-export const selectUserCountByDepartment = createSelector(
-  [selectAllUsers, (_state: RootState, department: Department) => department],
-  (users, department) => users.filter(user => user.department === department).length
-);
-
-// Utility selector to get user by ID from cache
-export const selectUserById = createSelector(
-  [selectAllUsers, (_state: RootState, userId: UserId) => userId],
-  (users, userId) => users.find(user => user.id === userId)
 );
 
 // Export the UI reducer

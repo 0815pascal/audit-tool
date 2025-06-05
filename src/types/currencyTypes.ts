@@ -9,9 +9,8 @@ type RON = 'RON';
 type USD = 'USD';
 
 export type ValidCurrency = BGN | CHF | DKK | EUR | GBP | HUF | MAD | RON | USD;
-export type CurrencyType = 'NC' | 'PC'
 
-export interface Currency {
+interface Currency {
   BGN: BGN;
   CHF: CHF;
   DKK: DKK;
@@ -34,4 +33,4 @@ export const CURRENCY: Currency = {
   RON: 'RON',
   USD: 'USD'
 };
-export type TimelineCurrency = 'IC' | 'PC';
+

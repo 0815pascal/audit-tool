@@ -1,4 +1,3 @@
-import axios from 'axios';
 import { API_BASE_PATH } from '../constants';
 import { CURRENCY } from '../types/currencyTypes';
 import type { 
@@ -20,13 +19,15 @@ export const getAuditsByQuarter = async (quarter: QuarterPeriod): Promise<UserAu
   try {
     const url = `${API_BASE_PATH}/api/audits/quarter/${quarter}`;
     
-    const response = await axios.get(url);
+    const response = await fetch(url);
     
-    if (response.status !== 200) {
+    if (!response.ok) {
       throw new Error(`Failed to fetch audits: ${response.status}`);
     }
     
-    return response.data.map((item: Record<string, unknown>) => ({
+    const data = await response.json();
+    
+    return data.map((item: Record<string, unknown>) => ({
       id: String(item.id),
       userId: String(item.userId),
       quarter: item.quarter,
@@ -51,14 +52,16 @@ export const getAllCasesByQuarter = async (quarter: QuarterPeriod): Promise<Case
   try {
     const url = `${API_BASE_PATH}/cases/quarter/${quarter}`;
     
-    const response = await axios.get(url);
+    const response = await fetch(url);
     
-    if (response.status !== 200) {
+    if (!response.ok) {
       throw new Error(`Failed to fetch all cases: ${response.status}`);
     }
     
+    const data = await response.json();
+    
     // The response should be an array of case objects
-    return response.data.map((caseData: Record<string, unknown>) => ({
+    return data.map((caseData: Record<string, unknown>) => ({
       caseNumber: String(caseData.caseNumber),
       claimOwner: {
         userId: String((caseData.claimOwner && (caseData.claimOwner as Record<string, unknown>).userId) ?? caseData.userId ?? 'unknown') as UserId,
@@ -82,13 +85,15 @@ export const getAuditsByAuditor = async (auditorId: UserId): Promise<UserAuditFo
   try {
     const url = `${API_BASE_PATH}/api/audits/auditor/${auditorId}`;
     
-    const response = await axios.get(url);
+    const response = await fetch(url);
     
-    if (response.status !== 200) {
+    if (!response.ok) {
       throw new Error(`Failed to fetch audits: ${response.status}`);
     }
     
-    return response.data.map((item: Record<string, unknown>) => ({
+    const data = await response.json();
+    
+    return data.map((item: Record<string, unknown>) => ({
       id: String(item.id),
       userId: String(item.userId),
       quarter: item.quarter,
@@ -112,13 +117,19 @@ export const createAudit = async (payload: Record<string, unknown>): Promise<Aud
   try {
     const url = `${API_BASE_PATH}/api/audits`;
     
-    const response = await axios.post(url, payload);
+    const response = await fetch(url, {
+      method: HTTP_METHOD.POST,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
     
-    if (response.status !== 201) {
+    if (!response.ok) {
       throw new Error(`Failed to create audit: ${response.status}`);
     }
     
-    const data = response.data;
+    const data = await response.json();
     return {
       id: createCaseAuditId(String(data.id)),
       auditId: createCaseAuditId(String(data.id)),
@@ -144,13 +155,19 @@ export const updateAudit = async (caseAuditId: CaseAuditId, payload: Record<stri
   try {
     const url = `${API_BASE_PATH}/api/audits/${caseAuditId}`;
     
-    const response = await axios.put(url, payload);
+    const response = await fetch(url, {
+      method: HTTP_METHOD.PUT,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
     
-    if (response.status !== 200) {
+    if (!response.ok) {
       throw new Error(`Failed to update audit: ${response.status}`);
     }
     
-    const data = response.data;
+    const data = await response.json();
     return {
       id: createCaseAuditId(String(data.id)),
       auditId: createCaseAuditId(String(data.id)),
@@ -176,9 +193,15 @@ export const addAuditFinding = async (caseAuditId: CaseAuditId, payload: Record<
   try {
     const url = `${API_BASE_PATH}/api/audits/${caseAuditId}/findings`;
     
-    const response = await axios.post(url, payload);
+    const response = await fetch(url, {
+      method: HTTP_METHOD.POST,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
     
-    if (response.status !== 201) {
+    if (!response.ok) {
       throw new Error(`Failed to add finding: ${response.status}`);
     }
   } catch (error) {
@@ -194,13 +217,13 @@ export const getAuditFindings = async (caseAuditId: CaseAuditId): Promise<unknow
   try {
     const url = `${API_BASE_PATH}/api/audits/${caseAuditId}/findings`;
     
-    const response = await axios.get(url);
+    const response = await fetch(url);
     
-    if (response.status !== 200) {
+    if (!response.ok) {
       throw new Error(`Failed to fetch findings: ${response.status}`);
     }
     
-    return response.data;
+    return await response.json();
   } catch (error) {
     console.error(`Error fetching findings for audit ${caseAuditId}:`, error);
     throw error;
@@ -216,14 +239,16 @@ export const selectCasesForAudit = async (quarterPeriod: QuarterPeriod, preLoade
     const url = `${API_BASE_PATH}/audits/select-cases/${quarterPeriod}`;
     const params = preLoadedCount > 0 ? `?preLoadedCount=${preLoadedCount}` : '';
     
-    const response = await axios.get(`${url}${params}`);
+    const response = await fetch(`${url}${params}`);
     
-    if (response.status !== 200) {
+    if (!response.ok) {
       throw new Error(`API responded with status ${response.status}`);
     }
     
+    const data = await response.json();
+    
     // The response should be an array of CaseObj directly
-    return response.data.map((caseData: Record<string, unknown>) => ({
+    return data.map((caseData: Record<string, unknown>) => ({
       caseNumber: String(caseData.caseNumber),
       claimOwner: {
         userId: String((caseData.claimOwner && (caseData.claimOwner as Record<string, unknown>).userId) ?? caseData.userId ?? 'unknown') as UserId,
@@ -248,15 +273,13 @@ export const exportAuditsForQuarter = async (quarter: QuarterPeriod): Promise<Bl
   try {
     const url = `${API_BASE_PATH}/api/audits/quarter/${quarter}/export`;
     
-    const response = await axios.get(url, {
-      responseType: 'blob'
-    });
+    const response = await fetch(url);
     
-    if (response.status !== 200) {
+    if (!response.ok) {
       throw new Error(`Failed to export audits: ${response.status}`);
     }
     
-    return response.data;
+    return await response.blob();
   } catch (error) {
     console.error(`Error exporting audits for quarter ${quarter}:`, error);
     throw error;

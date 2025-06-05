@@ -355,7 +355,7 @@ export const mockCases: MockCaseData[] = [
 /**
  * Generate a random currency from available currencies
  */
-export const generateRandomCurrency = (): ValidCurrency => {
+const generateRandomCurrency = (): ValidCurrency => {
   const currencies = [CURRENCY.CHF, CURRENCY.EUR, CURRENCY.USD];
   return currencies[Math.floor(Math.random() * currencies.length)];
 };
@@ -363,7 +363,7 @@ export const generateRandomCurrency = (): ValidCurrency => {
 /**
  * Generate a realistic coverage amount based on user role
  */
-export const generateCoverageAmount = (userRole?: USER_ROLE_ENUM): number => {
+const generateCoverageAmount = (userRole?: USER_ROLE_ENUM): number => {
   const maxAmount = userRole === USER_ROLE_ENUM.STAFF ? 30000 : 150000;
   return Math.floor(Math.random() * maxAmount) + 1000;
 };
@@ -371,7 +371,7 @@ export const generateCoverageAmount = (userRole?: USER_ROLE_ENUM): number => {
 /**
  * Generate a notification date within a specific quarter
  */
-export const generateNotificationDateForQuarter = (quarterNum: number, year: number): string => {
+const generateNotificationDateForQuarter = (quarterNum: number, year: number): string => {
   try {
     const startMonth = (quarterNum - 1) * 3; // 0-indexed month
     const randomDay = Math.floor(Math.random() * 28) + 1; // 1-28 to avoid month-end issues

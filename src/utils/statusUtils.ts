@@ -8,16 +8,7 @@
 import {AUDIT_STATUS_ENUM} from '../enums';
 import {CaseAuditStatus} from '../types';
 
-// Import centralized function
-import { generateRealisticCaseNumber as generateRealisticCaseNumberCentralized } from '../mocks/mockData';
 
-/**
- * Generates a realistic 8-digit case number starting with 4 (like 40001912)
- * @returns A string representing an 8-digit case number
- */
-export const generateRealisticCaseNumber = (): string => {
-  return generateRealisticCaseNumberCentralized();
-};
 
 /**
  * Maps AUDIT_STATUS_ENUM to CaseAuditStatus
@@ -41,7 +32,7 @@ export function mapAuditStatusToCaseAuditStatus(status: AUDIT_STATUS_ENUM): Case
  * Maps CaseAuditStatus to AUDIT_STATUS_ENUM
  * Since both enums use the same underlying values, this is a simple cast with validation.
  */
-export function mapCaseAuditStatusToAuditStatus(status: CaseAuditStatus): AUDIT_STATUS_ENUM {
+function mapCaseAuditStatusToAuditStatus(status: CaseAuditStatus): AUDIT_STATUS_ENUM {
   // Since CaseAuditStatus is now just an alias for AUDIT_STATUS_ENUM, we can return the input directly
   switch (status) {
     case AUDIT_STATUS_ENUM.COMPLETED:

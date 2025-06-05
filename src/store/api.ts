@@ -8,7 +8,7 @@ import { API_BASE_PATH } from '../constants';
  * - Consistent error handling with transformResponse
  * - Type-safe throughout
  */
-export const api = createApi({
+const api = createApi({
   reducerPath: 'api',
   baseQuery: fetchBaseQuery({
     baseUrl: API_BASE_PATH,

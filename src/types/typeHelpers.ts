@@ -26,10 +26,7 @@ export function createCaseAuditId(id: string): CaseAuditId {
   return id as CaseAuditId;
 }
 
-// Ensure a value is a CaseAuditId
-export function ensureCaseAuditId(id: string | CaseAuditId): CaseAuditId {
-  return typeof id === 'string' ? createCaseAuditId(id) : id;
-}
+
 
 /**
  * Create a date string in ISO format with type safety
@@ -58,7 +55,7 @@ export function isQuarterPeriod(value: string): value is QuarterPeriod {
   );
 }
 
-export function isValidYear(year: number): year is ValidYear {
+function isValidYear(year: number): year is ValidYear {
   return year >= 2000 && year <= 2100;
 }
 

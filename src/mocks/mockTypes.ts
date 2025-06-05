@@ -1,7 +1,6 @@
 import { 
   ClaimsStatus, 
   QuarterPeriod,
-  FindingType,
   CaseType,
   RatingValue,
   DetailedFindingsRecord,
@@ -71,12 +70,7 @@ export interface ApiAuditResponse {
   };
 }
 
-// API response format for finding endpoints
-export interface ApiFindingResponse {
-  findingId: number;
-  type: FindingType | string;
-  description: string;
-}
+
 
 // API request payload structure for audit endpoints
 export interface ApiAuditRequestPayload {

@@ -1,6 +1,5 @@
 import {
   FINDING_CATEGORY,
-  ACTION_STATUS_ENUM,
   CLAIMS_STATUS_ENUM,
   USER_ROLE_ENUM,
   CASE_TYPE_ENUM,
@@ -22,8 +21,7 @@ import type {
 // Import currency types
 import type { ValidCurrency } from './currencyTypes';
 
-// Common React component prop types
-import type { ReactNode, HTMLAttributes } from 'react';
+
 
 // CaseAudit types moved from caseAuditTypes.ts
 
@@ -31,7 +29,7 @@ import type { ReactNode, HTMLAttributes } from 'react';
 export type CaseAuditStatus = AUDIT_STATUS_ENUM;
 
 // Core audit step interface
-export interface CaseAuditStep {
+interface CaseAuditStep {
   id: string;
   isCompleted: boolean;
   isIncorrect: boolean;
@@ -72,7 +70,7 @@ export interface CaseAuditActionPayload extends BaseAuditActionPayload, CaseAudi
 
 // Summary version of CaseAudit with only essential fields
 // Core case audit data without audit-specific fields
-export interface CaseAuditCore extends BaseEntity<CaseAuditId> {
+interface CaseAuditCore extends BaseEntity<CaseAuditId> {
   userId: UserId;
   date: ISODateString;
   clientName: string;
@@ -98,25 +96,7 @@ export interface CaseAudit extends CaseAuditCore, CaseAuditData {
   notifiedCurrency?: ValidCurrency; // Currency code for the case (e.g., CHF, EUR, USD)
 }
 
-// Redux state for case audits
-export interface CaseAuditState {
-  currentUserId: UserId;
-  auditData: Dictionary<StoredCaseAuditData>;
-  userQuarterlyStatus: {
-    [userId: string]: {
-      [quarterKey: string]: {
-        completed: boolean;
-        lastCompleted?: string;
-      }
-    }
-  };
-  userRoles: Dictionary<{
-    role: string;
-    department: string;
-  }>;
-  loading?: boolean;
-  error?: string | null;
-}
+
 
 // Base types as string literals (enum-like) - Keep only meaningful aliases
 export type UserRole = USER_ROLE_ENUM;
@@ -140,15 +120,7 @@ export type FindingsRecord = {
 // Date representation - can be used instead of string for dates
 export type ISODateString = `${number}-${number}-${number}T${number}:${number}:${number}${string}` | `${number}-${number}-${number}`;
 
-// State management types
-export interface AsyncState<T, E = string> {
-  data: T | null;
-  status: ACTION_STATUS_ENUM;
-  error: E | null;
-  isLoading: boolean;
-  isError: boolean;
-  isSuccess: boolean;
-}
+
 
 // Generic API response caching
 export interface CachedItem<T> {
@@ -157,13 +129,13 @@ export interface CachedItem<T> {
 }
 
 // API response handling
-export interface ApiSuccessResponse<T> {
+interface ApiSuccessResponse<T> {
   success: true;
   data: T;
   message?: string;
 }
 
-export interface ApiErrorResponse {
+interface ApiErrorResponse {
   success: false;
   error: string;
   code?: number;
@@ -171,23 +143,20 @@ export interface ApiErrorResponse {
 
 export type ApiResponse<T> = ApiSuccessResponse<T> | ApiErrorResponse;
 
-// Utility types for common patterns - renamed for clarity
-export type Dictionary<T> = Record<string, T>;
+
 
 // Base entity interface for all main data objects
-export interface BaseEntity<T = string> {
+interface BaseEntity<T = string> {
   id: T;
 }
 
 // Common action payload types
-export interface BaseAuditActionPayload {
+interface BaseAuditActionPayload {
   auditId: CaseAuditId;
   userId: UserId;
 }
 
-export interface StatusUpdatePayload extends BaseAuditActionPayload {
-  status: CaseAuditStatus;
-}
+
 
 // Quarter period representation (e.g., "Q2-2023")
 export type QuarterPeriod = `Q${QuarterNumber}-${number}`;
@@ -223,7 +192,7 @@ export interface UserAuditForSelection extends AuditForSelection {
 }
 
 // Common user fields extracted into a reusable interface
-export interface BaseUserFields {
+interface BaseUserFields {
   displayName: string;
   department: Department;
   authorities: UserRole;
@@ -249,19 +218,9 @@ export interface SelectOption<T = string> {
 // Type for rating dropdown options - using the SelectOption generic
 export type RatingOption = SelectOption<RatingValue>;
 
-// Custom prop types for consistent component APIs
-export interface PropsWithChildren {
-  children: ReactNode;
-}
 
-export interface PropsWithClassName {
-  className?: string;
-}
 
-// Generic component props type helper with HTML attributes
-export type ComponentProps<T = HTMLDivElement> = HTMLAttributes<T> & PropsWithClassName;
 
-export type ContextProviderProps = PropsWithChildren;
 
 // =============================================
 // Redux Action Payload Types
@@ -271,7 +230,7 @@ export type ContextProviderProps = PropsWithChildren;
  * Represents a single audit item in API responses and Redux actions
  * Used for both userQuarterlyAudits and previousQuarterRandomAudits
  */
-export interface AuditItem {
+interface AuditItem {
   id: string;
   userId: string;
   status: string;
@@ -298,7 +257,7 @@ export interface StoreQuarterlyAuditsPayload {
 /**
  * Represents a case item for quarter display (simplified view)
  */
-export interface QuarterCaseItem {
+interface QuarterCaseItem {
   id: string;
   userId: string;
   coverageAmount: number;
@@ -318,7 +277,7 @@ export interface StoreAllCasesForQuarterPayload {
 /**
  * Represents a pre-loaded case with full audit data
  */
-export interface PreLoadedCaseItem {
+interface PreLoadedCaseItem {
   id: string;
   userId: string;
   auditor: string;
@@ -404,7 +363,7 @@ export interface AuditCompletionParams {
 /**
  * Interface for user role information stored in Redux
  */
-export interface UserRoleInfo {
+interface UserRoleInfo {
   role: UserRole;
   department: string;
 }
@@ -412,7 +371,7 @@ export interface UserRoleInfo {
 /**
  * Interface for quarterly completion status tracking
  */
-export interface QuarterlyCompletionStatus {
+interface QuarterlyCompletionStatus {
   completed: boolean;
   lastCompleted?: string;
 }
