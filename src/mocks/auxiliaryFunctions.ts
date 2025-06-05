@@ -1,15 +1,15 @@
-import {createCaseId, createValidYear, QuarterNumber, QuarterPeriod} from '../types';
+import {createCaseId, QuarterNumber, QuarterPeriod} from '../types';
 import { CURRENCY, ValidCurrency } from '../types/currencyTypes';
 import {
   CASE_STATUS_MAPPING,
   CLAIMS_STATUS,
   DETAILED_FINDING_TYPES,
-  QUARTER_CALCULATIONS,
-  SPECIAL_FINDING_TYPES
+  QUARTER_CALCULATIONS
 } from '../constants';
 import {createFindingId, Finding} from '../services';
 import {USER_ROLE_ENUM} from '../enums';
 import {ApiAuditResponse, ApiCaseResponse} from './mockTypes';
+import { generateFallbackNumericId, generateAuditFindings, generateCurrentDateString } from './mockData';
 
 // In-memory storage for created audits
 export const auditStore = new Map<number, ApiAuditResponse>();
@@ -22,9 +22,7 @@ export const safeParseInt = (value: string | number | undefined, fallback = 0): 
 
 // Safely extract numeric part from string ID
 export const getNumericId = (id: string | number | undefined): number => {
-  if (!id) return Math.floor(Math.random() * 1000) + 1;
-  const matches = RegExp(/\d+/).exec(id.toString());
-  return matches ? parseInt(matches[0]) : Math.floor(Math.random() * 1000) + 1;
+  return generateFallbackNumericId(id);
 };
 
 // Parse quarter string (Q1-2023) to get quarter number and year
@@ -75,11 +73,7 @@ export const caseToCaseObj = (caseItem: Record<string, unknown>): ApiCaseRespons
   const numericId = getNumericId(caseItem.id as string | number | undefined);
   
   // Use the notificationDate from case data or create a realistic fallback
-  const notificationDate = (caseItem.notificationDate as string) || new Date(
-    createValidYear(2025),
-    Math.floor(Math.random() * 12),
-    Math.floor(Math.random() * 28) + 1
-  ).toISOString().split('T')[0];
+  const notificationDate = (caseItem.notificationDate as string) || generateCurrentDateString();
   
   // Extract the actual userId from the case data, not the case ID
   const actualUserId = safeParseInt(caseItem.userId as string | number | undefined, 1);
@@ -121,19 +115,14 @@ export const caseToAudit = (caseObj: ApiCaseResponse, quarter: QuarterPeriod): A
 
 // Generate realistic findings for an audit
 export const generateFindings = (numericId: number): Finding[] => {
-  const numFindings = Math.floor(Math.random() * 3) + 1; // 1-3 findings
-  const findingTypes = [...Object.keys(DETAILED_FINDING_TYPES), ...Object.keys(SPECIAL_FINDING_TYPES)];
+  const basicFindings = generateAuditFindings(numericId);
   
-  return Array.from({ length: numFindings }, (_, i) => {
-    const randomType = findingTypes[Math.floor(Math.random() * findingTypes.length)];
-    const allFindingTypes = { ...DETAILED_FINDING_TYPES, ...SPECIAL_FINDING_TYPES };
-    
-    return {
-      findingId: createFindingId(i + 1),
-      type: randomType as keyof typeof allFindingTypes,
-      description: `Sample finding ${i + 1} for audit ${numericId}: ${allFindingTypes[randomType as keyof typeof allFindingTypes]}`
-    };
-  });
+  // Convert to the expected Finding format with proper types
+  return basicFindings.map((finding, i) => ({
+    findingId: createFindingId(i + 1),
+    type: finding.type as keyof typeof DETAILED_FINDING_TYPES,
+    description: finding.description
+  }));
 };
 
 // Calculate previous quarter info

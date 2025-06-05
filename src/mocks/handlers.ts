@@ -1,11 +1,10 @@
 import {http, HttpResponse} from 'msw';
 import { CURRENCY, ValidCurrency } from '../types/currencyTypes';
-import {ClaimsStatus, QuarterNumber, QuarterPeriod} from '../types/types';
+import {ClaimsStatus, QuarterPeriod} from '../types/types';
 import {createCaseId, createUserId, isQuarterPeriod,} from '../types/typeHelpers';
-import {API_BASE_PATH, CASE_STATUS_MAPPING, CLAIMS_STATUS, QUARTER_CALCULATIONS} from '../constants';
-import {AUDIT_STATUS_ENUM, CASE_STATUS_ENUM, DEFAULT_VALUE_ENUM, USER_ROLE_ENUM} from '../enums';
-import {generateRealisticCaseNumber} from '../utils/statusUtils';
-import {ApiAuditRequestPayload, ApiAuditResponse, ApiCaseResponse} from './mockTypes';
+import {API_BASE_PATH, CASE_STATUS_MAPPING, CLAIMS_STATUS} from '../constants';
+import {CASE_STATUS_ENUM, USER_ROLE_ENUM} from '../enums';
+import {ApiAuditRequestPayload, ApiAuditResponse} from './mockTypes';
 import {
   auditStore,
   caseToAudit,
@@ -17,7 +16,26 @@ import {
   parseQuarter,
   safeParseInt
 } from './auxiliaryFunctions';
-import {mockCases, users} from './mockData';
+import {
+  mockCases, 
+  users, 
+  generateMockCurrentQuarterCase,
+  generateMockPreviousQuarterCase,
+  generateQuarterlyAuditSelectionCases,
+  generateUserQuarterlyAudits,
+  generatePreviousQuarterRandomAudits,
+  generateCompletionData,
+  generateAuditCompletionResponse,
+  generateFallbackAudit,
+  generateFallbackCompletionResponse,
+  generateRandomAuditId,
+  generateRandomFindingId,
+  generateRandomCaseNumber,
+  shuffleArray,
+  generateCurrentQuarterString,
+  generateCurrentDateString,
+  generateCurrentTimestamp
+} from './mockData';
 
 export const handlers = [
   // Get audits by quarter
@@ -77,8 +95,7 @@ export const handlers = [
       
       // Take all available current quarter cases (should be 6 based on requirements)
       // and 2 random cases from previous quarter
-      const selectedPreviousCases = previousQuarterCases
-        .sort(() => 0.5 - Math.random()) // Randomize
+      const selectedPreviousCases = shuffleArray(previousQuarterCases)
         .slice(0, 2); // Take first 2
       
       // Combine current quarter cases with 2 previous quarter cases
@@ -172,7 +189,7 @@ export const handlers = [
       );
       
       // Convert to API format - use a recent quarter for these
-      const currentQuarter: QuarterPeriod = `Q${Math.floor((new Date().getMonth()) / 3) + 1}-${new Date().getFullYear()}` as QuarterPeriod;
+      const currentQuarter: QuarterPeriod = generateCurrentQuarterString() as QuarterPeriod;
       const audits = filteredCases
         .map(caseItem => {
           try {
@@ -214,14 +231,12 @@ export const handlers = [
       }
       
       // Generate a new audit ID
-      const auditId = Math.floor(Math.random() * 10000) + 1;
+      const auditId = generateRandomAuditId();
       
       // Create valid quarter format if needed
       let quarter = requestData.quarter;
       if (!quarter || !isQuarterPeriod(quarter)) {
-        const now = new Date();
-        const currentQuarter = Math.floor((now.getMonth()) / 3) + 1 as QuarterNumber;
-        quarter = `Q${currentQuarter}-${now.getFullYear()}`;
+        quarter = generateCurrentQuarterString();
       }
       
       // Create a new audit object
@@ -229,7 +244,7 @@ export const handlers = [
         auditId,
         quarter: quarter as QuarterPeriod,
         caseObj: {
-          caseNumber: createCaseId(Math.floor(DEFAULT_VALUE_ENUM.DEFAULT_CASE_NUMBER + Math.random() * DEFAULT_VALUE_ENUM.CASE_NUMBER_RANGE)),
+          caseNumber: createCaseId(generateRandomCaseNumber()),
           claimOwner: {
             userId: typeof requestData.caseObj === 'object' && requestData.caseObj?.claimOwner?.userId !== undefined 
               ? safeParseInt(String(requestData.caseObj.claimOwner.userId)) 
@@ -241,7 +256,7 @@ export const handlers = [
           claimsStatus: (requestData.caseObj?.claimsStatus as ClaimsStatus) || CLAIMS_STATUS.FULL_COVER,
           coverageAmount: requestData.caseObj?.coverageAmount ?? 10000.00,
           caseStatus: (requestData.caseObj?.caseStatus as CASE_STATUS_ENUM) || CASE_STATUS_MAPPING.COMPENSATED,
-          notificationDate: new Date().toISOString().split('T')[0],
+          notificationDate: generateCurrentDateString(),
           notifiedCurrency: CURRENCY.CHF
         },
         auditor: {
@@ -260,26 +275,7 @@ export const handlers = [
       console.error("[MSW] Error in /rest/kuk/v1/audits POST handler:", error);
       
       // Return a fallback audit object
-      const fallbackAudit = {
-        auditId: Math.floor(Math.random() * 10000) + 1,
-        quarter: `Q${Math.floor((new Date().getMonth()) / 3) + 1}-${new Date().getFullYear()}`,
-        caseObj: {
-          caseNumber: Math.floor(DEFAULT_VALUE_ENUM.DEFAULT_CASE_NUMBER + Math.random() * DEFAULT_VALUE_ENUM.CASE_NUMBER_RANGE),
-          claimOwner: {
-            userId: 1,
-            role: USER_ROLE_ENUM.TEAM_LEADER
-          },
-          claimsStatus: CLAIMS_STATUS.FULL_COVER,
-          coverageAmount: 10000.00,
-          caseStatus: CASE_STATUS_MAPPING.COMPENSATED,
-          notificationDate: new Date().toISOString().split('T')[0],
-          notifiedCurrency: CURRENCY.CHF
-        },
-        auditor: {
-          userId: 2,
-          role: USER_ROLE_ENUM.SPECIALIST
-        }
-      };
+      const fallbackAudit = generateFallbackAudit();
       
       return HttpResponse.json(fallbackAudit, { status: 201 });
     }
@@ -318,9 +314,7 @@ export const handlers = [
       
       // Fix requestData.quarter if needed
       if (requestData.quarter && !isQuarterPeriod(requestData.quarter)) {
-        const now = new Date();
-        const currentQuarter = Math.floor((now.getMonth()) / 3) + 1 as QuarterNumber;
-        requestData.quarter = `Q${currentQuarter}-${now.getFullYear()}`;
+        requestData.quarter = generateCurrentQuarterString();
       }
       
       // Get existing audit or create a placeholder
@@ -328,15 +322,13 @@ export const handlers = [
       
       if (!existingAudit) {
         // If not in our store, create a new one with this ID
-        const now = new Date();
-        const currentQuarter = Math.floor((now.getMonth()) / QUARTER_CALCULATIONS.MONTHS_PER_QUARTER) + QUARTER_CALCULATIONS.QUARTER_OFFSET as QuarterNumber;
-        const quarterStr = `Q${currentQuarter}-${now.getFullYear()}`;
+        const quarterStr = generateCurrentQuarterString();
         
         existingAudit = {
           auditId: numericAuditorId,
           quarter: (requestData.quarter && isQuarterPeriod(requestData.quarter) ? requestData.quarter : quarterStr) as QuarterPeriod,
           caseObj: {
-            caseNumber: createCaseId(Math.floor(DEFAULT_VALUE_ENUM.DEFAULT_CASE_NUMBER + Math.random() * DEFAULT_VALUE_ENUM.CASE_NUMBER_RANGE)),
+            caseNumber: createCaseId(generateRandomCaseNumber()),
             claimOwner: {
               userId: 1,
               role: USER_ROLE_ENUM.TEAM_LEADER
@@ -344,7 +336,7 @@ export const handlers = [
             claimsStatus: CLAIMS_STATUS.FULL_COVER,
             coverageAmount: 10000.00,
             caseStatus: CASE_STATUS_MAPPING.COMPENSATED,
-            notificationDate: new Date().toISOString().split('T')[0],
+            notificationDate: generateCurrentDateString(),
             notifiedCurrency: CURRENCY.CHF
           },
           auditor: {
@@ -412,26 +404,10 @@ export const handlers = [
       console.error("[MSW] Error in /rest/kuk/v1/audits/:auditId PUT handler:", error);
       
       // Return a fallback updated audit
-      const fallbackAudit: ApiAuditResponse = {
-        auditId: safeParseInt(Array.isArray(params.auditId) ? params.auditId[0] : params.auditId, 1),
-        quarter: `Q${Math.floor((new Date().getMonth()) / 3) + 1}-${new Date().getFullYear()}` as QuarterPeriod,
-        caseObj: {
-          caseNumber: createCaseId(Math.floor(DEFAULT_VALUE_ENUM.DEFAULT_CASE_NUMBER + Math.random() * DEFAULT_VALUE_ENUM.CASE_NUMBER_RANGE)),
-          claimOwner: {
-            userId: 1,
-            role: USER_ROLE_ENUM.TEAM_LEADER
-          },
-          claimsStatus: CLAIMS_STATUS.FULL_COVER,
-          coverageAmount: 10000.00,
-          caseStatus: CASE_STATUS_MAPPING.COMPENSATED,
-          notificationDate: new Date().toISOString().split('T')[0],
-          notifiedCurrency: CURRENCY.CHF
-        },
-        auditor: {
-          userId: 2,
-          role: USER_ROLE_ENUM.SPECIALIST
-        }
-      };
+      const fallbackAudit = {
+        ...generateFallbackAudit(),
+        auditId: safeParseInt(Array.isArray(params.auditId) ? params.auditId[0] : params.auditId, 1)
+      } as ApiAuditResponse;
       
       return HttpResponse.json(fallbackAudit, { status: 200 });
     }
@@ -482,7 +458,7 @@ export const handlers = [
       
       // Create a new finding with an ID
       const newFinding = {
-        findingId: Math.floor(Math.random() * 1000) + 1,
+        findingId: generateRandomFindingId(),
         type: requestData.type || "DOCUMENTATION_ISSUE",
         description: requestData.description || "No description provided"
       };
@@ -491,7 +467,7 @@ export const handlers = [
     } catch (error) {
       console.error("[MSW] Error in /rest/kuk/v1/audits/:auditId/findings POST handler:", error);
       return HttpResponse.json({
-        findingId: Math.floor(Math.random() * 1000) + 1,
+        findingId: generateRandomFindingId(),
         type: "DOCUMENTATION_ISSUE",
         description: "Error creating finding"
       }, { status: 201 });
@@ -559,50 +535,14 @@ export const handlers = [
       
       // Generate additional current quarter cases if needed
       for (let i = totalCurrentCases; i < currentQuarterNeeded; i++) {
-        // Generate a notification date for the current quarter
-        const currentQuarterDate = new Date(parsedQuarter.year, (parsedQuarter.quarterNum - 1) * 3 + Math.floor(Math.random() * 3), Math.floor(Math.random() * 28) + 1);
-        
-        // Random currency selection
-        const currencies = [CURRENCY.CHF, CURRENCY.EUR, CURRENCY.USD];
-        const randomCurrency = currencies[Math.floor(Math.random() * currencies.length)];
-        
-        const mockCase: ApiCaseResponse = {
-          caseNumber: createCaseId(40000000 + i),
-          claimOwner: {
-            userId: users[i % users.length].id,
-            role: users[i % users.length].authorities
-          },
-          claimsStatus: i % 2 === 0 ? CLAIMS_STATUS.FULL_COVER : CLAIMS_STATUS.PARTIAL_COVER,
-          coverageAmount: Math.floor(Math.random() * 100000) + 1000,
-          caseStatus: CASE_STATUS_MAPPING.COMPENSATED,
-          notificationDate: currentQuarterDate.toISOString().split('T')[0],
-          notifiedCurrency: randomCurrency
-        };
+        const mockCase = generateMockCurrentQuarterCase(i, parsedQuarter.quarterNum, parsedQuarter.year, users);
         currentQuarterCases.push(mockCase);
       }
       
       // Generate additional previous quarter cases if needed
       for (let i = totalPreviousCases; i < previousQuarterNeeded; i++) {
-        // Generate a notification date for the previous quarter
         const { quarter: prevQuarterNum, year: prevYear } = getPreviousQuarterInfo(parsedQuarter.quarterNum, parsedQuarter.year);
-        const previousQuarterDate = new Date(prevYear, (prevQuarterNum - 1) * 3 + Math.floor(Math.random() * 3), Math.floor(Math.random() * 28) + 1);
-        
-        // Random currency selection
-        const currencies = [CURRENCY.CHF, CURRENCY.EUR, CURRENCY.USD];
-        const randomCurrency = currencies[Math.floor(Math.random() * currencies.length)];
-        
-        const mockCase: ApiCaseResponse = {
-          caseNumber: createCaseId(30000000 + i),
-          claimOwner: {
-            userId: users[i % users.length].id,
-            role: users[i % users.length].authorities
-          },
-          claimsStatus: i % 2 === 0 ? CLAIMS_STATUS.FULL_COVER : CLAIMS_STATUS.PARTIAL_COVER,
-          coverageAmount: Math.floor(Math.random() * 100000) + 1000,
-          caseStatus: CASE_STATUS_MAPPING.COMPENSATED,
-          notificationDate: previousQuarterDate.toISOString().split('T')[0],
-          notifiedCurrency: randomCurrency
-        };
+        const mockCase = generateMockPreviousQuarterCase(i, prevQuarterNum, prevYear, users);
         previousQuarterCases.push(mockCase);
       }
       
@@ -666,39 +606,8 @@ export const handlers = [
     try {
       const quarterPeriod = params.quarterPeriod as string;
       
-      // Parse the quarter key (e.g., "Q1-2023")
-      const [quarterStr, yearStr] = quarterPeriod.split('-');
-      const quarterNum = parseInt(quarterStr.replace('Q', ''));
-      const year = parseInt(yearStr);
-      
       // Generate mock cases for audit selection
-      const cases = users
-        .filter(user => user.enabled)
-        .slice(0, 10) // Limit to 10 cases
-        .map((user, index) => {
-          const caseNumber = parseInt(generateRealisticCaseNumber());
-          return {
-            caseNumber,
-            claimOwner: {
-              userId: user.id,
-              displayName: user.displayName
-            },
-            coverageAmount: Math.floor(
-              Math.random() * (user.authorities === USER_ROLE_ENUM.STAFF ? 30000 : 150000)
-            ),
-            claimsStatus: CLAIMS_STATUS.FULL_COVER,
-            notificationDate: (() => {
-              // Generate a realistic date within the quarter
-              const startMonth = (quarterNum - 1) * 3; // 0-indexed month
-              const randomDay = Math.floor(Math.random() * 28) + 1; // 1-28 to avoid month-end issues
-              const randomMonth = startMonth + Math.floor(Math.random() * 3); // Random month within quarter
-              
-              const notificationDate = new Date(year, randomMonth, randomDay);
-              return notificationDate.toISOString().split('T')[0]; // Return YYYY-MM-DD format
-            })(),
-            notifiedCurrency: index % 3 === 0 ? CURRENCY.EUR : index % 3 === 1 ? CURRENCY.USD : CURRENCY.CHF // Mix of currencies
-          };
-        });
+      const cases = generateQuarterlyAuditSelectionCases(quarterPeriod, users, 10);
       
       return HttpResponse.json(cases);
     } catch (error) {
@@ -725,44 +634,10 @@ export const handlers = [
       const { quarter: prevQuarterNum, year: prevYear } = getPreviousQuarterInfo(quarterNum, year);
       
       // Generate mock user audits (would be one per eligible user)
-      const userQuarterlyAudits = users
-        .filter(user => user.enabled)
-        .map(user => {
-          const id = generateRealisticCaseNumber(); // Remove QUARTERLY prefix
-          return {
-            id,
-            auditId: id,
-            dossierId: id,
-            userId: user.id,
-            coverageAmount: Math.floor(
-              Math.random() * (user.authorities === USER_ROLE_ENUM.STAFF ? 30000 : 150000)
-            ),
-            claimsStatus: CLAIMS_STATUS.FULL_COVER,
-            quarter: quarterKey, // Add current quarter
-            year: year, // Add current year
-            caseType: 'USER_QUARTERLY' // Add case type
-          };
-        });
+      const userQuarterlyAudits = generateUserQuarterlyAudits(quarterKey, year, users);
       
       // Generate mock previous quarter audits for quality control
-      const previousQuarterRandomAudits = Array.from({ length: 2 }).map((_, index) => {
-        const id = generateRealisticCaseNumber(); // Remove PREV-QUARTER prefix
-        // Assign to a random active user
-        const activeUsers = users.filter(user => user.enabled && user.authorities !== USER_ROLE_ENUM.READER);
-        const randomUser = activeUsers[index % activeUsers.length];
-        
-        return {
-          id,
-          dossierId: id,
-          auditId: id,
-          userId: randomUser.id, // Assign to actual user
-          coverageAmount: Math.floor(Math.random() * 100000),
-          claimsStatus: CLAIMS_STATUS.FULL_COVER,
-          quarter: `Q${prevQuarterNum}-${prevYear}`, // Add previous quarter
-          year: prevYear, // Add previous quarter year
-          caseType: 'PREVIOUS_QUARTER_RANDOM' // Add case type
-        };
-      });
+      const previousQuarterRandomAudits = generatePreviousQuarterRandomAudits(prevQuarterNum, prevYear, users, 2);
       
       return HttpResponse.json({
         success: true,
@@ -770,7 +645,7 @@ export const handlers = [
           quarterKey,
           userQuarterlyAudits,
           previousQuarterRandomAudits,
-          lastSelectionDate: new Date().toISOString()
+          lastSelectionDate: generateCurrentTimestamp()
         }
       });
     } catch (error) {
@@ -789,15 +664,7 @@ export const handlers = [
       const numericAuditId = safeParseInt(Array.isArray(auditId) ? auditId[0] : auditId);
       
       // For now, return a basic completion response
-      
-      const completionData = {
-        auditId: numericAuditId,
-        status: 'not_completed' as const,
-        verifierId: 1,
-        rating: '',
-        comment: '',
-        findings: []
-      };
+      const completionData = generateCompletionData(numericAuditId);
       
       return HttpResponse.json({
         success: true,
@@ -844,15 +711,7 @@ export const handlers = [
       
       // In a real implementation, this would save to the database
       // For now, just return a success response with the data
-      const completionResponse = {
-        auditId: numericAuditId,
-        status: requestData.status ?? 'not_completed',
-        verifierId: requestData.verifierId ?? 1,
-        rating: requestData.rating ?? '',
-        comment: requestData.comment ?? '',
-        completionDate: requestData.status === AUDIT_STATUS_ENUM.COMPLETED ? new Date().toISOString() : undefined,
-        findings: requestData.findings ?? []
-      };
+      const completionResponse = generateFallbackCompletionResponse(numericAuditId, requestData);
       
       return HttpResponse.json({
         success: true,
@@ -897,19 +756,7 @@ export const handlers = [
       }
       
       // Create completion response
-      const completionResponse = {
-        success: true,
-        auditId: numericAuditId,
-        auditor: requestData.auditor ?? '',
-        rating: requestData.rating ?? '',
-        comment: requestData.comment ?? '',
-        specialFindings: requestData.specialFindings ?? {},
-        detailedFindings: requestData.detailedFindings ?? {},
-        status: requestData.status ?? 'completed',
-        isCompleted: requestData.isCompleted ?? true,
-        completionDate: new Date().toISOString(),
-        message: 'Audit completed successfully'
-      };
+      const completionResponse = generateAuditCompletionResponse(numericAuditId, requestData);
       
       return HttpResponse.json(completionResponse, { status: 200 });
     } catch (error) {

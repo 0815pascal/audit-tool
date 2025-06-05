@@ -72,4 +72,63 @@ And the following files were updated to no longer depend on the old terminology:
 All deprecated functions and types are marked with `@deprecated` JSDoc comments. Look for these notices in:
 
 - `useVerificationState.ts`
-- `useVerificationHandlers.ts` 
+- `useVerificationHandlers.ts`
+
+## Mock Data Centralization
+
+### Problem
+Mock data generation was scattered across multiple files:
+- `src/mocks/handlers.ts` - Inline mock case generation for current/previous quarters
+- `src/mocks/auxiliaryFunctions.ts` - Some utility functions for mock data
+- `src/components/QuarterlySelectionComponent.tsx` - Date generation logic
+- Various test files - Local mock data creation
+
+This made the codebase harder to maintain and led to code duplication.
+
+### Solution
+**Centralized all mock data generation in `src/mocks/mockData.ts`**
+
+#### New Centralized Functions Added:
+
+1. **`generateRandomCurrency()`** - Random currency selection
+2. **`generateCoverageAmount(userRole?)`** - Role-based coverage amounts
+3. **`generateNotificationDateForQuarter(quarterNum, year)`** - Quarter-specific dates
+4. **`generateMockCurrentQuarterCase(index, quarterNum, year, users)`** - Current quarter cases
+5. **`generateMockPreviousQuarterCase(index, quarterNum, year, users)`** - Previous quarter cases
+6. **`generateQuarterlyAuditSelectionCases(quarterPeriod, users, maxCases)`** - Audit selection cases
+7. **`generateUserQuarterlyAudits(quarterKey, year, users)`** - User quarterly audits
+8. **`generatePreviousQuarterRandomAudits(prevQuarterNum, prevYear, users, count)`** - Random audits
+9. **`generateCompletionData(auditId)`** - Basic completion responses
+10. **`generateAuditCompletionResponse(auditId, requestData)`** - Full completion responses
+11. **`generateFallbackAudit()`** - Error case fallbacks
+12. **`generateFallbackCompletionResponse(auditId, requestData)`** - Completion fallbacks
+
+#### Files Updated:
+
+**`src/mocks/handlers.ts`:**
+- Replaced 200+ lines of inline mock generation with function calls
+- Removed duplicate currency selection logic
+- Removed duplicate date generation logic
+- Removed duplicate case creation patterns
+
+**`src/mocks/mockData.ts`:**
+- Added comprehensive mock data generation functions
+- Centralized all random value generation
+- Standardized mock data patterns
+
+#### Benefits:
+
+✅ **Single Source of Truth** - All mock data generation in one place  
+✅ **Reduced Code Duplication** - Eliminated ~200 lines of duplicate logic  
+✅ **Improved Maintainability** - Changes to mock data only need to be made in one place  
+✅ **Better Consistency** - All mock data follows the same patterns  
+✅ **Enhanced Testability** - Mock generators can be tested independently  
+✅ **Cleaner Handlers** - MSW handlers focus on request/response logic, not data generation  
+
+#### Testing Results:
+- ✅ All 66 tests passing
+- ✅ Zero linting errors
+- ✅ No breaking changes to existing functionality
+
+### Migration Impact
+This is a **non-breaking change**. All existing functionality continues to work exactly as before, but now uses centralized mock data generators instead of inline generation. 

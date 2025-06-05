@@ -30,12 +30,12 @@ const startApp = async () => {
   if (import.meta.env.MODE === 'development') {
     try {
       const { worker } = await import('./mocks/browser');
+      
+      // Simplified MSW initialization
       await worker.start({
-        onUnhandledRequest: 'bypass',
-        serviceWorker: {
-          url: '/mockServiceWorker.js',
-        },
+        onUnhandledRequest: 'bypass'
       });
+      
       console.log('[MSW] Browser service worker started successfully');
     } catch (error) {
       console.error('[MSW] Failed to start service worker:', error);

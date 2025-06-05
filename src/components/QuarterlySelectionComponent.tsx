@@ -26,9 +26,9 @@ import {PruefensterModal} from './common';
 import './QuarterlySelectionComponent.css';
 import {useAppDispatch, useAppSelector} from '../store/hooks';
 import {selectAuditData, selectUserRole, setCurrentUser, setUserRole} from '../store/caseAuditSlice';
-import {QUARTER_CALCULATIONS} from '../constants';
 import { CURRENCY } from '../types/currencyTypes';
 import { AuditItem } from './QuarterlySelectionComponent.types';
+import { generateNotificationDateForQuarterComponent } from '../mocks/mockData';
 
 const QuarterlySelectionComponent: React.FC = () => {
   const {
@@ -211,14 +211,8 @@ const QuarterlySelectionComponent: React.FC = () => {
         const quarterNum = parseInt(quarterStr.replace('Q', '')) || 1;
         const year = parseInt(yearStr) || new Date().getFullYear();
         
-        // Generate a realistic date within the quarter
-        // Q1: Jan-Mar, Q2: Apr-Jun, Q3: Jul-Sep, Q4: Oct-Dec
-        const startMonth = Math.max(0, Math.min(11, (quarterNum - 1) * QUARTER_CALCULATIONS.MONTHS_PER_QUARTER)); // 0-indexed month
-        const randomDay = Math.floor(Math.random() * QUARTER_CALCULATIONS.RANDOM_DAY_LIMIT) + 1; // 1-28 to avoid month-end issues
-        const randomMonth = startMonth + Math.floor(Math.random() * QUARTER_CALCULATIONS.MONTHS_PER_QUARTER); // Random month within quarter
-        
-        const calculatedDate = new Date(year, Math.min(11, randomMonth), Math.min(28, randomDay));
-        notificationDate = calculatedDate.toISOString().split('T')[0]; // Return YYYY-MM-DD format
+        // Use centralized date generation function
+        notificationDate = generateNotificationDateForQuarterComponent(quarterNum, year);
       } catch (error) {
         console.warn('Error calculating notification date, using fallback:', error);
         notificationDate = new Date().toISOString().split('T')[0];
