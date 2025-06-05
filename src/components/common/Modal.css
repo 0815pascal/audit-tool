@@ -5,12 +5,17 @@
   /* Main modal container styles will be applied to the dialog element */
   background-color: white;
   border-radius: var(--border-radius-large);
+  outline: none;
   width: 34rem;
   max-width: 90vw;
   max-height: 90vh;
+  position: static !important; /* Override position: absolute */
+  inset: unset !important; /* Reset inset properties */
+  border: none !important; /* Remove default border */
   box-shadow: var(--box-shadow-strong);
   display: flex;
   flex-direction: column;
+  padding-bottom: 1rem;
 }
 
 /* Element: Modal Overlay */
@@ -92,22 +97,22 @@
     width: 95vw;
     max-height: 95vh;
   }
-  
+
   .modal__header {
     padding: var(--spacing-xl) var(--spacing-xl) var(--spacing-lg) var(--spacing-xl);
   }
-  
+
   .modal__content {
     padding: var(--spacing-xl);
   }
-  
+
   .modal__header::after {
     left: var(--spacing-xl);
     right: var(--spacing-xl);
   }
-  
+
   .modal__close-button {
     font-size: var(--font-size-xl);
     padding: var(--spacing-micro) var(--spacing-sm);
   }
-} 
+}
