@@ -20,7 +20,7 @@ import {
 import {Button, Checkbox, Select, TextArea} from './FormControls';
 import {useAppDispatch, useAppSelector} from '../../store/hooks';
 import {updateAuditInProgress, useSaveAuditCompletionMutation} from '../../store/caseAuditSlice';
-import {convertStatusToAuditStatus} from '../../utils/statusUtils';
+
 import {useUsers} from '../../hooks/useUsers';
 import './PruefensterModal.css';
 import { CURRENCY } from '../../types/currencyTypes';
@@ -43,7 +43,7 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
   
   const [currentStatus, setCurrentStatus] = useState<AUDIT_STATUS_ENUM>(
     audit.status ? 
-      convertStatusToAuditStatus(audit.status) :
+      audit.status as AUDIT_STATUS_ENUM :
       (audit.isCompleted ? AUDIT_STATUS_ENUM.COMPLETED : AUDIT_STATUS_ENUM.PENDING)
   );
 
@@ -156,7 +156,7 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
       
       // Update the current status based on audit
       setCurrentStatus(audit.status ? 
-        convertStatusToAuditStatus(audit.status) :
+        audit.status as AUDIT_STATUS_ENUM :
         (audit.isCompleted ? AUDIT_STATUS_ENUM.COMPLETED : AUDIT_STATUS_ENUM.PENDING));
       
       // Update findings with all options set to false by default
@@ -234,7 +234,7 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
     } else {
       // Only reset to NOT_VERIFIED if the audit wasn't already verified
       const auditCompletionStatus = audit.status ? 
-        convertStatusToAuditStatus(audit.status) :
+        audit.status as AUDIT_STATUS_ENUM :
         (audit.isCompleted ? AUDIT_STATUS_ENUM.COMPLETED : AUDIT_STATUS_ENUM.PENDING);
       if (auditCompletionStatus !== AUDIT_STATUS_ENUM.COMPLETED) {
         setCurrentStatus(audit.isCompleted ? AUDIT_STATUS_ENUM.COMPLETED : AUDIT_STATUS_ENUM.PENDING);

@@ -6,10 +6,6 @@
  * between types.ts and constants.ts.
  */
 
-// Finding Categories enum
-export enum FINDING_CATEGORY {
-}
-
 // Detailed Finding Types enum
 export enum DETAILED_FINDING_ENUM {
   FACTS_INCORRECT = 'facts_incorrect',
@@ -42,8 +38,6 @@ export enum HTTP_METHOD {
   PATCH = 'PATCH'
 }
 
-
-
 // Case status enum
 export enum CASE_STATUS_ENUM {
   OPEN = 'OPEN',
@@ -74,8 +68,6 @@ export enum AUDIT_STATUS_ENUM {
   PENDING = 'pending',
   COMPLETED = 'completed'
 }
-
-
 
 // Button color enum for form controls
 export enum BUTTON_COLOR {
@@ -119,14 +111,10 @@ export enum RATING_VALUE_ENUM {
   EMPTY = ''
 }
 
-
-
 // Input type enum for form controls
 export enum INPUT_TYPE_ENUM {
   CHECKBOX = 'checkbox',
 }
-
-
 
 // Default values enum
 export enum DEFAULT_VALUE_ENUM {
@@ -135,8 +123,6 @@ export enum DEFAULT_VALUE_ENUM {
   DEFAULT_CASE_NUMBER = 30000000,
   CASE_NUMBER_RANGE = 1000000
 }
-
- 
 
 export enum Department {
   Admin = 'Admin', 

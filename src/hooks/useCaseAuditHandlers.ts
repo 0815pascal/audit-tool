@@ -22,7 +22,6 @@ import {
 import {useUsers} from './useUsers';
 import {ACTION_STATUS, COVERAGE_LIMITS, QUARTER_CALCULATIONS} from '../constants';
 import {AUDIT_STATUS_ENUM, CASE_TYPE_ENUM, CLAIMS_STATUS_ENUM, DEFAULT_VALUE_ENUM, USER_ROLE_ENUM} from '../enums';
-import {mapAuditStatusToCaseAuditStatus} from '../utils/statusUtils';
 import {getAllCasesByQuarter, selectCasesForAudit} from '../services';
 import {CURRENCY} from '../types/currencyTypes';
 import {ExternalAuditData} from './useCaseAuditHandlers.types';
@@ -300,7 +299,7 @@ export const useCaseAuditHandlers = () => {
       }
 
       // Special case: If audit is IN_PROGRESS
-      if (audit.status === mapAuditStatusToCaseAuditStatus(AUDIT_STATUS_ENUM.IN_PROGRESS)) {
+      if (audit.status === AUDIT_STATUS_ENUM.IN_PROGRESS) {
         // Convert auditor to string for comparison
         const auditorString = audit.auditor ? String(audit.auditor) : '';
         const currentUserString = String(currentUserId);

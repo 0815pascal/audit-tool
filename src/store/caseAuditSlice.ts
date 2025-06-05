@@ -30,7 +30,7 @@ import {
 } from '../types/types';
 import { CASE_TYPE_ENUM, CLAIMS_STATUS_ENUM, USER_ROLE_ENUM, AUDIT_STATUS_ENUM, HTTP_METHOD } from '../enums';
 import { QUARTER_CALCULATIONS } from '../constants';
-import { mapAuditStatusToCaseAuditStatus } from '../utils/statusUtils';
+
 import {
   createUserId,
   createValidYear,
@@ -270,7 +270,7 @@ const createDefaultCaseAuditData = (userId: string): StoredCaseAuditData => {
     rating: '' as RatingValue,
     specialFindings: createEmptyFindings(),
     detailedFindings: createEmptyFindings(),
-    status: mapAuditStatusToCaseAuditStatus(AUDIT_STATUS_ENUM.PENDING),
+              status: AUDIT_STATUS_ENUM.PENDING,
     caseType: CASE_TYPE_ENUM.USER_QUARTERLY,
     coverageAmount: 0,
     claimsStatus: CLAIMS_STATUS_ENUM.FULL_COVER,
@@ -319,7 +319,7 @@ const auditUISlice = createSlice({
         state.auditData[auditId] = createDefaultCaseAuditData(userId);
       }
       
-      state.auditData[auditId].status = mapAuditStatusToCaseAuditStatus(status);
+      state.auditData[auditId].status = status;
       state.auditData[auditId].isCompleted = status === AUDIT_STATUS_ENUM.COMPLETED;
     },
 
@@ -336,7 +336,7 @@ const auditUISlice = createSlice({
       state.auditData[auditId].rating = rating;
       state.auditData[auditId].specialFindings = specialFindings ?? createEmptyFindings();
       state.auditData[auditId].detailedFindings = detailedFindings ?? createEmptyFindings();
-      state.auditData[auditId].status = mapAuditStatusToCaseAuditStatus(AUDIT_STATUS_ENUM.IN_PROGRESS);
+      state.auditData[auditId].status = AUDIT_STATUS_ENUM.IN_PROGRESS;
     },
 
     // Complete audit locally
@@ -346,7 +346,7 @@ const auditUISlice = createSlice({
       
       if (auditData) {
         auditData.isCompleted = true;
-        auditData.status = mapAuditStatusToCaseAuditStatus(AUDIT_STATUS_ENUM.COMPLETED);
+        auditData.status = AUDIT_STATUS_ENUM.COMPLETED;
         auditData.auditor = ensureUserId(auditor.toString());
         auditData.comment = comment ?? '';
         auditData.rating = rating ?? '';
@@ -417,7 +417,7 @@ const auditUISlice = createSlice({
           rating: (audit.rating ?? '') as RatingValue,
           specialFindings: convertToFindingsRecord(audit.specialFindings),
           detailedFindings: convertToFindingsRecord(audit.detailedFindings),
-          status: mapAuditStatusToCaseAuditStatus(audit.status as AUDIT_STATUS_ENUM),
+          status: audit.status as AUDIT_STATUS_ENUM,
           caseType: audit.caseType as CASE_TYPE_ENUM,
           coverageAmount: audit.coverageAmount,
           claimsStatus: audit.claimsStatus as CLAIMS_STATUS_ENUM,
@@ -460,7 +460,7 @@ const auditUISlice = createSlice({
           rating: '' as RatingValue,
           specialFindings: createEmptyFindings(),
           detailedFindings: createEmptyFindings(),
-          status: mapAuditStatusToCaseAuditStatus(AUDIT_STATUS_ENUM.PENDING),
+          status: AUDIT_STATUS_ENUM.PENDING,
           caseType: CASE_TYPE_ENUM.QUARTER_DISPLAY, // New case type for quarter display
           coverageAmount: caseData.coverageAmount,
           claimsStatus: caseData.claimsStatus as CLAIMS_STATUS_ENUM,
@@ -494,11 +494,11 @@ const auditUISlice = createSlice({
         // Determine the correct status based on completion and auditor assignment
         let status: CaseAuditStatus;
         if (caseData.isCompleted) {
-          status = mapAuditStatusToCaseAuditStatus(AUDIT_STATUS_ENUM.COMPLETED);
+          status = AUDIT_STATUS_ENUM.COMPLETED;
         } else if (caseData.auditor && caseData.auditor.trim() !== '') {
-          status = mapAuditStatusToCaseAuditStatus(AUDIT_STATUS_ENUM.IN_PROGRESS);
+          status = AUDIT_STATUS_ENUM.IN_PROGRESS;
         } else {
-          status = mapAuditStatusToCaseAuditStatus(AUDIT_STATUS_ENUM.PENDING);
+          status = AUDIT_STATUS_ENUM.PENDING;
         }
         
         state.auditData[caseData.id] = {

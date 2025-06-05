@@ -1,6 +1,5 @@
 import type { 
-  FindingType, 
-  FindingCategory
+  FindingType
 } from '../types/types';
 import type { ValidCurrency } from '../types/currencyTypes';
 import type { 
@@ -70,6 +69,5 @@ export interface Finding {
   findingId: FindingId;
   type: FindingType;
   description: string;
-  category?: FindingCategory;
 }
 
