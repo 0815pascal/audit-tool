@@ -7,7 +7,14 @@ import {
   createNotFoundProblem,
   createInternalErrorProblem,
   validateAuditCompletion,
-  canUserAuditOwnCase
+  canUserAuditOwnCase,
+  // New REST utilities for Medium Impact fixes
+  generateCachingHeaders,
+  parsePaginationParams,
+  paginateData,
+  negotiateContent,
+  getResponseContentType,
+  CACHE_STRATEGIES
 } from '../utils/restUtils';
 import { CURRENCY, ValidCurrency } from '../types/currencyTypes';
 import {ClaimsStatus, QuarterPeriod, AuditCompletionParams} from '../types/types';
@@ -50,6 +57,37 @@ import {
 // Type the handlers array properly
 type MSWHandler = ReturnType<typeof http.get> | ReturnType<typeof http.post> | ReturnType<typeof http.put> | ReturnType<typeof http.patch> | ReturnType<typeof http.delete>;
 
+/**
+ * Enhanced response helper with caching, pagination, and content negotiation
+ */
+const createEnhancedResponse = (
+  request: Request,
+  data: unknown,
+  status = 200,
+  cacheStrategy: keyof typeof CACHE_STRATEGIES = 'DYNAMIC',
+  lastModified?: Date | string
+) => {
+  // Content negotiation
+  const contentNegotiation = negotiateContent(request);
+  const contentType = getResponseContentType(contentNegotiation);
+  
+  // Caching headers
+  const cachingHeaders = generateCachingHeaders(
+    data,
+    cacheStrategy,
+    lastModified,
+    ['Accept', 'Accept-Language'] // Vary headers for content negotiation
+  );
+  
+  // Combine headers
+  const headers = {
+    'Content-Type': contentType,
+    ...cachingHeaders
+  };
+  
+  return HttpResponse.json(data as Record<string, unknown>, { status, headers });
+};
+
 export const handlers: MSWHandler[] = [
   // Get audits with query parameter support (REST compliant)
   http.get(`${API_BASE_PATH}/audits`, ({ request }) => {
@@ -58,7 +96,10 @@ export const handlers: MSWHandler[] = [
       const quarter = url.searchParams.get('quarter');
       const auditor = url.searchParams.get('auditor');
       
-      console.log(`[MSW] GET /audits with params:`, { quarter, auditor });
+      // Parse pagination parameters
+      const paginationParams = parsePaginationParams(url.searchParams);
+      
+      console.log(`[MSW] GET /audits with params:`, { quarter, auditor, pagination: paginationParams });
       
       let filteredAudits: ApiAuditResponse[] = [];
       
@@ -69,7 +110,7 @@ export const handlers: MSWHandler[] = [
         
         if (!parsedQuarter) {
           console.log(`[MSW] Failed to parse quarter: ${quarterValue}`);
-          return HttpResponse.json([], { status: 200 });
+          return createEnhancedResponse(request, [], 200, 'DYNAMIC');
         }
         
         // Get current quarter cases (6 cases - one per employee)
@@ -151,24 +192,38 @@ export const handlers: MSWHandler[] = [
         filteredAudits = [];
       }
       
+      // Apply pagination
+      const paginatedResult = paginateData(filteredAudits, paginationParams);
+      
       // Enhance with HATEOAS links
-      const enhancedAudits = filteredAudits.map(audit => ({
+      const enhancedAudits = paginatedResult.data.map(audit => ({
         ...audit,
         _links: generateAuditLinks(String(audit.auditId))
       }));
       
+      // Generate pagination links
+      const baseUrl = quarter ? `${API_BASE_PATH}/audits?quarter=${quarter}` : `${API_BASE_PATH}/audits`;
+      const paginationLinks = generatePaginationLinks(
+        baseUrl,
+        paginatedResult.metadata.page,
+        paginatedResult.metadata.pages,
+        paginatedResult.metadata.limit
+      );
+      
       const response = createSuccessResponse(enhancedAudits, 
-        quarter ? generatePaginationLinks(`/audits?quarter=${quarter}`, 0, enhancedAudits.length, enhancedAudits.length) : {}, 
+        paginationLinks, 
         {
           timestamp: new Date().toISOString(),
-          total: enhancedAudits.length,
+          total: paginatedResult.metadata.total,
+          pagination: paginatedResult.metadata
         }
       );
       
-      return HttpResponse.json(response, { status: 200 });
+      // Use conditional caching for audit data that changes occasionally
+      return createEnhancedResponse(request, response, 200, 'CONDITIONAL');
     } catch (error) {
       console.error("[MSW] Error in GET /audits handler:", error);
-      return HttpResponse.json([], { status: 200 });
+      return createEnhancedResponse(request, [], 200, 'REAL_TIME');
     }
   }),
 
@@ -193,23 +248,27 @@ export const handlers: MSWHandler[] = [
   }),
 
   // Audit completion endpoints - Standardized under /audits/{id}/completion
-  http.get(`${API_BASE_PATH}/audits/:auditId/completion`, ({ params }) => {
+  http.get(`${API_BASE_PATH}/audits/:auditId/completion`, ({ params, request }) => {
     try {
       const { auditId } = params;
       const numericAuditId = safeParseInt(Array.isArray(auditId) ? auditId[0] : auditId);
       
       const completionData = generateCompletionData(numericAuditId);
       
-      return HttpResponse.json({
+      const response = {
         success: true,
         data: completionData
-      }, { status: 200 });
+      };
+      
+      // Cache completion data for longer since it doesn't change often once set
+      return createEnhancedResponse(request, response, 200, 'CONDITIONAL');
     } catch (error) {
       console.error("[MSW] Error in GET /audits/:auditId/completion handler:", error);
-      return HttpResponse.json({
+      const errorResponse = {
         success: false,
         error: 'Failed to fetch audit completion'
-      }, { status: 500 });
+      };
+      return createEnhancedResponse(request, errorResponse, 500, 'REAL_TIME');
     }
   }),
 
@@ -231,16 +290,20 @@ export const handlers: MSWHandler[] = [
       
       const completionResponse = generateFallbackCompletionResponse(numericAuditId, requestData);
       
-      return HttpResponse.json({
+      const response = {
         success: true,
         data: completionResponse
-      }, { status: 200 });
+      };
+      
+      // No caching for write operations
+      return createEnhancedResponse(request, response, 200, 'REAL_TIME');
     } catch (error) {
       console.error("[MSW] Error in PUT /audits/:auditId/completion handler:", error);
-      return HttpResponse.json({
+      const errorResponse = {
         success: false,
         error: 'Failed to update audit completion'
-      }, { status: 500 });
+      };
+      return createEnhancedResponse(request, errorResponse, 500, 'REAL_TIME');
     }
   }),
 
@@ -259,7 +322,7 @@ export const handlers: MSWHandler[] = [
           `/audits/${auditIdStr}/completion`
         );
         
-        return HttpResponse.json(problem, { status: 404 });
+        return createEnhancedResponse(request, problem, 404, 'REAL_TIME');
       }
       
       const clonedRequest = request.clone();
@@ -277,7 +340,7 @@ export const handlers: MSWHandler[] = [
       // Enhanced validation using REST utilities
       const validationProblems = validateAuditCompletion(requestData);
       if (validationProblems.length > 0) {
-        return HttpResponse.json(validationProblems[0], { status: 400 });
+        return createEnhancedResponse(request, validationProblems[0], 400, 'REAL_TIME');
       }
       
       // Business logic validation using REST utilities
@@ -287,7 +350,7 @@ export const handlers: MSWHandler[] = [
           `/audits/${auditIdStr}/completion`,
           { violatedRule: 'self-audit-restriction' }
         );
-        return HttpResponse.json(problem, { status: 422 });
+        return createEnhancedResponse(request, problem, 422, 'REAL_TIME');
       }
       
       // Generate completion response with HATEOAS links
@@ -325,7 +388,8 @@ export const handlers: MSWHandler[] = [
         }
       };
       
-      return HttpResponse.json(enhancedResponse, { status: 200 });
+      // No caching for completion creation
+      return createEnhancedResponse(request, enhancedResponse, 200, 'REAL_TIME');
     } catch (error) {
       console.error("[MSW] Error in POST /audits/:auditId/completion handler:", error);
       
@@ -334,7 +398,7 @@ export const handlers: MSWHandler[] = [
         `/audits/${auditIdStr}/completion`
       );
       
-      return HttpResponse.json(problem, { status: 500 });
+      return createEnhancedResponse(request, problem, 500, 'REAL_TIME');
     }
   }),
 
@@ -355,71 +419,105 @@ export const handlers: MSWHandler[] = [
       
       const quarterPeriod = requestData.quarterKey as QuarterPeriod;
       if (!quarterPeriod || !isQuarterPeriod(quarterPeriod)) {
-        return HttpResponse.json({
+        const errorResponse = {
           success: false,
           error: 'Invalid quarter period'
-        }, { status: 400 });
+        };
+        return createEnhancedResponse(request, errorResponse, 400, 'REAL_TIME');
       }
       
       const data = generateQuarterlyAuditSelectionCases(quarterPeriod, users);
       
-      return HttpResponse.json({
+      const response = {
         success: true,
         data
-      }, { status: 200 });
+      };
+      
+      // No caching for quarterly selections (they're generated fresh each time)
+      return createEnhancedResponse(request, response, 200, 'REAL_TIME');
     } catch (error) {
       console.error('Error in quarterly selections handler:', error);
-      return HttpResponse.json({
+      const errorResponse = {
         success: false,
         error: 'Failed to create quarterly selection'
-      }, { status: 500 });
+      };
+      return createEnhancedResponse(request, errorResponse, 500, 'REAL_TIME');
     }
   }),
 
-  http.get(`${API_BASE_PATH}/quarterly-selections/:period`, ({ params }) => {
+  http.get(`${API_BASE_PATH}/quarterly-selections/:period`, ({ params, request }) => {
     try {
       const { period } = params;
       const quarterPeriod = Array.isArray(period) ? period[0] : period;
       
       if (!quarterPeriod || !isQuarterPeriod(quarterPeriod as QuarterPeriod)) {
-        return HttpResponse.json({
+        const errorResponse = {
           success: false,
           error: 'Invalid quarter period'
-        }, { status: 400 });
+        };
+        return createEnhancedResponse(request, errorResponse, 400, 'REAL_TIME');
       }
       
       const data = generateQuarterlyAuditSelectionCases(quarterPeriod as QuarterPeriod, users);
       
-      return HttpResponse.json({
+      const response = {
         success: true,
         data
-      }, { status: 200 });
+      };
+      
+      // Cache quarterly selections for a moderate time
+      return createEnhancedResponse(request, response, 200, 'DYNAMIC');
     } catch (error) {
       console.error("[MSW] Error in GET /quarterly-selections/:period handler:", error);
-      return HttpResponse.json({
+      const errorResponse = {
         success: false,
         error: 'Failed to fetch quarterly selection'
-      }, { status: 500 });
+      };
+      return createEnhancedResponse(request, errorResponse, 500, 'REAL_TIME');
     }
   }),
 
-  // Audit findings with query parameter support
+  // Audit findings with query parameter support and pagination
   http.get(`${API_BASE_PATH}/audit-findings`, ({ request }) => {
     try {
       const url = new URL(request.url);
       const auditId = url.searchParams.get('auditId');
+      const paginationParams = parsePaginationParams(url.searchParams);
       
       if (!auditId) {
-        return HttpResponse.json([], { status: 200 });
+        return createEnhancedResponse(request, [], 200, 'DYNAMIC');
       }
       
       const numericAuditId = safeParseInt(auditId);
-      const findings = generateFindings(numericAuditId);
+      const allFindings = generateFindings(numericAuditId);
       
-      return HttpResponse.json(findings, { status: 200 });
+      // Apply pagination to findings
+      const paginatedResult = paginateData(allFindings, paginationParams);
+      
+      // Generate pagination links
+      const baseUrl = `${API_BASE_PATH}/audit-findings?auditId=${auditId}`;
+      const paginationLinks = generatePaginationLinks(
+        baseUrl,
+        paginatedResult.metadata.page,
+        paginatedResult.metadata.pages,
+        paginatedResult.metadata.limit
+      );
+      
+      const response = createSuccessResponse(
+        paginatedResult.data,
+        paginationLinks,
+        {
+          timestamp: new Date().toISOString(),
+          total: paginatedResult.metadata.total,
+          pagination: paginatedResult.metadata
+        }
+      );
+      
+      // Cache findings data conditionally
+      return createEnhancedResponse(request, response, 200, 'CONDITIONAL');
     } catch (error) {
       console.error("[MSW] Error in GET /audit-findings handler:", error);
-      return HttpResponse.json([], { status: 200 });
+      return createEnhancedResponse(request, [], 200, 'REAL_TIME');
     }
   }),
 
@@ -656,7 +754,7 @@ export const handlers: MSWHandler[] = [
               ...((requestData.caseObj as Record<string, unknown>).claimOwner as Record<string, unknown>)?.userId !== undefined ? {
                 userId: safeParseInt(String(((requestData.caseObj as Record<string, unknown>).claimOwner as Record<string, unknown>).userId))
               } : {},
-              ...((requestData.caseObj as Record<string, unknown>).claimOwner as Record<string, unknown>)?.role ? {
+              ...((requestData.caseObj as Record<string, unknown>)?.claimOwner as Record<string, unknown>)?.role ? {
                 role: ((requestData.caseObj as Record<string, unknown>).claimOwner as Record<string, unknown>).role
               } : {}
             }
@@ -687,7 +785,7 @@ export const handlers: MSWHandler[] = [
       };
       
       // Store the updated audit
-      auditStore.set(numericAuditorId, updatedAudit);
+      auditStore.set(numericAuditorId, updatedAudit as ApiAuditResponse);
       
       return HttpResponse.json(updatedAudit, { status: 200 });
     } catch (error) {

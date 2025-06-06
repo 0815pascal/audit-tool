@@ -6,6 +6,238 @@ import type {
 } from '../types/types';
 
 // =============================================================================
+// CACHING UTILITIES (2 pts)
+// =============================================================================
+
+/**
+ * Cache control strategies for different resource types
+ */
+export const CACHE_STRATEGIES = {
+  STATIC: 'public, max-age=86400, immutable', // 24 hours for static content
+  DYNAMIC: 'private, max-age=300, must-revalidate', // 5 minutes for dynamic content
+  REAL_TIME: 'no-cache, no-store, must-revalidate', // No caching for real-time data
+  CONDITIONAL: 'private, max-age=3600, must-revalidate' // 1 hour with conditional requests
+} as const;
+
+/**
+ * Generate ETag from data (simplified hash-based approach)
+ */
+export const generateETag = (data: unknown): string => {
+  const str = typeof data === 'string' ? data : JSON.stringify(data);
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32-bit integer
+  }
+  return `"${Math.abs(hash).toString(36)}"`;
+};
+
+/**
+ * Generate Last-Modified header value
+ */
+export const generateLastModified = (timestamp?: Date | string): string => {
+  const date = timestamp ? new Date(timestamp) : new Date();
+  return date.toUTCString();
+};
+
+/**
+ * Generate comprehensive caching headers
+ */
+export interface CachingHeaders {
+  'Cache-Control': string;
+  'ETag': string;
+  'Last-Modified': string;
+  'Expires'?: string;
+  'Vary'?: string;
+}
+
+export const generateCachingHeaders = (
+  data: unknown,
+  strategy: keyof typeof CACHE_STRATEGIES = 'DYNAMIC',
+  lastModified?: Date | string,
+  varyHeaders?: string[]
+): CachingHeaders => {
+  const headers: CachingHeaders = {
+    'Cache-Control': CACHE_STRATEGIES[strategy],
+    'ETag': generateETag(data),
+    'Last-Modified': generateLastModified(lastModified)
+  };
+
+  // Add Expires header for static content
+  if (strategy === 'STATIC') {
+    const expires = new Date();
+    expires.setDate(expires.getDate() + 1); // 24 hours
+    headers.Expires = expires.toUTCString();
+  }
+
+  // Add Vary header for content negotiation
+  if (varyHeaders && varyHeaders.length > 0) {
+    headers.Vary = varyHeaders.join(', ');
+  }
+
+  return headers;
+};
+
+// =============================================================================
+// PAGINATION UTILITIES (1 pt)
+// =============================================================================
+
+export interface PaginationParams {
+  page?: number;
+  limit?: number;
+  offset?: number;
+}
+
+export interface PaginationMetadata {
+  page: number;
+  limit: number;
+  total: number;
+  pages: number;
+  hasNext: boolean;
+  hasPrev: boolean;
+  offset: number;
+}
+
+/**
+ * Parse pagination parameters from URL search params
+ */
+export const parsePaginationParams = (searchParams: URLSearchParams): PaginationParams => {
+  const page = parseInt(searchParams.get('page') ?? '1', 10);
+  const limit = parseInt(searchParams.get('limit') ?? '20', 10);
+  const offset = parseInt(searchParams.get('offset') ?? '0', 10);
+
+  return {
+    page: Math.max(1, page),
+    limit: Math.min(Math.max(1, limit), 100), // Cap at 100 items per page
+    offset: Math.max(0, offset)
+  };
+};
+
+/**
+ * Calculate pagination metadata
+ */
+export const calculatePaginationMetadata = (
+  total: number,
+  page: number,
+  limit: number
+): PaginationMetadata => {
+  const pages = Math.ceil(total / limit);
+  const offset = (page - 1) * limit;
+
+  return {
+    page,
+    limit,
+    total,
+    pages,
+    hasNext: page < pages,
+    hasPrev: page > 1,
+    offset
+  };
+};
+
+/**
+ * Apply pagination to data array
+ */
+export const paginateData = <T>(
+  data: T[],
+  pagination: PaginationParams
+): { data: T[]; metadata: PaginationMetadata } => {
+  const { page = 1, limit = 20 } = pagination;
+  const offset = (page - 1) * limit;
+  
+  const paginatedData = data.slice(offset, offset + limit);
+  const metadata = calculatePaginationMetadata(data.length, page, limit);
+
+  return {
+    data: paginatedData,
+    metadata
+  };
+};
+
+// =============================================================================
+// CONTENT NEGOTIATION UTILITIES (1 pt)
+// =============================================================================
+
+export interface ContentNegotiation {
+  acceptedTypes: string[];
+  acceptedLanguages: string[];
+  preferredType: string;
+  preferredLanguage: string;
+}
+
+/**
+ * Parse Accept header and determine preferred content type
+ */
+export const parseAcceptHeader = (acceptHeader?: string): string[] => {
+  if (!acceptHeader) return ['application/json'];
+  
+  return acceptHeader
+    .split(',')
+    .map(type => type.trim().split(';')[0]) // Remove quality values for simplicity
+    .filter(type => type.length > 0);
+};
+
+/**
+ * Parse Accept-Language header
+ */
+export const parseAcceptLanguageHeader = (acceptLangHeader?: string): string[] => {
+  if (!acceptLangHeader) return ['en'];
+  
+  return acceptLangHeader
+    .split(',')
+    .map(lang => lang.trim().split(';')[0]) // Remove quality values
+    .filter(lang => lang.length > 0);
+};
+
+/**
+ * Determine content negotiation preferences
+ */
+export const negotiateContent = (request: Request): ContentNegotiation => {
+  const acceptHeader = request.headers.get('Accept');
+  const acceptLangHeader = request.headers.get('Accept-Language');
+  
+  const acceptedTypes = parseAcceptHeader(acceptHeader ?? undefined);
+  const acceptedLanguages = parseAcceptLanguageHeader(acceptLangHeader ?? undefined);
+  
+  // Supported content types (in order of preference)
+  const supportedTypes = ['application/json', 'application/hal+json', 'application/problem+json'];
+  const supportedLanguages = ['en', 'de', 'fr', 'it']; // Common European languages
+  
+  const preferredType = acceptedTypes.find(type => 
+    supportedTypes.includes(type) || type === '*/*'
+  ) ?? 'application/json';
+  
+  const preferredLanguage = acceptedLanguages.find(lang => 
+    supportedLanguages.includes(lang) || lang === '*'
+  ) ?? 'en';
+  
+  return {
+    acceptedTypes,
+    acceptedLanguages,
+    preferredType: preferredType === '*/*' ? 'application/json' : preferredType,
+    preferredLanguage: preferredLanguage === '*' ? 'en' : preferredLanguage
+  };
+};
+
+/**
+ * Generate appropriate Content-Type header based on negotiation
+ */
+export const getResponseContentType = (contentNegotiation: ContentNegotiation): string => {
+  const { preferredType } = contentNegotiation;
+  
+  // Map preferred types to appropriate response types
+  switch (preferredType) {
+    case 'application/hal+json':
+      return 'application/hal+json; charset=utf-8';
+    case 'application/problem+json':
+      return 'application/problem+json; charset=utf-8';
+    default:
+      return 'application/json; charset=utf-8';
+  }
+};
+
+// =============================================================================
 // HATEOAS Link Generation Utilities
 // =============================================================================
 
@@ -65,7 +297,7 @@ export const generateCompletionLinks = (auditId: string): HATEOASLinks => ({
 });
 
 /**
- * Generate pagination HATEOAS links
+ * Enhanced pagination HATEOAS links with metadata
  */
 export const generatePaginationLinks = (
   baseUrl: string,
@@ -215,11 +447,11 @@ export const createInternalErrorProblem = (
 });
 
 // =============================================================================
-// Enhanced Response Generation
+// Enhanced Response Creation Utilities
 // =============================================================================
 
 /**
- * Create enhanced success response with HATEOAS support
+ * Create enhanced success response with caching and pagination support
  */
 export const createSuccessResponse = <T>(
   data: T,
@@ -230,6 +462,7 @@ export const createSuccessResponse = <T>(
     pages?: number;
     limit?: number;
     timestamp?: string;
+    pagination?: PaginationMetadata;
   },
   message?: string
 ): EnhancedApiResponse<T> => ({
@@ -244,7 +477,7 @@ export const createSuccessResponse = <T>(
 });
 
 /**
- * Create enhanced error response with RFC 7807 Problem Details
+ * Create error response with RFC 7807 Problem Details
  */
 export const createErrorResponse = (
   error: string,
@@ -253,37 +486,36 @@ export const createErrorResponse = (
 ): EnhancedApiResponse<never> => ({
   success: false,
   error,
-  code,
-  problem
+  problem,
+  _meta: {
+    timestamp: new Date().toISOString(),
+    errorCode: code
+  }
 });
 
+// =============================================================================
+// Business Logic Validation Utilities
+// =============================================================================
+
 /**
- * Validate request payload and return validation problems
+ * Validate audit completion request data
  */
 export const validateAuditCompletion = (data: Record<string, unknown>): ProblemDetails[] => {
   const problems: ProblemDetails[] = [];
 
-  if (!data.auditor) {
+  if (!data.auditor || typeof data.auditor !== 'string') {
     problems.push(createValidationProblem(
-      'Auditor field is required',
+      'Auditor ID is required and must be a string',
       undefined,
       { field: 'auditor' }
     ));
   }
 
-  if (!data.rating) {
+  if (data.rating !== undefined && (typeof data.rating !== 'number' || data.rating < 1 || data.rating > 5)) {
     problems.push(createValidationProblem(
-      'Rating field is required',
+      'Rating must be a number between 1 and 5',
       undefined,
-      { field: 'rating' }
-    ));
-  }
-
-  if (!data.comment || (typeof data.comment === 'string' && data.comment.trim().length === 0)) {
-    problems.push(createValidationProblem(
-      'Comment field is required and cannot be empty',
-      undefined,
-      { field: 'comment' }
+      { field: 'rating', value: data.rating }
     ));
   }
 
@@ -291,7 +523,7 @@ export const validateAuditCompletion = (data: Record<string, unknown>): ProblemD
 };
 
 /**
- * Check if user can audit their own cases (business logic)
+ * Business rule: Users cannot audit their own cases
  */
 export const canUserAuditOwnCase = (auditorId: string, caseUserId: string): boolean => {
   return auditorId !== caseUserId;

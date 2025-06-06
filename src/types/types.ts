@@ -80,6 +80,10 @@ interface EnhancedApiErrorResponse {
   error: string;          // Legacy error message for backward compatibility
   code?: number;          // Legacy error code for backward compatibility
   problem?: ProblemDetails; // RFC 7807 Problem Details
+  _meta?: {
+    timestamp?: string;
+    errorCode?: number;
+  };
 }
 
 export type EnhancedApiResponse<T> = EnhancedApiSuccessResponse<T> | EnhancedApiErrorResponse;
