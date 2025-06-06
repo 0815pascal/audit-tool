@@ -83,3 +83,44 @@ export const QUARTER_CALCULATIONS = {
   MAX_QUARTER: 4,
   RANDOM_DAY_LIMIT: 28
 };
+
+// API Endpoints - Centralized endpoint paths following REST conventions
+export const API_ENDPOINTS = {
+  // Authentication endpoints
+  AUTH: {
+    CURRENT_USER: '/auth/current-user',
+  },
+  
+  // User management endpoints
+  USERS: {
+    BASE: '/users',
+    BY_ID: (id: string) => `/users/${id}`,
+    STATUS: (id: string) => `/users/${id}/status`,
+    ROLE: (id: string) => `/users/${id}/role`,
+  },
+  
+  // Audit endpoints
+  AUDITS: {
+    BASE: '/audits',
+    BY_ID: (id: string) => `/audits/${id}`,
+    BY_QUARTER: (quarter: string) => `/audits/quarter/${quarter}`,
+    BY_AUDITOR: (auditorId: string) => `/audits/auditor/${auditorId}`,
+    FINDINGS: (auditId: string) => `/audits/${auditId}/findings`,
+  },
+  
+  // Audit completion endpoints
+  AUDIT_COMPLETION: {
+    BY_ID: (auditId: string) => `/audit-completion/${auditId}`,
+    SELECT_QUARTERLY: '/audit-completion/select-quarterly',
+    SELECT_QUARTERLY_BY_PERIOD: (period: string) => `/audit-completion/select-quarterly/${period}`,
+    COMPLETE: (auditId: string) => `/audit/${auditId}/complete`,
+  },
+  
+  // Audit findings endpoints
+  AUDIT_FINDINGS: {
+    BY_AUDIT_ID: (auditId: string) => `/audit-findings/${auditId}`,
+  },
+  
+  // Pre-loaded cases endpoint
+  PRE_LOADED_CASES: '/pre-loaded-cases',
+} as const;

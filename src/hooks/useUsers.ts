@@ -34,17 +34,28 @@ function generateInitials(name: string): string {
 
 /**
  * Hook to interact with the user store using RTK Query
+ * Enhanced with conditional fetching optimization
  */
-export const useUsers = () => {
+export const useUsers = (options?: { 
+  skipFetch?: boolean; 
+  enablePolling?: boolean;
+}) => {
+  const { skipFetch = false, enablePolling = false } = options || {};
   const dispatch = useAppDispatch();
   
-  // RTK Query hooks
-  const { error, isLoading, isFetching, refetch } = useGetUsersQuery();
+  // RTK Query hooks with conditional fetching
+  const { error, isLoading, isFetching, refetch } = useGetUsersQuery(undefined, {
+    skip: skipFetch, // Allow callers to skip fetching when users not needed
+    pollingInterval: enablePolling ? 60000 : 0, // Poll every minute if enabled
+  });
+  
   const [createUserMutation] = useCreateUserMutation();
   const [updateUserMutation] = useUpdateUserMutation();
   const [deleteUserMutation] = useDeleteUserMutation();
   const [updateUserStatusMutation] = useUpdateUserStatusMutation();
   const [updateUserRoleMutation] = useUpdateUserRoleMutation();
+  
+
   
   // Selectors for derived data
   const allUsers = useAppSelector(selectAllUsers);
@@ -170,6 +181,6 @@ export const useUsers = () => {
     removeUser,
     toggleUserActive,
     changeUserRole,
-    refreshUsers
+    refreshUsers,
   };
 }; 

@@ -29,7 +29,7 @@ import {
   QuarterlyAuditsSelector
 } from '../types/types';
 import { CASE_TYPE_ENUM, CLAIMS_STATUS_ENUM, USER_ROLE_ENUM, AUDIT_STATUS_ENUM, HTTP_METHOD } from '../enums';
-import { QUARTER_CALCULATIONS } from '../constants';
+import { QUARTER_CALCULATIONS, API_ENDPOINTS } from '../constants';
 
 import {
   createUserId,
@@ -79,7 +79,7 @@ export const auditApi = api.injectEndpoints({
   endpoints: (builder) => ({
     // Get current user
     getCurrentUser: builder.query<User, void>({
-      query: () => '/auth/current-user',
+      query: () => API_ENDPOINTS.AUTH.CURRENT_USER,
       transformResponse: (response: CurrentUserResponse) => {
         if (!response.success) {
           throw new Error('Failed to fetch current user');
@@ -91,7 +91,7 @@ export const auditApi = api.injectEndpoints({
 
     // Get audits by quarter
     getAuditsByQuarter: builder.query<CaseAudit[], string>({
-      query: (quarter) => `/audits/quarter/${quarter}`,
+      query: (quarter) => API_ENDPOINTS.AUDITS.BY_QUARTER(quarter),
       transformResponse: (response: CaseAudit[]) => response ?? [],
       providesTags: (result) =>
         result
@@ -104,7 +104,7 @@ export const auditApi = api.injectEndpoints({
 
     // Get audits by auditor
     getAuditsByAuditor: builder.query<CaseAudit[], string>({
-      query: (auditorId) => `/audits/auditor/${auditorId}`,
+      query: (auditorId) => API_ENDPOINTS.AUDITS.BY_AUDITOR(auditorId),
       transformResponse: (response: CaseAudit[]) => response ?? [],
       providesTags: (result) =>
         result
@@ -118,7 +118,7 @@ export const auditApi = api.injectEndpoints({
     // Select quarterly audits
     selectQuarterlyAudits: builder.mutation<QuarterlyAuditsData, QuarterPeriod>({
       query: (quarterPeriod) => ({
-        url: '/audit-completion/select-quarterly',
+        url: API_ENDPOINTS.AUDIT_COMPLETION.SELECT_QUARTERLY,
         method: HTTP_METHOD.POST,
         body: { quarterKey: quarterPeriod, userIds: [] },
       }),
@@ -136,7 +136,7 @@ export const auditApi = api.injectEndpoints({
 
     // Get quarterly audits for a specific period
     getQuarterlyAudits: builder.query<QuarterlyAuditsData, QuarterPeriod>({
-      query: (quarterPeriod) => `/audit-completion/select-quarterly/${quarterPeriod}`,
+      query: (quarterPeriod) => API_ENDPOINTS.AUDIT_COMPLETION.SELECT_QUARTERLY_BY_PERIOD(quarterPeriod),
       transformResponse: (response: QuarterlyAuditsResponse) => {
         if (!response.success) {
           throw new Error('Failed to get quarterly audits');
@@ -151,7 +151,7 @@ export const auditApi = api.injectEndpoints({
     // Complete audit
     completeAudit: builder.mutation<AuditCompletionResponse, AuditCompletionParams>({
       query: ({ auditId, ...completionData }) => ({
-        url: `/audit/${auditId}/complete`,
+        url: API_ENDPOINTS.AUDIT_COMPLETION.COMPLETE(auditId),
         method: HTTP_METHOD.POST,
         body: completionData,
       }),
@@ -170,7 +170,7 @@ export const auditApi = api.injectEndpoints({
     // Save audit completion (in-progress)
     saveAuditCompletion: builder.mutation<AuditCompletionResponse, AuditCompletionParams>({
       query: ({ auditId, ...completionData }) => ({
-        url: `/audit-completion/${auditId}`,
+        url: API_ENDPOINTS.AUDIT_COMPLETION.BY_ID(auditId),
         method: HTTP_METHOD.PUT,
         body: completionData,
       }),
@@ -188,7 +188,7 @@ export const auditApi = api.injectEndpoints({
     // Create audit
     createAudit: builder.mutation<CaseAudit, Partial<CaseAudit>>({
       query: (auditData) => ({
-        url: '/audits',
+        url: API_ENDPOINTS.AUDITS.BASE,
         method: HTTP_METHOD.POST,
         body: auditData,
       }),
@@ -199,7 +199,7 @@ export const auditApi = api.injectEndpoints({
     // Update audit
     updateAudit: builder.mutation<CaseAudit, CaseAudit>({
       query: ({ id, ...patch }) => ({
-        url: `/audits/${id}`,
+        url: API_ENDPOINTS.AUDITS.BY_ID(id),
         method: HTTP_METHOD.PUT,
         body: patch,
       }),
@@ -212,7 +212,7 @@ export const auditApi = api.injectEndpoints({
 
     // Get audit findings
     getAuditFindings: builder.query<FindingsRecord[], string>({
-      query: (auditId) => `/audits/${auditId}/findings`,
+      query: (auditId) => API_ENDPOINTS.AUDITS.FINDINGS(auditId),
       transformResponse: (response: FindingsRecord[]) => response ?? [],
       providesTags: (_, __, auditId) => [
         { type: 'Audit', id: `${auditId}-findings` },
@@ -222,16 +222,23 @@ export const auditApi = api.injectEndpoints({
     // Add finding to audit
     addAuditFinding: builder.mutation<FindingsRecord, AddAuditFindingParams>({
       query: ({ auditId, findingType, findingDescription }) => ({
-        url: `/audit-findings/${auditId}`,
+        url: API_ENDPOINTS.AUDIT_FINDINGS.BY_AUDIT_ID(auditId),
         method: HTTP_METHOD.POST,
         body: { findingType, findingDescription },
       }),
+      invalidatesTags: (_, __, { auditId }) => [
+        { type: 'Audit', id: `${auditId}-findings` },
+        { type: 'Audit', id: auditId },
+      ],
     }),
 
     // Get pre-loaded cases (verified and in-progress)
     getPreLoadedCases: builder.query<PreLoadedCase[], void>({
-      query: () => '/pre-loaded-cases',
-      transformResponse: (response: PreLoadedCasesResponse) => response.data ?? [],
+      query: () => API_ENDPOINTS.PRE_LOADED_CASES,
+      transformResponse: (response: PreLoadedCasesResponse) => {
+        return response.data ?? [];
+      },
+      providesTags: [{ type: 'PreLoadedCases', id: 'LIST' }],
     }),
   }),
   overrideExisting: false,
@@ -240,8 +247,16 @@ export const auditApi = api.injectEndpoints({
 // Export hooks for use in components
 export const {
   useGetCurrentUserQuery,
+  useGetAuditsByQuarterQuery,
+  useGetAuditsByAuditorQuery,
+  useSelectQuarterlyAuditsMutation,
+  useGetQuarterlyAuditsQuery,
   useCompleteAuditMutation,
   useSaveAuditCompletionMutation,
+  useCreateAuditMutation,
+  useUpdateAuditMutation,
+  useGetAuditFindingsQuery,
+  useAddAuditFindingMutation,
   useGetPreLoadedCasesQuery,
 } = auditApi;
 

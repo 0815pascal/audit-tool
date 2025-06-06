@@ -91,8 +91,15 @@ export const useCaseAuditHandlers = () => {
 
   const loading: boolean = loadingStatus === ACTION_STATUS.loading || Boolean(usersLoading);
 
-  // Use RTK Query to get current user
-  const { data: currentUser } = useGetCurrentUserQuery();
+  // RTK Query: Conditional fetching - only fetch current user if not already set
+  const { data: currentUser } = useGetCurrentUserQuery(undefined, {
+    skip: Boolean(currentUserId && currentUserId !== ''), // Skip if already have current user
+  });
+
+  // RTK Query: Only fetch pre-loaded cases if current user is authenticated
+  const { data: preLoadedCases } = useGetPreLoadedCasesQuery(undefined, {
+    skip: !currentUserId, // Skip if no current user (not authenticated)
+  });
 
   // RTK Query mutation for completing audits
   const [completeAuditMutation] = useCompleteAuditMutation();
@@ -109,9 +116,6 @@ export const useCaseAuditHandlers = () => {
       }));
     }
   }, [dispatch, currentUser, currentUserId]); // Add currentUser to dependencies
-
-  // Load pre-loaded cases (verified and in-progress) on app initialization
-  const { data: preLoadedCases } = useGetPreLoadedCasesQuery();
 
   useEffect(() => {
     if (preLoadedCases && preLoadedCases.length > 0) {
