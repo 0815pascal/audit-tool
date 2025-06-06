@@ -2,7 +2,7 @@ import React from 'react';
 import './Modal.css';
 import { ModalProps } from './Modal.types';
 
-export const Modal: React.FC<ModalProps> = ({ isOpen, title, onClose, children }) => {
+export const Modal: React.FC<ModalProps> = ({ isOpen, title, onClose, children, footer }) => {
   if (!isOpen) return null;
   
   return (
@@ -32,6 +32,13 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, title, onClose, children }
         <div className="modal__content">
           {children}
         </div>
+        
+        {/* Fixed Footer */}
+        {footer && (
+          <div className="modal__footer">
+            {footer}
+          </div>
+        )}
       </dialog>
     </div>
   );

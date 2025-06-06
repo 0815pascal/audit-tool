@@ -179,7 +179,7 @@ button {
   color: white;
   border: none;
   padding: var(--spacing-md) var(--spacing-3xl);
-  border-radius: var(--border-radius);
+  border-radius: var(--border-radius-large);
   cursor: pointer;
   font-weight: var(--font-weight-medium);
   transition: background-color 0.2s, opacity 0.2s;

@@ -343,11 +343,33 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
     onClose();
   };
 
+  // Create the footer content
+  const footerContent = (
+    <div className="button-container flex justify-end gap-md">
+      <Button
+        onClick={handleCloseModal}
+        color={BUTTON_COLOR.TEXT}
+        size={BUTTON_SIZE.MEDIUM}
+      >
+        Abbrechen
+      </Button>
+      <Button
+        onClick={handleComplete}
+        color={BUTTON_COLOR.PRIMARY}
+        size={BUTTON_SIZE.MEDIUM}
+        disabled={!verifier.trim()}
+      >
+        Bestätigen
+      </Button>
+    </div>
+  );
+
   return (
     <Modal
       isOpen={isOpen}
       onClose={handleCloseModal}
       title="Prueffenster"
+      footer={footerContent}
     >
       <div className="pruefenster-content">
         <div className="case-info-grid text-left mb-8">
@@ -461,24 +483,6 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
               />
             ))}
           </div>
-        </div>
-
-        <div className="button-container flex justify-end gap-md">
-          <Button
-            onClick={handleCloseModal}
-            color={BUTTON_COLOR.TEXT}
-            size={BUTTON_SIZE.MEDIUM}
-          >
-            Abbrechen
-          </Button>
-          <Button
-            onClick={handleComplete}
-            color={BUTTON_COLOR.PRIMARY}
-            size={BUTTON_SIZE.MEDIUM}
-            disabled={!verifier.trim()}
-          >
-            Bestätigen
-          </Button>
         </div>
       </div>
     </Modal>

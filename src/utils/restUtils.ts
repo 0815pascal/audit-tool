@@ -511,9 +511,19 @@ export const validateAuditCompletion = (data: Record<string, unknown>): ProblemD
     ));
   }
 
-  if (data.rating !== undefined && (typeof data.rating !== 'number' || data.rating < 1 || data.rating > 5)) {
+  // Validate rating: accept valid RATING_VALUE_ENUM strings
+  const validRatings = [
+    'NOT_FULFILLED',
+    'PARTIALLY_FULFILLED', 
+    'MOSTLY_FULFILLED',
+    'SUCCESSFULLY_FULFILLED',
+    'EXCELLENTLY_FULFILLED',
+    ''  // Allow empty rating
+  ];
+
+  if (data.rating !== undefined && (typeof data.rating !== 'string' || !validRatings.includes(data.rating))) {
     problems.push(createValidationProblem(
-      'Rating must be a number between 1 and 5',
+      `Rating must be one of: ${validRatings.filter(r => r !== '').join(', ')}, or empty`,
       undefined,
       { field: 'rating', value: data.rating }
     ));

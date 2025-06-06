@@ -2,6 +2,8 @@
 
 .pruefenster-content {
   font-family: var(--font-family-source);
+  /* Add bottom padding to prevent content from being hidden behind fixed footer */
+  padding-bottom: var(--spacing-xl);
 }
 
 /* Case Information Grid */

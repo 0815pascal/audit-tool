@@ -170,9 +170,9 @@ test.describe('IKS Audit Tool - Auto-Select and Verification', () => {
       ok: boolean;
     }
     
-    const completionRequests: CompletionRequest[] = [];
+        const completionRequests: CompletionRequest[] = [];
     page.on('request', request => {
-      if (request.url().includes('/audit/') && request.url().includes('/complete') && request.method() === 'POST') {
+      if (request.url().includes('/audits/') && request.url().includes('/completion') && request.method() === 'POST') {
         completionRequests.push({
           url: request.url(),
           method: request.method(),
@@ -180,10 +180,10 @@ test.describe('IKS Audit Tool - Auto-Select and Verification', () => {
         });
       }
     });
-    
+
     const responses: CompletionResponse[] = [];
     page.on('response', response => {
-      if (response.url().includes('/audit/') && response.url().includes('/complete') && response.request().method() === 'POST') {
+      if (response.url().includes('/audits/') && response.url().includes('/completion') && response.request().method() === 'POST') {
         responses.push({
           url: response.url(),
           status: response.status(),
