@@ -40,7 +40,7 @@ export const useUsers = (options?: {
   skipFetch?: boolean; 
   enablePolling?: boolean;
 }) => {
-  const { skipFetch = false, enablePolling = false } = options || {};
+  const { skipFetch = false, enablePolling = false } = options ?? {};
   const dispatch = useAppDispatch();
   
   // RTK Query hooks with conditional fetching

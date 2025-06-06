@@ -13,30 +13,34 @@ import {AUDIT_STATUS_ENUM, HTTP_METHOD} from '../enums';
 import { CompletionData, CompletionResponse } from './auditService.types';
 
 /**
- * Fetch audits for a specific quarter
+ * Get audits by quarter using new REST-compliant query parameter approach
  */
 export const getAuditsByQuarter = async (quarter: QuarterPeriod): Promise<UserAuditForSelection[]> => {
   try {
-    const url = `${API_BASE_PATH}/api/audits/quarter/${quarter}`;
+    // Use query parameter approach (REST compliant)
+    const url = new URL(`${API_BASE_PATH}/audits`, window.location.origin);
+    url.searchParams.set('quarter', quarter);
     
-    const response = await fetch(url);
+    const response = await fetch(url.toString());
     
     if (!response.ok) {
-      throw new Error(`Failed to fetch audits: ${response.status}`);
+      throw new Error(`API responded with status ${response.status}`);
     }
     
     const data = await response.json();
     
-    return data.map((item: Record<string, unknown>) => ({
-      id: String(item.id),
-      userId: String(item.userId),
-      quarter: item.quarter,
-      status: item.status,
-      auditor: item.auditor ?? '',
-      coverageAmount: item.coverageAmount ?? 0,
-      isCompleted: Boolean(item.isCompleted),
-      claimsStatus: item.claimsStatus ?? 'FULL_COVER',
-      notifiedCurrency: item.notifiedCurrency ?? CURRENCY.CHF
+    // Map API response to our expected format
+    return data.map((audit: Record<string, unknown>) => ({
+      id: createCaseAuditId(String(audit.id)),
+      auditId: createCaseAuditId(String(audit.id)), 
+      userId: String(audit.userId),
+      quarter,
+      status: String(audit.status),
+      auditor: String(audit.auditor ?? ''),
+      coverageAmount: Number(audit.coverageAmount) || 0,
+      isCompleted: Boolean(audit.isCompleted),
+      claimsStatus: String(audit.claimsStatus) || 'FULL_COVER',
+      notifiedCurrency: String(audit.notifiedCurrency) || CURRENCY.CHF
     }));
   } catch (error) {
     console.error(`Error fetching audits for quarter ${quarter}:`, error);
@@ -45,64 +49,65 @@ export const getAuditsByQuarter = async (quarter: QuarterPeriod): Promise<UserAu
 };
 
 /**
- * Fetch ALL cases for a specific quarter (not just selected for audit)
- * This is used when user selects a quarter from dropdown to show all cases
+ * Get all cases for a quarter using new REST-compliant query parameter approach
  */
 export const getAllCasesByQuarter = async (quarter: QuarterPeriod): Promise<CaseObj[]> => {
   try {
-    const url = `${API_BASE_PATH}/cases/quarter/${quarter}`;
-    
-    const response = await fetch(url);
+    // Use existing /cases/quarter endpoint (this remains the same as it's for different resource)
+    const response = await fetch(`${API_BASE_PATH}/cases/quarter/${quarter}`);
     
     if (!response.ok) {
-      throw new Error(`Failed to fetch all cases: ${response.status}`);
+      throw new Error(`API responded with status ${response.status}`);
     }
     
     const data = await response.json();
     
-    // The response should be an array of case objects
     return data.map((caseData: Record<string, unknown>) => ({
       caseNumber: String(caseData.caseNumber),
       claimOwner: {
         userId: String((caseData.claimOwner && (caseData.claimOwner as Record<string, unknown>).userId) ?? caseData.userId ?? 'unknown') as UserId,
-        displayName: String((caseData.claimOwner && (caseData.claimOwner as Record<string, unknown>).displayName) ?? caseData.displayName ?? 'Unknown')
+        role: (caseData.claimOwner && (caseData.claimOwner as Record<string, unknown>).role) ?? 'STAFF'
       },
       coverageAmount: Number(caseData.coverageAmount) || 0,
       claimsStatus: String(caseData.claimsStatus) || 'FULL_COVER',
+      caseStatus: String(caseData.caseStatus) || 'COMPENSATED',
       notificationDate: String(caseData.notificationDate),
       notifiedCurrency: String(caseData.notifiedCurrency) || CURRENCY.CHF
     }));
   } catch (error) {
-    console.error(`Error fetching all cases for quarter ${quarter}:`, error);
+    console.error(`Error fetching cases for quarter ${quarter}:`, error);
     throw error;
   }
 };
 
 /**
- * Fetch audits by auditor
+ * Get audits by auditor using new REST-compliant query parameter approach
  */
 export const getAuditsByAuditor = async (auditorId: UserId): Promise<UserAuditForSelection[]> => {
   try {
-    const url = `${API_BASE_PATH}/api/audits/auditor/${auditorId}`;
+    // Use query parameter approach (REST compliant)
+    const url = new URL(`${API_BASE_PATH}/audits`, window.location.origin);
+    url.searchParams.set('auditor', auditorId);
     
-    const response = await fetch(url);
+    const response = await fetch(url.toString());
     
     if (!response.ok) {
-      throw new Error(`Failed to fetch audits: ${response.status}`);
+      throw new Error(`API responded with status ${response.status}`);
     }
     
     const data = await response.json();
     
-    return data.map((item: Record<string, unknown>) => ({
-      id: String(item.id),
-      userId: String(item.userId),
-      quarter: item.quarter,
-      status: item.status,
-      auditor: item.auditor ?? '',
-      coverageAmount: item.coverageAmount ?? 0,
-      isCompleted: Boolean(item.isCompleted),
-      claimsStatus: item.claimsStatus ?? 'FULL_COVER',
-      notifiedCurrency: item.notifiedCurrency ?? CURRENCY.CHF
+    return data.map((audit: Record<string, unknown>) => ({
+      id: createCaseAuditId(String(audit.id)),
+      auditId: createCaseAuditId(String(audit.id)),
+      userId: String(audit.userId),
+      quarter: String(audit.quarter),
+      status: String(audit.status),
+      auditor: String(audit.auditor ?? ''),
+      coverageAmount: Number(audit.coverageAmount) || 0,
+      isCompleted: Boolean(audit.isCompleted),
+      claimsStatus: String(audit.claimsStatus) || 'FULL_COVER',
+      notifiedCurrency: String(audit.notifiedCurrency) || CURRENCY.CHF
     }));
   } catch (error) {
     console.error(`Error fetching audits for auditor ${auditorId}:`, error);
@@ -294,7 +299,8 @@ export const completeAuditAPI = async (
   caseAuditData: CaseAuditData
 ): Promise<CompletionResponse> => {
   try {
-    const response = await fetch(`${API_BASE_PATH}/audit/${caseAuditId}/complete`, {
+    // Use new standardized completion endpoint
+    const response = await fetch(`${API_BASE_PATH}/audits/${caseAuditId}/completion`, {
       method: HTTP_METHOD.POST,
       headers: {
         'Content-Type': 'application/json',
@@ -325,7 +331,8 @@ export const completeAuditAPI = async (
 
 export const getAuditCompletion = async (caseAuditId: CaseAuditId | string): Promise<CompletionData | null> => {
   try {
-    const response = await fetch(`${API_BASE_PATH}/audit/${caseAuditId}/completion`);
+    // Use new standardized completion endpoint
+    const response = await fetch(`${API_BASE_PATH}/audits/${caseAuditId}/completion`);
     
     if (!response.ok) {
       if (response.status === 404) {

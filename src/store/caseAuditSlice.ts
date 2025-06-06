@@ -25,7 +25,7 @@ import {
   SetUserRolePayload,
   PreLoadedCase,
   PreLoadedCasesResponse,
-  AddAuditFindingParams,
+
   QuarterlyAuditsSelector
 } from '../types/types';
 import { CASE_TYPE_ENUM, CLAIMS_STATUS_ENUM, USER_ROLE_ENUM, AUDIT_STATUS_ENUM, HTTP_METHOD } from '../enums';
@@ -89,9 +89,12 @@ export const auditApi = api.injectEndpoints({
       providesTags: [{ type: 'CurrentUser', id: 'current' }],
     }),
 
-    // Get audits by quarter
+    // Get audits by quarter - Using query parameters (REST compliant)
     getAuditsByQuarter: builder.query<CaseAudit[], string>({
-      query: (quarter) => API_ENDPOINTS.AUDITS.BY_QUARTER(quarter),
+      query: (quarter) => ({
+        url: API_ENDPOINTS.AUDITS.BY_QUARTER,
+        params: { quarter },
+      }),
       transformResponse: (response: CaseAudit[]) => response ?? [],
       providesTags: (result) =>
         result
@@ -102,9 +105,12 @@ export const auditApi = api.injectEndpoints({
           : [{ type: 'Audit', id: 'LIST' }],
     }),
 
-    // Get audits by auditor
+    // Get audits by auditor - Using query parameters (REST compliant)
     getAuditsByAuditor: builder.query<CaseAudit[], string>({
-      query: (auditorId) => API_ENDPOINTS.AUDITS.BY_AUDITOR(auditorId),
+      query: (auditorId) => ({
+        url: API_ENDPOINTS.AUDITS.BY_AUDITOR,
+        params: { auditor: auditorId },
+      }),
       transformResponse: (response: CaseAudit[]) => response ?? [],
       providesTags: (result) =>
         result
@@ -115,10 +121,10 @@ export const auditApi = api.injectEndpoints({
           : [{ type: 'Audit', id: 'LIST' }],
     }),
 
-    // Select quarterly audits
+    // Select quarterly audits - Using resource-based approach
     selectQuarterlyAudits: builder.mutation<QuarterlyAuditsData, QuarterPeriod>({
       query: (quarterPeriod) => ({
-        url: API_ENDPOINTS.AUDIT_COMPLETION.SELECT_QUARTERLY,
+        url: API_ENDPOINTS.QUARTERLY_SELECTIONS.BASE,
         method: HTTP_METHOD.POST,
         body: { quarterKey: quarterPeriod, userIds: [] },
       }),
@@ -134,9 +140,9 @@ export const auditApi = api.injectEndpoints({
       ],
     }),
 
-    // Get quarterly audits for a specific period
+    // Get quarterly audits for a specific period - Using resource-based approach
     getQuarterlyAudits: builder.query<QuarterlyAuditsData, QuarterPeriod>({
-      query: (quarterPeriod) => API_ENDPOINTS.AUDIT_COMPLETION.SELECT_QUARTERLY_BY_PERIOD(quarterPeriod),
+      query: (quarterPeriod) => API_ENDPOINTS.QUARTERLY_SELECTIONS.BY_PERIOD(quarterPeriod),
       transformResponse: (response: QuarterlyAuditsResponse) => {
         if (!response.success) {
           throw new Error('Failed to get quarterly audits');
@@ -148,12 +154,16 @@ export const auditApi = api.injectEndpoints({
       ],
     }),
 
-    // Complete audit
+    // Complete audit - Using standardized completion endpoint
     completeAudit: builder.mutation<AuditCompletionResponse, AuditCompletionParams>({
       query: ({ auditId, ...completionData }) => ({
-        url: API_ENDPOINTS.AUDIT_COMPLETION.COMPLETE(auditId),
+        url: API_ENDPOINTS.AUDITS.COMPLETION(auditId),
         method: HTTP_METHOD.POST,
-        body: completionData,
+        body: {
+          ...completionData,
+          status: AUDIT_STATUS_ENUM.COMPLETED,
+          isCompleted: true,
+        },
       }),
       transformResponse: (response: AuditCompletionResponse) => {
         if (!response.success) {
@@ -165,14 +175,27 @@ export const auditApi = api.injectEndpoints({
         { type: 'Audit', id: auditId },
         { type: 'Audit', id: 'LIST' },
       ],
+      // RTK Query best practice: Optimistic updates
+      async onQueryStarted(_, { queryFulfilled }) {
+        // We rely on cache invalidation for consistency since we can't know the exact quarter
+        try {
+          await queryFulfilled;
+        } catch {
+          // Cache invalidation will handle the consistency
+        }
+      },
     }),
 
-    // Save audit completion (in-progress)
+    // Save audit completion (in-progress) - Using standardized completion endpoint
     saveAuditCompletion: builder.mutation<AuditCompletionResponse, AuditCompletionParams>({
       query: ({ auditId, ...completionData }) => ({
-        url: API_ENDPOINTS.AUDIT_COMPLETION.BY_ID(auditId),
+        url: API_ENDPOINTS.AUDITS.COMPLETION(auditId),
         method: HTTP_METHOD.PUT,
-        body: completionData,
+        body: {
+          ...completionData,
+          status: AUDIT_STATUS_ENUM.IN_PROGRESS,
+          isCompleted: false,
+        },
       }),
       transformResponse: (response: AuditCompletionResponse) => {
         if (!response.success) {
@@ -182,6 +205,20 @@ export const auditApi = api.injectEndpoints({
       },
       invalidatesTags: (_, __, { auditId }) => [
         { type: 'Audit', id: auditId },
+      ],
+    }),
+
+    // Get audit completion data - Using standardized completion endpoint
+    getAuditCompletion: builder.query<AuditCompletionResponse, string>({
+      query: (auditId) => API_ENDPOINTS.AUDITS.COMPLETION(auditId),
+      transformResponse: (response: AuditCompletionResponse) => {
+        if (!response.success) {
+          throw new Error('Failed to fetch audit completion');
+        }
+        return response;
+      },
+      providesTags: (_, __, auditId) => [
+        { type: 'Audit', id: `${auditId}-completion` },
       ],
     }),
 
@@ -210,27 +247,16 @@ export const auditApi = api.injectEndpoints({
       ],
     }),
 
-    // Get audit findings
+    // Get audit findings - Using query parameter approach
     getAuditFindings: builder.query<FindingsRecord[], string>({
-      query: (auditId) => API_ENDPOINTS.AUDITS.FINDINGS(auditId),
+      query: (auditId) => API_ENDPOINTS.AUDIT_FINDINGS.BY_AUDIT_ID(auditId),
       transformResponse: (response: FindingsRecord[]) => response ?? [],
       providesTags: (_, __, auditId) => [
         { type: 'Audit', id: `${auditId}-findings` },
       ],
     }),
 
-    // Add finding to audit
-    addAuditFinding: builder.mutation<FindingsRecord, AddAuditFindingParams>({
-      query: ({ auditId, findingType, findingDescription }) => ({
-        url: API_ENDPOINTS.AUDIT_FINDINGS.BY_AUDIT_ID(auditId),
-        method: HTTP_METHOD.POST,
-        body: { findingType, findingDescription },
-      }),
-      invalidatesTags: (_, __, { auditId }) => [
-        { type: 'Audit', id: `${auditId}-findings` },
-        { type: 'Audit', id: auditId },
-      ],
-    }),
+
 
     // Get pre-loaded cases (verified and in-progress)
     getPreLoadedCases: builder.query<PreLoadedCase[], void>({
@@ -253,10 +279,10 @@ export const {
   useGetQuarterlyAuditsQuery,
   useCompleteAuditMutation,
   useSaveAuditCompletionMutation,
+  useGetAuditCompletionQuery,
   useCreateAuditMutation,
   useUpdateAuditMutation,
   useGetAuditFindingsQuery,
-  useAddAuditFindingMutation,
   useGetPreLoadedCasesQuery,
 } = auditApi;
 

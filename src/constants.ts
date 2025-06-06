@@ -99,28 +99,64 @@ export const API_ENDPOINTS = {
     ROLE: (id: string) => `/users/${id}/role`,
   },
   
-  // Audit endpoints
+  // Audit endpoints - Standardized and RESTful
   AUDITS: {
     BASE: '/audits',
     BY_ID: (id: string) => `/audits/${id}`,
-    BY_QUARTER: (quarter: string) => `/audits/quarter/${quarter}`,
-    BY_AUDITOR: (auditorId: string) => `/audits/auditor/${auditorId}`,
     FINDINGS: (auditId: string) => `/audits/${auditId}/findings`,
+    COMPLETION: (auditId: string) => `/audits/${auditId}/completion`,
+    
+    // Query parameter-based filtering (more RESTful)
+    // Usage: /audits?quarter=Q1-2024
+    BY_QUARTER: '/audits',
+    // Usage: /audits?auditor={auditorId}
+    BY_AUDITOR: '/audits',
   },
   
-  // Audit completion endpoints
-  AUDIT_COMPLETION: {
-    BY_ID: (auditId: string) => `/audit-completion/${auditId}`,
-    SELECT_QUARTERLY: '/audit-completion/select-quarterly',
-    SELECT_QUARTERLY_BY_PERIOD: (period: string) => `/audit-completion/select-quarterly/${period}`,
-    COMPLETE: (auditId: string) => `/audit/${auditId}/complete`,
+  // Quarterly audit selection endpoints - Resource-based approach
+  QUARTERLY_SELECTIONS: {
+    BASE: '/quarterly-selections',
+    BY_PERIOD: (period: string) => `/quarterly-selections/${period}`,
   },
   
-  // Audit findings endpoints
+  // Audit findings endpoints (separate resource for complex finding operations)
   AUDIT_FINDINGS: {
-    BY_AUDIT_ID: (auditId: string) => `/audit-findings/${auditId}`,
+    BASE: '/audit-findings',
+    BY_AUDIT_ID: (auditId: string) => `/audit-findings?auditId=${auditId}`,
   },
   
   // Pre-loaded cases endpoint
   PRE_LOADED_CASES: '/pre-loaded-cases',
+  
+
+} as const;
+
+// =============================================================================
+// REST API Enhancement Constants for 100% Compliance
+// =============================================================================
+
+export const PROBLEM_TYPES = {
+  VALIDATION_ERROR: 'urn:audit-tool:problems:validation-error',
+  BUSINESS_LOGIC_ERROR: 'urn:audit-tool:problems:business-logic-error',
+  RESOURCE_NOT_FOUND: 'urn:audit-tool:problems:resource-not-found',
+  RESOURCE_CONFLICT: 'urn:audit-tool:problems:resource-conflict',
+  AUTHENTICATION_ERROR: 'urn:audit-tool:problems:authentication-error',
+  AUTHORIZATION_ERROR: 'urn:audit-tool:problems:authorization-error',
+  RATE_LIMIT_EXCEEDED: 'urn:audit-tool:problems:rate-limit-exceeded',
+  INTERNAL_ERROR: 'urn:audit-tool:problems:internal-error'
+} as const;
+
+export const REST_STATUS_MESSAGES = {
+  400: 'Bad Request',
+  401: 'Unauthorized',
+  403: 'Forbidden',
+  404: 'Not Found',
+  405: 'Method Not Allowed',
+  409: 'Conflict',
+  422: 'Unprocessable Entity',
+  429: 'Too Many Requests',
+  500: 'Internal Server Error',
+  501: 'Not Implemented',
+  502: 'Bad Gateway',
+  503: 'Service Unavailable'
 } as const;

@@ -24,7 +24,7 @@ export const useAudits = () => {
     skipFetch?: boolean;
     enablePolling?: boolean;
   }) => {
-    const { skipFetch = false, enablePolling = false } = options || {};
+    const { skipFetch = false, enablePolling = false } = options ?? {};
     
     return useGetAuditsByQuarterQuery(quarter!, {
       skip: !quarter || skipFetch, // Skip if no quarter provided or explicitly skipped
@@ -39,7 +39,7 @@ export const useAudits = () => {
   const useAuditsByAuditor = (auditorId?: string, options?: {
     skipFetch?: boolean;
   }) => {
-    const { skipFetch = false } = options || {};
+    const { skipFetch = false } = options ?? {};
     
     return useGetAuditsByAuditorQuery(auditorId!, {
       skip: !auditorId || skipFetch, // Skip if no auditor ID provided
@@ -54,7 +54,7 @@ export const useAudits = () => {
     skipFetch?: boolean;
     enablePolling?: boolean;
   }) => {
-    const { skipFetch = false, enablePolling = false } = options || {};
+    const { skipFetch = false, enablePolling = false } = options ?? {};
     
     return useGetQuarterlyAuditsQuery(quarter!, {
       skip: !quarter || skipFetch, // Skip if no quarter provided
@@ -69,7 +69,7 @@ export const useAudits = () => {
   const useAuditFindings = (auditId?: string, options?: {
     skipFetch?: boolean;
   }) => {
-    const { skipFetch = false } = options || {};
+    const { skipFetch = false } = options ?? {};
     
     return useGetAuditFindingsQuery(auditId!, {
       skip: !auditId || skipFetch, // Skip if no audit ID provided
@@ -111,7 +111,7 @@ export const useAudits = () => {
     });
 
     // Regular users only see their own audits
-    const userAudits = useAuditsByAuditor(targetUserId || currentUserId, {
+    const userAudits = useAuditsByAuditor(targetUserId ?? currentUserId, {
       skipFetch: canViewAllAudits || !currentUserId,
     });
 

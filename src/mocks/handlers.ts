@@ -1,6 +1,16 @@
 import {http, HttpResponse} from 'msw';
+import {
+  generateAuditLinks,
+  generatePaginationLinks,
+  createSuccessResponse,
+  createBusinessLogicProblem,
+  createNotFoundProblem,
+  createInternalErrorProblem,
+  validateAuditCompletion,
+  canUserAuditOwnCase
+} from '../utils/restUtils';
 import { CURRENCY, ValidCurrency } from '../types/currencyTypes';
-import {ClaimsStatus, QuarterPeriod} from '../types/types';
+import {ClaimsStatus, QuarterPeriod, AuditCompletionParams} from '../types/types';
 import {createCaseId, createUserId, isQuarterPeriod,} from '../types/typeHelpers';
 import {API_BASE_PATH, CASE_STATUS_MAPPING, CLAIMS_STATUS} from '../constants';
 import {CASE_STATUS_ENUM, USER_ROLE_ENUM} from '../enums';
@@ -37,94 +47,378 @@ import {
   generateCurrentTimestamp
 } from './mockData';
 
-export const handlers = [
-  // Get audits by quarter
-  http.get(`${API_BASE_PATH}/audits/quarter/:quarter`, ({ params }) => {
+// Type the handlers array properly
+type MSWHandler = ReturnType<typeof http.get> | ReturnType<typeof http.post> | ReturnType<typeof http.put> | ReturnType<typeof http.patch> | ReturnType<typeof http.delete>;
+
+export const handlers: MSWHandler[] = [
+  // Get audits with query parameter support (REST compliant)
+  http.get(`${API_BASE_PATH}/audits`, ({ request }) => {
     try {
-      const { quarter } = params;
+      const url = new URL(request.url);
+      const quarter = url.searchParams.get('quarter');
+      const auditor = url.searchParams.get('auditor');
       
-      const quarterValue = Array.isArray(quarter) ? quarter[0] : quarter ?? '';
-      const parsedQuarter = parseQuarter(quarterValue);
+      console.log(`[MSW] GET /audits with params:`, { quarter, auditor });
       
-      console.log(`[MSW] Requested quarter: ${quarterValue}`, parsedQuarter);
+      let filteredAudits: ApiAuditResponse[] = [];
       
-      if (!parsedQuarter) {
-        console.log(`[MSW] Failed to parse quarter: ${quarterValue}`);
+      if (quarter) {
+        // Filter by quarter
+        const quarterValue = quarter;
+        const parsedQuarter = parseQuarter(quarterValue);
+        
+        if (!parsedQuarter) {
+          console.log(`[MSW] Failed to parse quarter: ${quarterValue}`);
+          return HttpResponse.json([], { status: 200 });
+        }
+        
+        // Get current quarter cases (6 cases - one per employee)
+        const currentQuarterCases = mockCases.filter(caseItem => {
+          try {
+            const { quarterNum, year } = getQuarterFromDate(caseItem.notificationDate);
+            return quarterNum === parsedQuarter.quarterNum && 
+                  year === parsedQuarter.year;
+          } catch {
+            return false;
+          }
+        });
+        
+        // Get previous quarter (2 random cases)
+        let previousQuarter = parsedQuarter.quarterNum - 1;
+        let previousYear = parsedQuarter.year;
+        if (previousQuarter < 1) {
+          previousQuarter = 4;
+          previousYear = parsedQuarter.year - 1;
+        }
+        
+        const previousQuarterCases = mockCases.filter(caseItem => {
+          try {
+            const { quarterNum, year } = getQuarterFromDate(caseItem.notificationDate);
+            return quarterNum === previousQuarter && 
+                  year === previousYear;
+          } catch {
+            return false;
+          }
+        });
+        
+        const selectedPreviousCases = shuffleArray(previousQuarterCases).slice(0, 2);
+        const combinedCases = [...currentQuarterCases, ...selectedPreviousCases];
+        
+        const quarterAudits = combinedCases
+          .map(caseItem => {
+            try {
+              const caseObj = caseToCaseObj(caseItem);
+              return caseToAudit(caseObj, quarterValue as QuarterPeriod);
+            } catch {
+              return null;
+            }
+          })
+          .filter((audit): audit is ApiAuditResponse => audit !== null);
+          
+        filteredAudits = quarterAudits;
+          
+        // Add stored audits for this quarter
+        for (const [, audit] of Array.from(auditStore.entries())) {
+          if (audit.quarter === quarter) {
+            filteredAudits.push(audit);
+          }
+        }
+        
+      } else if (auditor) {
+        // Filter by auditor
+        const numericAuditorId = safeParseInt(auditor);
+        
+        const filteredCases = mockCases.filter(caseItem => 
+          (getNumericId(caseItem.id) % 2) + 1 === numericAuditorId
+        );
+        
+        const currentQuarter: QuarterPeriod = generateCurrentQuarterString() as QuarterPeriod;
+        const auditorAudits = filteredCases
+          .map(caseItem => {
+            try {
+              const caseObj = caseToCaseObj(caseItem);
+              return caseToAudit(caseObj, currentQuarter);
+            } catch {
+              return null;
+            }
+          })
+          .filter((audit): audit is ApiAuditResponse => audit !== null);
+          
+        filteredAudits = auditorAudits;
+          
+      } else {
+        // No filters - return all audits (or empty for now)
+        filteredAudits = [];
+      }
+      
+      // Enhance with HATEOAS links
+      const enhancedAudits = filteredAudits.map(audit => ({
+        ...audit,
+        _links: generateAuditLinks(String(audit.auditId))
+      }));
+      
+      const response = createSuccessResponse(enhancedAudits, 
+        quarter ? generatePaginationLinks(`/audits?quarter=${quarter}`, 0, enhancedAudits.length, enhancedAudits.length) : {}, 
+        {
+          timestamp: new Date().toISOString(),
+          total: enhancedAudits.length,
+        }
+      );
+      
+      return HttpResponse.json(response, { status: 200 });
+    } catch (error) {
+      console.error("[MSW] Error in GET /audits handler:", error);
+      return HttpResponse.json([], { status: 200 });
+    }
+  }),
+
+  // Legacy endpoint support for backward compatibility
+  http.get(`${API_BASE_PATH}/audits/quarter/:quarter`, ({ params }) => {
+    const { quarter } = params;
+    const quarterValue = Array.isArray(quarter) ? quarter[0] : quarter ?? '';
+    
+    // Redirect to new endpoint with proper URL construction
+    const redirectUrl = `${API_BASE_PATH}/audits?quarter=${quarterValue}`;
+    return HttpResponse.redirect(redirectUrl, 302);
+  }),
+
+  // Legacy endpoint support for backward compatibility  
+  http.get(`${API_BASE_PATH}/audits/auditor/:auditorId`, ({ params }) => {
+    const { auditorId } = params;
+    const auditorValue = Array.isArray(auditorId) ? auditorId[0] : auditorId ?? '';
+    
+    // Redirect to new endpoint with proper URL construction
+    const redirectUrl = `${API_BASE_PATH}/audits?auditor=${auditorValue}`;
+    return HttpResponse.redirect(redirectUrl, 302);
+  }),
+
+  // Audit completion endpoints - Standardized under /audits/{id}/completion
+  http.get(`${API_BASE_PATH}/audits/:auditId/completion`, ({ params }) => {
+    try {
+      const { auditId } = params;
+      const numericAuditId = safeParseInt(Array.isArray(auditId) ? auditId[0] : auditId);
+      
+      const completionData = generateCompletionData(numericAuditId);
+      
+      return HttpResponse.json({
+        success: true,
+        data: completionData
+      }, { status: 200 });
+    } catch (error) {
+      console.error("[MSW] Error in GET /audits/:auditId/completion handler:", error);
+      return HttpResponse.json({
+        success: false,
+        error: 'Failed to fetch audit completion'
+      }, { status: 500 });
+    }
+  }),
+
+  http.put(`${API_BASE_PATH}/audits/:auditId/completion`, async ({ params, request }) => {
+    try {
+      const { auditId } = params;
+      const numericAuditId = safeParseInt(Array.isArray(auditId) ? auditId[0] : auditId);
+      
+      const clonedRequest = request.clone();
+              let requestData: Record<string, unknown> = {};
+      try {
+        const jsonData = await clonedRequest.json();
+        if (jsonData && typeof jsonData === 'object') {
+          requestData = jsonData as Partial<AuditCompletionParams>;
+        }
+      } catch {
+        console.warn("[MSW] Failed to parse request body for completion update");
+      }
+      
+      const completionResponse = generateFallbackCompletionResponse(numericAuditId, requestData);
+      
+      return HttpResponse.json({
+        success: true,
+        data: completionResponse
+      }, { status: 200 });
+    } catch (error) {
+      console.error("[MSW] Error in PUT /audits/:auditId/completion handler:", error);
+      return HttpResponse.json({
+        success: false,
+        error: 'Failed to update audit completion'
+      }, { status: 500 });
+    }
+  }),
+
+  http.post(`${API_BASE_PATH}/audits/:auditId/completion`, async ({ params, request }) => {
+    const { auditId } = params;
+    const auditIdStr = Array.isArray(auditId) ? auditId[0] : auditId;
+    
+    try {
+      const numericAuditId = safeParseInt(auditIdStr);
+      
+      // Validate audit exists (simulate 404 for invalid IDs)
+      if (numericAuditId < 1 || numericAuditId > 1000) {
+        const problem = createNotFoundProblem(
+          'audit',
+          auditIdStr,
+          `/audits/${auditIdStr}/completion`
+        );
+        
+        return HttpResponse.json(problem, { status: 404 });
+      }
+      
+      const clonedRequest = request.clone();
+      let requestData: Record<string, unknown> = {};
+      
+      try {
+        const jsonData = await clonedRequest.json();
+        if (jsonData && typeof jsonData === 'object') {
+          requestData = jsonData;
+        }
+      } catch {
+        console.warn("[MSW] Failed to parse request body for audit completion");
+      }
+      
+      // Enhanced validation using REST utilities
+      const validationProblems = validateAuditCompletion(requestData);
+      if (validationProblems.length > 0) {
+        return HttpResponse.json(validationProblems[0], { status: 400 });
+      }
+      
+      // Business logic validation using REST utilities
+      if (!canUserAuditOwnCase(String(requestData.auditor), String(requestData.caseUserId))) {
+        const problem = createBusinessLogicProblem(
+          'Users cannot audit their own cases',
+          `/audits/${auditIdStr}/completion`,
+          { violatedRule: 'self-audit-restriction' }
+        );
+        return HttpResponse.json(problem, { status: 422 });
+      }
+      
+      // Generate completion response with HATEOAS links
+      const completionResponse = generateAuditCompletionResponse(numericAuditId, {
+        ...requestData,
+        status: 'completed',
+        isCompleted: true,
+      });
+      
+      // Add HATEOAS links
+      const links = {
+        self: {
+          href: `${API_BASE_PATH}/audits/${auditIdStr}/completion`,
+          method: 'GET'
+        },
+        audit: {
+          href: `${API_BASE_PATH}/audits/${auditIdStr}`,
+          method: 'GET',
+          title: 'Parent audit'
+        },
+        auditor: {
+          href: `${API_BASE_PATH}/users/${requestData.auditor}`,
+          method: 'GET',
+          title: 'Auditor details'
+        }
+      };
+      
+      // Enhanced response with HATEOAS and metadata
+      const enhancedResponse = {
+        ...completionResponse,
+        _links: links,
+        _meta: {
+          timestamp: new Date().toISOString(),
+          completedAt: new Date().toISOString()
+        }
+      };
+      
+      return HttpResponse.json(enhancedResponse, { status: 200 });
+    } catch (error) {
+      console.error("[MSW] Error in POST /audits/:auditId/completion handler:", error);
+      
+      const problem = createInternalErrorProblem(
+        'An unexpected error occurred while processing your request',
+        `/audits/${auditIdStr}/completion`
+      );
+      
+      return HttpResponse.json(problem, { status: 500 });
+    }
+  }),
+
+  // Quarterly selections - Resource-based approach
+  http.post(`${API_BASE_PATH}/quarterly-selections`, async ({ request }) => {
+    try {
+      const clonedRequest = request.clone();
+      let requestData: { quarterKey?: string; userIds?: number[] } = {};
+      
+      try {
+        const jsonData = await clonedRequest.json();
+        if (jsonData && typeof jsonData === 'object') {
+          requestData = jsonData as typeof requestData;
+        }
+      } catch {
+        console.warn("[MSW] Failed to parse request body for quarterly selection");
+      }
+      
+      const quarterPeriod = requestData.quarterKey as QuarterPeriod;
+      if (!quarterPeriod || !isQuarterPeriod(quarterPeriod)) {
+        return HttpResponse.json({
+          success: false,
+          error: 'Invalid quarter period'
+        }, { status: 400 });
+      }
+      
+      const data = generateQuarterlyAuditSelectionCases(quarterPeriod, users);
+      
+      return HttpResponse.json({
+        success: true,
+        data
+      }, { status: 200 });
+    } catch (error) {
+      console.error('Error in quarterly selections handler:', error);
+      return HttpResponse.json({
+        success: false,
+        error: 'Failed to create quarterly selection'
+      }, { status: 500 });
+    }
+  }),
+
+  http.get(`${API_BASE_PATH}/quarterly-selections/:period`, ({ params }) => {
+    try {
+      const { period } = params;
+      const quarterPeriod = Array.isArray(period) ? period[0] : period;
+      
+      if (!quarterPeriod || !isQuarterPeriod(quarterPeriod as QuarterPeriod)) {
+        return HttpResponse.json({
+          success: false,
+          error: 'Invalid quarter period'
+        }, { status: 400 });
+      }
+      
+      const data = generateQuarterlyAuditSelectionCases(quarterPeriod as QuarterPeriod, users);
+      
+      return HttpResponse.json({
+        success: true,
+        data
+      }, { status: 200 });
+    } catch (error) {
+      console.error("[MSW] Error in GET /quarterly-selections/:period handler:", error);
+      return HttpResponse.json({
+        success: false,
+        error: 'Failed to fetch quarterly selection'
+      }, { status: 500 });
+    }
+  }),
+
+  // Audit findings with query parameter support
+  http.get(`${API_BASE_PATH}/audit-findings`, ({ request }) => {
+    try {
+      const url = new URL(request.url);
+      const auditId = url.searchParams.get('auditId');
+      
+      if (!auditId) {
         return HttpResponse.json([], { status: 200 });
       }
       
-      // According to requirements: 8 cases per quarter
-      // - 6 cases from current quarter (one per employee)
-      // - 2 additional random cases from previous quarter
+      const numericAuditId = safeParseInt(auditId);
+      const findings = generateFindings(numericAuditId);
       
-      // Filter cases for the requested quarter (current quarter)
-      const currentQuarterCases = mockCases.filter(caseItem => {
-        try {
-          const { quarterNum, year } = getQuarterFromDate(caseItem.notificationDate);
-          return quarterNum === parsedQuarter.quarterNum && 
-                year === parsedQuarter.year;
-        } catch {
-          return false;
-        }
-      });
-      
-      console.log(`[MSW] Current quarter (Q${parsedQuarter.quarterNum}-${parsedQuarter.year}) cases:`, currentQuarterCases.length);
-      
-      // Get previous quarter
-      let previousQuarter = parsedQuarter.quarterNum - 1;
-      let previousYear = parsedQuarter.year;
-      if (previousQuarter < 1) {
-        previousQuarter = 4;
-        previousYear = parsedQuarter.year - 1;
-      }
-      
-      console.log(`[MSW] Looking for previous quarter: Q${previousQuarter}-${previousYear}`);
-      
-      // Filter cases for the previous quarter
-      const previousQuarterCases = mockCases.filter(caseItem => {
-        try {
-          const { quarterNum, year } = getQuarterFromDate(caseItem.notificationDate);
-          return quarterNum === previousQuarter && 
-                year === previousYear;
-        } catch {
-          return false;
-        }
-      });
-      
-      console.log(`[MSW] Previous quarter (Q${previousQuarter}-${previousYear}) cases:`, previousQuarterCases.length);
-      
-      // Take all available current quarter cases (should be 6 based on requirements)
-      // and 2 random cases from previous quarter
-      const selectedPreviousCases = shuffleArray(previousQuarterCases)
-        .slice(0, 2); // Take first 2
-      
-      // Combine current quarter cases with 2 previous quarter cases
-      const combinedCases = [...currentQuarterCases, ...selectedPreviousCases];
-      
-      console.log(`[MSW] Returning ${combinedCases.length} total cases (${currentQuarterCases.length} current + ${selectedPreviousCases.length} previous)`);
-      
-      // Convert to API format
-      const audits = combinedCases
-        .map(caseItem => {
-          try {
-            const caseObj = caseToCaseObj(caseItem);
-            return caseToAudit(caseObj, quarterValue);
-          } catch {
-            return null;
-          }
-        })
-        .filter(audit => audit !== null);
-      
-      // Add any audits from our store that match this quarter
-      for (const [, audit] of Array.from(auditStore.entries())) {
-        if (audit.quarter === quarter) {
-          audits.push(audit);
-        }
-      }
-      
-      return HttpResponse.json(audits || [], { status: 200 });
+      return HttpResponse.json(findings, { status: 200 });
     } catch (error) {
-      console.error("[MSW] Error in /rest/kuk/v1/audits/quarter/:quarter handler:", error);
+      console.error("[MSW] Error in GET /audit-findings handler:", error);
       return HttpResponse.json([], { status: 200 });
     }
   }),
@@ -291,7 +585,7 @@ export const handlers = [
       // Clone the request to avoid "Body is unusable" errors
       const clonedRequest = request.clone();
       
-      let requestData: ApiAuditRequestPayload = {
+      let requestData: Record<string, unknown> = {
         type: "DOCUMENTATION_ISSUE",
         description: "No description provided"
       };
@@ -313,7 +607,7 @@ export const handlers = [
       }
       
       // Fix requestData.quarter if needed
-      if (requestData.quarter && !isQuarterPeriod(requestData.quarter)) {
+      if (requestData.quarter && !isQuarterPeriod(requestData.quarter as string)) {
         requestData.quarter = generateCurrentQuarterString();
       }
       
@@ -326,7 +620,7 @@ export const handlers = [
         
         existingAudit = {
           auditId: numericAuditorId,
-          quarter: (requestData.quarter && isQuarterPeriod(requestData.quarter) ? requestData.quarter : quarterStr) as QuarterPeriod,
+          quarter: (requestData.quarter && isQuarterPeriod(requestData.quarter as string) ? requestData.quarter : quarterStr) as QuarterPeriod,
           caseObj: {
             caseNumber: createCaseId(generateRandomCaseNumber()),
             claimOwner: {
@@ -349,51 +643,47 @@ export const handlers = [
       // Update audit with new data
       const updatedAudit = {
         ...existingAudit,
-        ...(requestData.quarter && { quarter: requestData.quarter as QuarterPeriod }),
-        ...(requestData.caseObj && { caseObj: {
+        ...(requestData.quarter ? { quarter: requestData.quarter as QuarterPeriod } : {}),
+        ...(requestData.caseObj && typeof requestData.caseObj === 'object' ? { caseObj: {
           ...existingAudit.caseObj,
-          // Safely handle caseObj properties
-          ...(typeof requestData.caseObj === 'object' ? 
-            // Only include properties that can be safely typed
-            {
-              ...(requestData.caseObj.caseNumber !== undefined && { 
-                caseNumber: createCaseId(safeParseInt(requestData.caseObj.caseNumber))
-              }),
-              ...(requestData.caseObj.claimOwner && {
-                claimOwner: {
-                  ...existingAudit.caseObj.claimOwner,
-                  ...(requestData.caseObj.claimOwner.userId !== undefined && {
-                    userId: safeParseInt(String(requestData.caseObj.claimOwner.userId))
-                  }),
-                  ...(requestData.caseObj.claimOwner.role && {
-                    role: requestData.caseObj.claimOwner.role
-                  })
-                }
-              }),
-              ...(requestData.caseObj.claimsStatus && {
-                claimsStatus: requestData.caseObj.claimsStatus
-              }),
-              ...(requestData.caseObj.coverageAmount !== undefined && {
-                coverageAmount: safeParseInt(requestData.caseObj.coverageAmount as string | number, existingAudit.caseObj.coverageAmount)
-              }),
-              ...(requestData.caseObj.caseStatus && {
-                caseStatus: requestData.caseObj.caseStatus
-              }),
-              ...(requestData.caseObj.notifiedCurrency && {
-                notifiedCurrency: requestData.caseObj.notifiedCurrency as ValidCurrency
-              })
-            } : {})
-        }}),
-        ...(requestData.auditor && { auditor: {
+          // Safely handle caseObj properties with proper typing
+          ...((requestData.caseObj as Record<string, unknown>)?.caseNumber !== undefined ? { 
+            caseNumber: createCaseId(safeParseInt((requestData.caseObj as Record<string, unknown>).caseNumber as string))
+          } : {}),
+          ...((requestData.caseObj as Record<string, unknown>)?.claimOwner ? {
+            claimOwner: {
+              ...existingAudit.caseObj.claimOwner,
+              ...((requestData.caseObj as Record<string, unknown>).claimOwner as Record<string, unknown>)?.userId !== undefined ? {
+                userId: safeParseInt(String(((requestData.caseObj as Record<string, unknown>).claimOwner as Record<string, unknown>).userId))
+              } : {},
+              ...((requestData.caseObj as Record<string, unknown>).claimOwner as Record<string, unknown>)?.role ? {
+                role: ((requestData.caseObj as Record<string, unknown>).claimOwner as Record<string, unknown>).role
+              } : {}
+            }
+          } : {}),
+          ...((requestData.caseObj as Record<string, unknown>)?.claimsStatus ? {
+            claimsStatus: (requestData.caseObj as Record<string, unknown>).claimsStatus
+          } : {}),
+          ...((requestData.caseObj as Record<string, unknown>)?.coverageAmount !== undefined ? {
+            coverageAmount: safeParseInt((requestData.caseObj as Record<string, unknown>).coverageAmount as string | number, existingAudit.caseObj.coverageAmount)
+          } : {}),
+          ...((requestData.caseObj as Record<string, unknown>)?.caseStatus ? {
+            caseStatus: (requestData.caseObj as Record<string, unknown>).caseStatus
+          } : {}),
+          ...((requestData.caseObj as Record<string, unknown>)?.notifiedCurrency ? {
+            notifiedCurrency: (requestData.caseObj as Record<string, unknown>).notifiedCurrency as ValidCurrency
+          } : {})
+        }} : {}),
+        ...(requestData.auditor && typeof requestData.auditor === 'object' ? { auditor: {
           ...existingAudit.auditor,
-          // Safely handle auditor properties
-          ...(requestData.auditor.userId !== undefined && {
-            userId: safeParseInt(String(requestData.auditor.userId))
-          }),
-          ...(requestData.auditor.role && {
-            role: requestData.auditor.role
-          })
-        }})
+          // Safely handle auditor properties with proper typing
+          ...((requestData.auditor as Record<string, unknown>)?.userId !== undefined ? {
+            userId: safeParseInt(String((requestData.auditor as Record<string, unknown>).userId))
+          } : {}),
+          ...((requestData.auditor as Record<string, unknown>)?.role ? {
+            role: (requestData.auditor as Record<string, unknown>).role
+          } : {})
+        }} : {})
       };
       
       // Store the updated audit
@@ -438,7 +728,7 @@ export const handlers = [
       // Clone the request to avoid "Body is unusable" errors
       const clonedRequest = request.clone();
       
-      let requestData: { type: string; description: string; } = {
+      let requestData: Record<string, unknown> = {
         type: "DOCUMENTATION_ISSUE",
         description: "No description provided"
       };
@@ -459,8 +749,8 @@ export const handlers = [
       // Create a new finding with an ID
       const newFinding = {
         findingId: generateRandomFindingId(),
-        type: requestData.type || "DOCUMENTATION_ISSUE",
-        description: requestData.description || "No description provided"
+        type: requestData.type ?? "DOCUMENTATION_ISSUE",
+        description: requestData.description ?? "No description provided"
       };
       
       return HttpResponse.json(newFinding, { status: 201 });
@@ -657,117 +947,6 @@ export const handlers = [
     }
   }),
 
-  // Get audit completion data
-  http.get(`${API_BASE_PATH}/audit-completion/:auditId`, async ({ params }) => {
-    try {
-      const { auditId } = params;
-      const numericAuditId = safeParseInt(Array.isArray(auditId) ? auditId[0] : auditId);
-      
-      // For now, return a basic completion response
-      const completionData = generateCompletionData(numericAuditId);
-      
-      return HttpResponse.json({
-        success: true,
-        data: completionData
-      }, { status: 200 });
-    } catch (error) {
-      console.error("[MSW] Error in /rest/kuk/v1/audit-completion/:auditId GET handler:", error);
-      return HttpResponse.json({
-        success: false,
-        error: 'Failed to fetch completion data'
-      }, { status: 500 });
-    }
-  }),
-  
-  // Update audit completion data
-  http.put(`${API_BASE_PATH}/audit-completion/:auditId`, async ({ params, request }) => {
-    try {
-      const { auditId } = params;
-      const numericAuditId = safeParseInt(Array.isArray(auditId) ? auditId[0] : auditId);
-      
-      // Clone the request to avoid "Body is unusable" errors
-      const clonedRequest = request.clone();
-      
-      // Parse request body
-      let requestData: {
-        status?: string;
-        verifierId?: number;
-        rating?: string;
-        comment?: string;
-        findings?: Array<{
-          type: string;
-          description: string;
-          category: string;
-        }>;
-      } = {};
-      try {
-        const jsonData = await clonedRequest.json();
-        if (jsonData && typeof jsonData === 'object') {
-          requestData = jsonData as typeof requestData;
-        }
-      } catch {
-        console.warn("[MSW] Failed to parse request body for completion update");
-      }
-      
-      // In a real implementation, this would save to the database
-      // For now, just return a success response with the data
-      const completionResponse = generateFallbackCompletionResponse(numericAuditId, requestData);
-      
-      return HttpResponse.json({
-        success: true,
-        data: completionResponse
-      }, { status: 200 });
-    } catch (error) {
-      console.error("[MSW] Error in /rest/kuk/v1/audit-completion/:auditId PUT handler:", error);
-      return HttpResponse.json({
-        success: false,
-        error: 'Failed to update completion data'
-      }, { status: 500 });
-    }
-  }),
-
-  // Complete audit - POST handler for /audit/{id}/complete
-  http.post(`${API_BASE_PATH}/audit/:auditId/complete`, async ({ params, request }) => {
-    try {
-      const { auditId } = params;
-      const numericAuditId = safeParseInt(Array.isArray(auditId) ? auditId[0] : auditId);
-      
-      // Clone the request to avoid "Body is unusable" errors
-      const clonedRequest = request.clone();
-      
-      // Parse request body
-      let requestData: {
-        auditor?: string;
-        rating?: string;
-        comment?: string;
-        specialFindings?: Record<string, boolean>;
-        detailedFindings?: Record<string, boolean>;
-        status?: string;
-        isCompleted?: boolean;
-      } = {};
-      
-      try {
-        const jsonData = await clonedRequest.json();
-        if (jsonData && typeof jsonData === 'object') {
-          requestData = jsonData as typeof requestData;
-        }
-      } catch {
-        console.warn("[MSW] Failed to parse request body for audit completion");
-      }
-      
-      // Create completion response
-      const completionResponse = generateAuditCompletionResponse(numericAuditId, requestData);
-      
-      return HttpResponse.json(completionResponse, { status: 200 });
-    } catch (error) {
-      console.error("[MSW] Error in /rest/kuk/v1/audit/:auditId/complete POST handler:", error);
-      return HttpResponse.json({
-        success: false,
-        error: 'Failed to complete audit'
-      }, { status: 500 });
-    }
-  }),
-
   // =======================================================
   // PRE-LOADED CASES ENDPOINT
   // =======================================================
@@ -797,6 +976,95 @@ export const handlers = [
       success: true,
       data: preLoadedCases
     });
+  }),
+
+  // =======================================================
+
+  // Legacy endpoints for backward compatibility during transition
+  // These support the old API patterns that tests are expecting
+  
+  // Legacy: POST /audit/{id}/complete
+  http.post(`${API_BASE_PATH}/audit/:auditId/complete`, async ({ params, request }) => {
+    try {
+      const { auditId } = params;
+      const numericAuditId = safeParseInt(Array.isArray(auditId) ? auditId[0] : auditId);
+      
+      const clonedRequest = request.clone();
+      let requestData: Record<string, unknown> = {};
+      
+      try {
+        const jsonData = await clonedRequest.json();
+        if (jsonData && typeof jsonData === 'object') {
+          requestData = jsonData;
+        }
+      } catch {
+        console.warn("[MSW] Failed to parse request body for legacy audit completion");
+      }
+      
+      // Create completion response
+      const completionResponse = generateAuditCompletionResponse(numericAuditId, requestData);
+      
+      return HttpResponse.json(completionResponse, { status: 200 });
+    } catch (error) {
+      console.error("[MSW] Error in legacy POST /audit/:auditId/complete handler:", error);
+      return HttpResponse.json({
+        success: false,
+        error: 'Failed to complete audit'
+      }, { status: 500 });
+    }
+  }),
+
+  // Legacy: GET /audit-completion/{id}
+  http.get(`${API_BASE_PATH}/audit-completion/:auditId`, ({ params }) => {
+    try {
+      const { auditId } = params;
+      const numericAuditId = safeParseInt(Array.isArray(auditId) ? auditId[0] : auditId);
+      
+      const completionData = generateCompletionData(numericAuditId);
+      
+      return HttpResponse.json({
+        success: true,
+        data: completionData
+      }, { status: 200 });
+    } catch (error) {
+      console.error("[MSW] Error in legacy GET /audit-completion/:auditId handler:", error);
+      return HttpResponse.json({
+        success: false,
+        error: 'Failed to fetch audit completion'
+      }, { status: 500 });
+    }
+  }),
+
+  // Legacy: PUT /audit-completion/{id}
+  http.put(`${API_BASE_PATH}/audit-completion/:auditId`, async ({ params, request }) => {
+    try {
+      const { auditId } = params;
+      const numericAuditId = safeParseInt(Array.isArray(auditId) ? auditId[0] : auditId);
+      
+      const clonedRequest = request.clone();
+      let requestData: Record<string, unknown> = {};
+      try {
+        const jsonData = await clonedRequest.json();
+        if (jsonData && typeof jsonData === 'object') {
+          requestData = jsonData;
+        }
+      } catch {
+        console.warn("[MSW] Failed to parse request body for legacy completion update");
+      }
+      
+      const completionResponse = generateFallbackCompletionResponse(numericAuditId, requestData);
+      
+      return HttpResponse.json({
+        success: true,
+        data: completionResponse
+      }, { status: 200 });
+    } catch (error) {
+      console.error("[MSW] Error in legacy PUT /audit-completion/:auditId handler:", error);
+      return HttpResponse.json({
+        success: false,
+        error: 'Failed to update audit completion'
+      }, { status: 500 });
+    }
   }),
 
   // =======================================================

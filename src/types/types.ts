@@ -20,7 +20,103 @@ import type {
 // Import currency types
 import type { ValidCurrency } from './currencyTypes';
 
+// =============================================================================
+// REST API Enhancement Types for 100% Compliance
+// =============================================================================
 
+// HATEOAS (Hypermedia as the Engine of Application State) support
+export interface HATEOASLink {
+  href: string;
+  method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+  type?: string;
+  title?: string;
+}
+
+export interface HATEOASLinks {
+  self?: HATEOASLink;
+  next?: HATEOASLink;
+  prev?: HATEOASLink;
+  first?: HATEOASLink;
+  last?: HATEOASLink;
+  edit?: HATEOASLink;
+  delete?: HATEOASLink;
+  completion?: HATEOASLink;
+  auditor?: HATEOASLink;
+  user?: HATEOASLink;
+  related?: HATEOASLink[];
+}
+
+// RFC 7807 Problem Details for HTTP APIs
+export interface ProblemDetails {
+  type: string;          // URI reference that identifies the problem type
+  title: string;         // Human-readable summary of the problem type
+  status: number;        // HTTP status code
+  detail?: string;       // Human-readable explanation specific to this occurrence
+  instance?: string;     // URI reference that identifies the specific occurrence
+  violatedRule?: string; // Business rule that was violated
+  field?: string;        // Field that caused validation error
+  resourceType?: string; // Type of resource that was not found
+  resourceId?: string;   // ID of resource that was not found
+}
+
+// Enhanced API response with HATEOAS support
+interface EnhancedApiSuccessResponse<T> {
+  success: true;
+  data: T;
+  message?: string;
+  _links?: HATEOASLinks;
+  _meta?: {
+    total?: number;
+    page?: number;
+    pages?: number;
+    limit?: number;
+    timestamp?: string;
+  };
+}
+
+// Enhanced error response with RFC 7807 Problem Details
+interface EnhancedApiErrorResponse {
+  success: false;
+  error: string;          // Legacy error message for backward compatibility
+  code?: number;          // Legacy error code for backward compatibility
+  problem?: ProblemDetails; // RFC 7807 Problem Details
+}
+
+export type EnhancedApiResponse<T> = EnhancedApiSuccessResponse<T> | EnhancedApiErrorResponse;
+
+// Enhanced status codes for comprehensive REST compliance
+export enum RestStatusCode {
+  // Success
+  OK = 200,
+  CREATED = 201,
+  ACCEPTED = 202,
+  NO_CONTENT = 204,
+  NOT_MODIFIED = 304,
+  
+  // Client Errors
+  BAD_REQUEST = 400,
+  UNAUTHORIZED = 401,
+  FORBIDDEN = 403,
+  NOT_FOUND = 404,
+  METHOD_NOT_ALLOWED = 405,
+  NOT_ACCEPTABLE = 406,
+  CONFLICT = 409,
+  GONE = 410,
+  PRECONDITION_FAILED = 412,
+  UNPROCESSABLE_ENTITY = 422,
+  TOO_MANY_REQUESTS = 429,
+  
+  // Server Errors
+  INTERNAL_SERVER_ERROR = 500,
+  NOT_IMPLEMENTED = 501,
+  BAD_GATEWAY = 502,
+  SERVICE_UNAVAILABLE = 503,
+  GATEWAY_TIMEOUT = 504
+}
+
+// =============================================================================
+// End REST API Enhancement Types
+// =============================================================================
 
 // CaseAudit types moved from caseAuditTypes.ts
 
@@ -316,6 +412,14 @@ export interface QuarterlyAuditsData {
 export interface QuarterlyAuditsResponse {
   success: boolean;
   data: QuarterlyAuditsData;
+  _links?: HATEOASLinks;
+  _meta?: {
+    total?: number;
+    page?: number;
+    pages?: number;
+    limit?: number;
+    timestamp?: string;
+  };
 }
 
 /**
@@ -327,6 +431,10 @@ export interface AuditCompletionResponse {
   status: string;
   completionDate?: string;
   message?: string;
+  _links?: HATEOASLinks;
+  _meta?: {
+    timestamp?: string;
+  };
 }
 
 /**
@@ -451,3 +559,4 @@ export interface QuarterlyAuditsSelector {
   preLoadedCases: Array<StoredCaseAuditData & { id: string }>;
   lastSelectionDate: string | null;
 }
+
