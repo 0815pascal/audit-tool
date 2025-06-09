@@ -27,7 +27,6 @@ import {
   caseToAudit,
   caseToCaseObj,
   caseToAuditedCaseObj,
-  generateFindings,
   getNumericId,
   getPreviousQuarterInfo,
   getQuarterFromDate,
@@ -37,22 +36,20 @@ import {
 import {
   mockCases, 
   users, 
+  getQuarterlyAuditSelectionCases,
+  getUserQuarterlyAudits,
+  getPreviousQuarterRandomAudits,
+  getCompletionData,
+  createAuditCompletionResponse,
+  getFallbackCompletionResponse,
+  getAuditFindings,
+  getFallbackAudit,
+  getCurrentQuarterString,
+  getCurrentTimestamp,
+  getCurrentDateString,
+
   generateMockCurrentQuarterCase,
-  generateMockPreviousQuarterCase,
-  generateQuarterlyAuditSelectionCases,
-  generateUserQuarterlyAudits,
-  generatePreviousQuarterRandomAudits,
-  generateCompletionData,
-  generateAuditCompletionResponse,
-  generateFallbackAudit,
-  generateFallbackCompletionResponse,
-  generateRandomAuditId,
-  generateRandomFindingId,
-  generateRandomCaseNumber,
-  shuffleArray,
-  generateCurrentQuarterString,
-  generateCurrentDateString,
-  generateCurrentTimestamp
+  generateMockPreviousQuarterCase
 } from './mockData';
 
 // Type the handlers array properly
@@ -143,7 +140,8 @@ export const handlers: MSWHandler[] = [
         }
       });
       
-        const selectedPreviousCases = shuffleArray(previousQuarterCases).slice(0, 2);
+        // Select first 2 previous quarter cases deterministically (no random selection)
+        const selectedPreviousCases = previousQuarterCases.slice(0, 2);
       const combinedCases = [...currentQuarterCases, ...selectedPreviousCases];
       
         const quarterAudits = combinedCases
@@ -174,7 +172,7 @@ export const handlers: MSWHandler[] = [
           (getNumericId(caseItem.id) % 2) + 1 === numericAuditorId
         );
         
-        const currentQuarter: QuarterPeriod = generateCurrentQuarterString() as QuarterPeriod;
+        const currentQuarter: QuarterPeriod = getCurrentQuarterString() as QuarterPeriod;
         const auditorAudits = filteredCases
           .map(caseItem => {
             try {
@@ -254,7 +252,7 @@ export const handlers: MSWHandler[] = [
       const { auditId } = params;
       const numericAuditId = safeParseInt(Array.isArray(auditId) ? auditId[0] : auditId);
       
-      const completionData = generateCompletionData(numericAuditId);
+      const completionData = getCompletionData(numericAuditId);
       
       const response = {
         success: true,
@@ -289,7 +287,7 @@ export const handlers: MSWHandler[] = [
         console.warn("[MSW] Failed to parse request body for completion update");
       }
       
-      const completionResponse = generateFallbackCompletionResponse(numericAuditId, requestData);
+      const completionResponse = getFallbackCompletionResponse(numericAuditId, requestData);
       
       const response = {
         success: true,
@@ -355,7 +353,7 @@ export const handlers: MSWHandler[] = [
       }
       
       // Generate completion response with HATEOAS links
-      const completionResponse = generateAuditCompletionResponse(numericAuditId, {
+      const completionResponse = createAuditCompletionResponse(numericAuditId, {
         ...requestData,
         status: 'completed',
         isCompleted: true,
@@ -427,7 +425,7 @@ export const handlers: MSWHandler[] = [
         return createEnhancedResponse(request, errorResponse, 400, 'REAL_TIME');
       }
       
-      const data = generateQuarterlyAuditSelectionCases(quarterPeriod, users);
+      const data = getQuarterlyAuditSelectionCases(quarterPeriod);
       
       const response = {
         success: true,
@@ -459,7 +457,7 @@ export const handlers: MSWHandler[] = [
         return createEnhancedResponse(request, errorResponse, 400, 'REAL_TIME');
       }
       
-      const data = generateQuarterlyAuditSelectionCases(quarterPeriod as QuarterPeriod, users);
+      const data = getQuarterlyAuditSelectionCases(quarterPeriod);
       
       const response = {
         success: true,
@@ -490,7 +488,7 @@ export const handlers: MSWHandler[] = [
       }
       
       const numericAuditId = safeParseInt(auditId);
-      const allFindings = generateFindings(numericAuditId);
+      const allFindings = getAuditFindings(numericAuditId);
       
       // Apply pagination to findings
       const paginatedResult = paginateData(allFindings, paginationParams);
@@ -590,7 +588,7 @@ export const handlers: MSWHandler[] = [
       );
       
       // Convert to API format - use a recent quarter for these
-      const currentQuarter: QuarterPeriod = generateCurrentQuarterString() as QuarterPeriod;
+      const currentQuarter: QuarterPeriod = getCurrentQuarterString() as QuarterPeriod;
       const audits = filteredCases
         .map(caseItem => {
           try {
@@ -632,12 +630,12 @@ export const handlers: MSWHandler[] = [
       }
       
       // Generate a new audit ID
-      const auditId = generateRandomAuditId();
+      const auditId = 50001;
       
       // Create valid quarter format if needed
       let quarter = requestData.quarter;
       if (!quarter || !isQuarterPeriod(quarter)) {
-        quarter = generateCurrentQuarterString();
+        quarter = getCurrentQuarterString();
       }
       
       // Create a new audit object
@@ -645,7 +643,7 @@ export const handlers: MSWHandler[] = [
         auditId,
         quarter: quarter as QuarterPeriod,
         caseObj: {
-          caseNumber: createCaseId(generateRandomCaseNumber()),
+          caseNumber: createCaseId(40000001),
           claimOwner: {
             userId: typeof requestData.caseObj === 'object' && requestData.caseObj?.claimOwner?.userId !== undefined 
               ? safeParseInt(String(requestData.caseObj.claimOwner.userId)) 
@@ -657,7 +655,7 @@ export const handlers: MSWHandler[] = [
           claimsStatus: (requestData.caseObj?.claimsStatus as ClaimsStatus) || CLAIMS_STATUS.FULL_COVER,
           coverageAmount: requestData.caseObj?.coverageAmount ?? 10000.00,
           caseStatus: (requestData.caseObj?.caseStatus as CASE_STATUS_ENUM) || CASE_STATUS_MAPPING.COMPENSATED,
-          notificationDate: generateCurrentDateString(),
+          notificationDate: getCurrentDateString(),
           notifiedCurrency: CURRENCY.CHF
         },
         auditor: {
@@ -676,7 +674,7 @@ export const handlers: MSWHandler[] = [
       console.error("[MSW] Error in /rest/kuk/v1/audits POST handler:", error);
       
       // Return a fallback audit object
-      const fallbackAudit = generateFallbackAudit();
+      const fallbackAudit = getFallbackAudit();
       
       return HttpResponse.json(fallbackAudit, { status: 201 });
     }
@@ -715,7 +713,7 @@ export const handlers: MSWHandler[] = [
       
       // Fix requestData.quarter if needed
       if (requestData.quarter && !isQuarterPeriod(requestData.quarter as string)) {
-        requestData.quarter = generateCurrentQuarterString();
+        requestData.quarter = getCurrentQuarterString();
       }
       
       // Get existing audit or create a placeholder
@@ -723,13 +721,13 @@ export const handlers: MSWHandler[] = [
       
       if (!existingAudit) {
         // If not in our store, create a new one with this ID
-        const quarterStr = generateCurrentQuarterString();
+        const quarterStr = getCurrentQuarterString();
         
         existingAudit = {
           auditId: numericAuditorId,
           quarter: (requestData.quarter && isQuarterPeriod(requestData.quarter as string) ? requestData.quarter : quarterStr) as QuarterPeriod,
           caseObj: {
-            caseNumber: createCaseId(generateRandomCaseNumber()),
+            caseNumber: createCaseId(40000001),
             claimOwner: {
               userId: 1,
               role: USER_ROLE_ENUM.TEAM_LEADER
@@ -737,7 +735,7 @@ export const handlers: MSWHandler[] = [
             claimsStatus: CLAIMS_STATUS.FULL_COVER,
             coverageAmount: 10000.00,
             caseStatus: CASE_STATUS_MAPPING.COMPENSATED,
-            notificationDate: generateCurrentDateString(),
+            notificationDate: getCurrentDateString(),
             notifiedCurrency: CURRENCY.CHF
           },
           auditor: {
@@ -802,7 +800,7 @@ export const handlers: MSWHandler[] = [
       
       // Return a fallback updated audit
       const fallbackAudit = {
-        ...generateFallbackAudit(),
+        ...getFallbackAudit(),
         auditId: safeParseInt(Array.isArray(params.auditId) ? params.auditId[0] : params.auditId, 1)
       } as ApiAuditResponse;
       
@@ -817,7 +815,7 @@ export const handlers: MSWHandler[] = [
       
       // Generate mock findings for this audit
       const auditIdValue = Array.isArray(auditId) ? auditId[0] : auditId;
-      const findings = generateFindings(auditIdValue ?? 1);
+      const findings = getAuditFindings(auditIdValue ?? 1);
       
       return HttpResponse.json(findings, { status: 200 });
     } catch (error) {
@@ -855,7 +853,7 @@ export const handlers: MSWHandler[] = [
       
       // Create a new finding with an ID
       const newFinding = {
-        findingId: generateRandomFindingId(),
+        findingId: 1001,
         type: requestData.type ?? "DOCUMENTATION_ISSUE",
         description: requestData.description ?? "No description provided"
       };
@@ -864,7 +862,7 @@ export const handlers: MSWHandler[] = [
     } catch (error) {
       console.error("[MSW] Error in /rest/kuk/v1/audits/:auditId/findings POST handler:", error);
       return HttpResponse.json({
-        findingId: generateRandomFindingId(),
+        findingId: 1001,
         type: "DOCUMENTATION_ISSUE",
         description: "Error creating finding"
       }, { status: 201 });
@@ -1004,7 +1002,7 @@ export const handlers: MSWHandler[] = [
       const quarterPeriod = params.quarterPeriod as string;
       
       // Generate mock cases for audit selection
-      const cases = generateQuarterlyAuditSelectionCases(quarterPeriod, users, 10);
+      const cases = getQuarterlyAuditSelectionCases(quarterPeriod);
       
       return HttpResponse.json(cases);
     } catch (error) {
@@ -1031,10 +1029,11 @@ export const handlers: MSWHandler[] = [
       const { quarter: prevQuarterNum, year: prevYear } = getPreviousQuarterInfo(quarterNum, year);
       
       // Generate mock user audits (would be one per eligible user)
-      const userQuarterlyAudits = generateUserQuarterlyAudits(quarterKey, year, users);
+      const userQuarterlyAudits = getUserQuarterlyAudits(quarterKey);
       
       // Generate mock previous quarter audits for quality control
-      const previousQuarterRandomAudits = generatePreviousQuarterRandomAudits(prevQuarterNum, prevYear, users, 2);
+      const prevQuarterKey = `Q${prevQuarterNum}-${prevYear}`;
+      const previousQuarterRandomAudits = getPreviousQuarterRandomAudits(prevQuarterKey);
       
       return HttpResponse.json({
         success: true,
@@ -1042,7 +1041,7 @@ export const handlers: MSWHandler[] = [
           quarterKey,
           userQuarterlyAudits,
           previousQuarterRandomAudits,
-          lastSelectionDate: generateCurrentTimestamp()
+          lastSelectionDate: getCurrentTimestamp()
         }
       });
     } catch (error) {
@@ -1109,7 +1108,7 @@ export const handlers: MSWHandler[] = [
       }
       
       // Create completion response
-      const completionResponse = generateAuditCompletionResponse(numericAuditId, requestData);
+      const completionResponse = createAuditCompletionResponse(numericAuditId, requestData);
       
       return HttpResponse.json(completionResponse, { status: 200 });
     } catch (error) {
@@ -1127,7 +1126,7 @@ export const handlers: MSWHandler[] = [
       const { auditId } = params;
       const numericAuditId = safeParseInt(Array.isArray(auditId) ? auditId[0] : auditId);
       
-      const completionData = generateCompletionData(numericAuditId);
+      const completionData = getCompletionData(numericAuditId);
       
       return HttpResponse.json({
         success: true,
@@ -1159,7 +1158,7 @@ export const handlers: MSWHandler[] = [
         console.warn("[MSW] Failed to parse request body for legacy completion update");
       }
       
-      const completionResponse = generateFallbackCompletionResponse(numericAuditId, requestData);
+      const completionResponse = getFallbackCompletionResponse(numericAuditId, requestData);
       
       return HttpResponse.json({
         success: true,

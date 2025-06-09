@@ -34,8 +34,8 @@ const startApp = async () => {
   
   // Make MSW service globally accessible in development for debugging
   if (import.meta.env.MODE === 'development') {
-    (window as any).__MSW_SERVICE__ = mswService;
-    (window as any).__REDUX_STORE__ = store;
+    (window as unknown as Record<string, unknown>).__MSW_SERVICE__ = mswService;
+    (window as unknown as Record<string, unknown>).__REDUX_STORE__ = store;
     console.log('🛠️ Debug: MSW Service and Redux Store available on window.__MSW_SERVICE__ and window.__REDUX_STORE__');
   }
   

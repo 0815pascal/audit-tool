@@ -117,7 +117,7 @@ describe('UI Store - MSW Control', () => {
     store.dispatch(toggleDebugInfo());
     
     // Check localStorage was updated
-    const savedState = JSON.parse(localStorage.getItem('audit-tool-ui-state') || '{}');
+    const savedState = JSON.parse(localStorage.getItem('audit-tool-ui-state') ?? '{}');
     expect(savedState.isMswEnabled).toBe(false);
     expect(savedState.showDebugInfo).toBe(true);
     expect(savedState.theme).toBe('system');

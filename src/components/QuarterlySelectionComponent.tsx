@@ -27,7 +27,7 @@ import {useAppDispatch, useAppSelector} from '../store/hooks';
 import {selectAuditData, selectUserRole, setCurrentUser, setUserRole} from '../store/caseAuditSlice';
 import { CURRENCY } from '../types/currencyTypes';
 import { AuditItem } from './QuarterlySelectionComponent.types';
-import { generateNotificationDateForQuarterComponent } from '../mocks/mockData';
+import { getNotificationDateForQuarter } from '../mocks/mockData';
 
 const QuarterlySelectionComponent: React.FC = () => {
   const {
@@ -211,7 +211,7 @@ const QuarterlySelectionComponent: React.FC = () => {
         const year = parseInt(yearStr) || new Date().getFullYear();
         
         // Use centralized date generation function
-        notificationDate = generateNotificationDateForQuarterComponent(quarterNum, year);
+        notificationDate = getNotificationDateForQuarter(quarterNum, year);
       } catch (error) {
         console.warn('Error calculating notification date, using fallback:', error);
         notificationDate = new Date().toISOString().split('T')[0];

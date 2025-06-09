@@ -3,13 +3,11 @@ import { CURRENCY, ValidCurrency } from '../types/currencyTypes';
 import {
   CASE_STATUS_MAPPING,
   CLAIMS_STATUS,
-  DETAILED_FINDING_TYPES,
   QUARTER_CALCULATIONS
 } from '../constants';
-import {createFindingId, Finding} from '../services';
 import {USER_ROLE_ENUM} from '../enums';
 import {ApiAuditResponse, ApiCaseResponse} from './mockTypes';
-import { generateFallbackNumericId, generateAuditFindings, generateCurrentDateString } from './mockData';
+import { users, extractNumericId } from './mockData';
 
 // In-memory storage for created audits
 export const auditStore = new Map<number, ApiAuditResponse>();
@@ -22,7 +20,7 @@ export const safeParseInt = (value: string | number | undefined, fallback = 0): 
 
 // Safely extract numeric part from string ID
 export const getNumericId = (id: string | number | undefined): number => {
-  return generateFallbackNumericId(id);
+  return extractNumericId(id);
 };
 
 // Parse quarter string (Q1-2023) to get quarter number and year
@@ -30,8 +28,8 @@ export const parseQuarter = (quarterStr: string): { quarterNum: number; year: nu
   if (!quarterStr) return null;
   
   try {
-  // Handle both formats: "Q1-2023" and "Q1 2023"
-  const match = RegExp(/Q(\d+)[\s-](\d{4})/).exec(quarterStr);
+    // Handle both formats: "Q1-2023" and "Q1 2023"
+    const match = RegExp(/Q(\d+)[\s-](\d{4})/).exec(quarterStr);
     if (!match) {
       // Try alternate format without Q prefix: "1-2023"
       const altMatch = RegExp(/(\d+)[\s-](\d{4})/).exec(quarterStr);
@@ -43,10 +41,10 @@ export const parseQuarter = (quarterStr: string): { quarterNum: number; year: nu
       };
     }
   
-  return {
-    quarterNum: parseInt(match[1]),
-    year: parseInt(match[2])
-  };
+    return {
+      quarterNum: parseInt(match[1]),
+      year: parseInt(match[2])
+    };
   } catch (error) {
     console.warn("Error parsing quarter string:", quarterStr, error);
     // Provide fallback values for current quarter
@@ -70,28 +68,28 @@ export const getQuarterFromDate = (dateString: string): { quarterNum: number; ye
 
 // Utility to convert our case data to the API case format
 export const caseToCaseObj = (caseItem: Record<string, unknown>): ApiCaseResponse => {
-  const numericId = getNumericId(caseItem.id as string | number | undefined);
-  
-  // Use the notificationDate from case data or create a realistic fallback
-  const notificationDate = (caseItem.notificationDate as string) || generateCurrentDateString();
-  
-  // Extract the actual userId from the case data, not the case ID
   const actualUserId = safeParseInt(caseItem.userId as string | number | undefined, 1);
+  const actualCaseNumber = caseItem.caseNumber as number;
   
-  // Use the actual caseNumber from the mock data if available, otherwise fallback to ID-based generation
-  const actualCaseNumber = caseItem.caseNumber as number | undefined;
-  const caseNumber = actualCaseNumber ? createCaseId(actualCaseNumber) : createCaseId(numericId);
+  // Ensure we have a valid case number - no more fallback generation
+  if (!actualCaseNumber) {
+    throw new Error('Case number is required in mock data');
+  }
+  
+  // Find the actual user data to get their role
+  const userData = users.find(u => u.id === `user-${actualUserId}`);
+  const userRole = userData?.authorities ?? USER_ROLE_ENUM.STAFF;
   
   return {
-    caseNumber,
+    caseNumber: createCaseId(actualCaseNumber),
     claimOwner: {
-      userId: actualUserId, // Use the actual userId from case data
-      role: USER_ROLE_ENUM.SPECIALIST
+      userId: actualUserId,
+      role: userRole
     },
     claimsStatus: (caseItem.claimsStatus as typeof CLAIMS_STATUS.FULL_COVER) || CLAIMS_STATUS.FULL_COVER,
-    coverageAmount: (caseItem.coverageAmount as number) || 10000.00,
+    coverageAmount: (caseItem.coverageAmount as number) || 0,
     caseStatus: CASE_STATUS_MAPPING.COMPENSATED,
-    notificationDate,
+    notificationDate: (caseItem.notificationDate as string) || '',
     notifiedCurrency: (caseItem.notifiedCurrency as ValidCurrency) || CURRENCY.CHF
   };
 };
@@ -123,7 +121,7 @@ export const caseToAudit = (caseObj: ApiCaseResponse, quarter: QuarterPeriod): A
       ...caseObj,
       caseStatus: CASE_STATUS_MAPPING.COMPENSATED,
       claimsStatus: caseObj.claimsStatus || CLAIMS_STATUS.FULL_COVER,
-      coverageAmount: caseObj.coverageAmount || 10000.00,
+      coverageAmount: caseObj.coverageAmount || 0,
       notificationDate: caseObj.notificationDate,
       notifiedCurrency: caseObj.notifiedCurrency || CURRENCY.CHF
     },
@@ -132,18 +130,6 @@ export const caseToAudit = (caseObj: ApiCaseResponse, quarter: QuarterPeriod): A
       role: caseObj.claimOwner?.role || USER_ROLE_ENUM.SPECIALIST
     }
   };
-};
-
-// Generate realistic findings for an audit
-export const generateFindings = (numericId: number): Finding[] => {
-  const basicFindings = generateAuditFindings(numericId);
-  
-  // Convert to the expected Finding format with proper types
-  return basicFindings.map((finding, i) => ({
-    findingId: createFindingId(i + 1),
-    type: finding.type as keyof typeof DETAILED_FINDING_TYPES,
-    description: finding.description
-  }));
 };
 
 // Calculate previous quarter info
