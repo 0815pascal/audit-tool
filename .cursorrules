@@ -333,3 +333,103 @@ When refactoring existing files:
 3. Create `.types.ts` file for local types
 4. Update all imports
 5. Verify no circular dependencies exist 
+
+## Development Server Management Guidelines
+
+**ALWAYS check for running dev servers before starting new instances** to prevent port conflicts and resource waste.
+
+### Rule: Check Before Starting Dev Server
+
+**Before running `npm run dev` or any development server command:**
+
+1. **Check for existing dev server processes:**
+```bash
+# Check for Vite dev servers (ports 5173, 5174, etc.)
+lsof -i :5173 -i :5174 -i :5175 -i :5176
+
+# Or check for any Node.js processes that might be dev servers
+ps aux | grep -E "(vite|dev|npm.*run.*dev)" | grep -v grep
+
+# Check specifically for this project's dev server
+ps aux | grep "audit-tool.*dev" | grep -v grep
+```
+
+2. **If a dev server is already running:**
+   - ✅ **GOOD**: Use the existing server (navigate to the URL shown in terminal)
+   - ✅ **GOOD**: Ask user if they want to stop the existing server first
+   - ❌ **BAD**: Start a new server without checking (causes port conflicts)
+
+3. **Recommended dev server check command sequence:**
+```bash
+# Step 1: Check if dev server is running
+echo "🔍 Checking for existing dev servers..."
+if lsof -i :5173 -i :5174 -i :5175 2>/dev/null | grep LISTEN; then
+  echo "⚠️  Dev server already running on one of the common ports"
+  echo "📍 You can access it at: http://localhost:5173 or http://localhost:5174"
+  echo "❓ Do you want to stop the existing server and start a new one? (y/n)"
+else
+  echo "✅ No dev server detected, safe to start new instance"
+  npm run dev
+fi
+```
+
+4. **If you need to stop existing servers:**
+```bash
+# Kill processes on specific ports
+lsof -ti:5173 | xargs kill -9 2>/dev/null || echo "No process on port 5173"
+lsof -ti:5174 | xargs kill -9 2>/dev/null || echo "No process on port 5174"
+
+# Or kill by process name
+pkill -f "vite.*audit-tool" || echo "No Vite processes found"
+```
+
+### Terminal Command Templates
+
+**✅ SAFE - Always use this pattern when starting dev servers:**
+```bash
+# Template for safe dev server startup
+echo "🔍 Checking for existing dev servers..."
+EXISTING_SERVER=$(lsof -i :5173 -i :5174 2>/dev/null | grep LISTEN)
+if [ ! -z "$EXISTING_SERVER" ]; then
+  echo "⚠️  Dev server already running:"
+  echo "$EXISTING_SERVER"
+  echo "📍 Navigate to http://localhost:5173 or http://localhost:5174"
+  echo "💡 To restart, first kill existing server with: lsof -ti:5173 | xargs kill -9"
+else
+  echo "✅ Starting new dev server..."
+  npm run dev
+fi
+```
+
+**❌ DANGEROUS - Never do this without checking:**
+```bash
+# DON'T do this directly
+npm run dev  # Could conflict with existing server
+```
+
+### Benefits of This Approach
+
+✅ **Prevents port conflicts** - No more "EADDRINUSE" errors  
+✅ **Saves resources** - Avoid running multiple unnecessary servers  
+✅ **Better developer experience** - Clear feedback about server status  
+✅ **Consistent workflow** - Same process every time  
+✅ **Easy debugging** - Know exactly which servers are running where  
+
+### Integration with Terminal Commands
+
+When suggesting terminal commands that involve `npm run dev`, ALWAYS:
+1. Include the dev server check first
+2. Provide the user with clear next steps
+3. Show them how to access existing servers if found
+4. Give them the option to restart if needed
+
+**Example of good command suggestions:**
+```bash
+# Check and start dev server safely
+echo "🔍 Checking for running dev servers..." && \
+if lsof -i :5173 -i :5174 2>/dev/null | grep -q LISTEN; then \
+  echo "⚠️  Dev server already running. Check http://localhost:5173 or http://localhost:5174"; \
+else \
+  echo "✅ Starting dev server..." && npm run dev; \
+fi
+```
