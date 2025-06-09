@@ -480,20 +480,33 @@ const auditUISlice = createSlice({
       
       // Add the new cases as display-only audits
       cases.forEach(caseData => {
+        // Determine the correct status based on completion and auditor assignment
+        let status: CaseAuditStatus;
+        const hasAuditor = 'auditor' in caseData && caseData.auditor && String(caseData.auditor).trim() !== '';
+        const isCompleted = 'isCompleted' in caseData && Boolean(caseData.isCompleted);
+        
+        if (isCompleted) {
+          status = AUDIT_STATUS_ENUM.COMPLETED;
+        } else if (hasAuditor) {
+          status = AUDIT_STATUS_ENUM.IN_PROGRESS;
+        } else {
+          status = AUDIT_STATUS_ENUM.PENDING;
+        }
+        
         state.auditData[caseData.id] = {
-          isCompleted: false,
+          isCompleted: isCompleted,
           isIncorrect: false,
-          completionDate: null,
+          completionDate: isCompleted ? createISODateString(new Date()) : null,
           userId: ensureUserId(caseData.userId),
           quarter: caseData.quarter,
           year: parseInt(caseData.quarter.split('-')[1]),
           steps: {},
-          auditor: ensureUserId(''),
-          comment: '',
+          auditor: ensureUserId(hasAuditor ? String(caseData.auditor) : ''),
+          comment: 'comment' in caseData ? String(caseData.comment) : '',
           rating: '' as RatingValue,
           specialFindings: createEmptyFindings(),
           detailedFindings: createEmptyFindings(),
-          status: AUDIT_STATUS_ENUM.PENDING,
+          status: status,
           caseType: CASE_TYPE_ENUM.QUARTER_DISPLAY, // New case type for quarter display
           coverageAmount: caseData.coverageAmount,
           claimsStatus: caseData.claimsStatus as CLAIMS_STATUS_ENUM,

@@ -401,6 +401,7 @@ const QuarterlySelectionComponent: React.FC = () => {
                         <th data-testid="case-id-header">CaseID</th>
                         <th data-testid="quarter-header">Quartal</th>
                         <th data-testid="responsible-user-header">Verantwortlicher Fallbearbeiter</th>
+                        <th data-testid="coverage-amount-header">Schadenssumme</th>
                         <th data-testid="completion-result-header">Prüfergebnis</th>
                         <th data-testid="verifier-header">Prüfer</th>
                         <th data-testid="actions-header">Aktionen</th>
@@ -423,6 +424,7 @@ const QuarterlySelectionComponent: React.FC = () => {
                             <td>{audit.id}</td>
                             <td>{audit.quarter}</td>
                             <td>{user ? user.displayName : 'Unknown'}</td>
+                            <td>{audit.coverageAmount?.toLocaleString()} {audit.notifiedCurrency ?? CURRENCY.CHF}</td>
                             <td>{currentStatus as AUDIT_STATUS_ENUM === AUDIT_STATUS_ENUM.COMPLETED ? 'Geprüft' : 
                                  currentStatus as AUDIT_STATUS_ENUM === AUDIT_STATUS_ENUM.IN_PROGRESS ? 'In Bearbeitung' : 'Nicht geprüft'}</td>
                             <td>{getUserInitials(currentAuditor ?? '')}</td>
@@ -446,7 +448,7 @@ const QuarterlySelectionComponent: React.FC = () => {
               {/* Show quarter display cases if available */}
               {quarterlyDossiers.quarterDisplayCases && quarterlyDossiers.quarterDisplayCases.length > 0 && (
                 <div>
-                  <h3>All Cases for {selectedQuarter}</h3>
+                  <h3>Audited Cases for {selectedQuarter}</h3>
                   <table>
                     <thead>
                       <tr>
@@ -454,19 +456,45 @@ const QuarterlySelectionComponent: React.FC = () => {
                         <th data-testid="quarter-header">Quartal</th>
                         <th data-testid="responsible-user-header">Verantwortlicher Fallbearbeiter</th>
                         <th data-testid="coverage-amount-header">Schadenssumme</th>
-                        <th data-testid="claims-status-header">Status</th>
+                        <th data-testid="completion-result-header">Prüfergebnis</th>
+                        <th data-testid="verifier-header">Prüfer</th>
+                        <th data-testid="actions-header">Aktionen</th>
                       </tr>
                     </thead>
                     <tbody>
                       {quarterlyDossiers.quarterDisplayCases.map((caseItem: AuditItem) => {
                         const user = findUserById(caseItem.userId);
+                        // Get the latest audit data from Redux to ensure we show current status
+                        const latestAuditData = auditData[caseItem.id];
+                        const currentStatus = latestAuditData?.status || caseItem.status;
+                        const currentAuditor = latestAuditData?.auditor || caseItem.auditor;
+                        
+                        // Store the result of canCompleteAudit in a variable with a default false value for safety
+                        let canComplete = false;
+                        try {
+                          canComplete = canCompleteAudit(caseItem.id);
+                        } catch {
+                          // If canCompleteAudit throws an error, keep canComplete as false
+                        }
+                        
                         return (
                           <tr key={caseItem.id}>
                             <td>{caseItem.id}</td>
                             <td>{caseItem.quarter}</td>
                             <td>{user ? user.displayName : 'Unknown'}</td>
                             <td>{caseItem.coverageAmount?.toLocaleString()} {caseItem.notifiedCurrency ?? CURRENCY.CHF}</td>
-                            <td>{caseItem.claimsStatus}</td>
+                            <td>{currentStatus as AUDIT_STATUS_ENUM === AUDIT_STATUS_ENUM.COMPLETED ? 'Geprüft' : 
+                                 currentStatus as AUDIT_STATUS_ENUM === AUDIT_STATUS_ENUM.IN_PROGRESS ? 'In Bearbeitung' : 'Nicht geprüft'}</td>
+                            <td>{getUserInitials(currentAuditor ?? '')}</td>
+                            <td>
+                              <button
+                                className="complete-button"
+                                onClick={() => handleOpenCompletion(caseItem.id)}
+                                disabled={!canComplete}
+                              >
+                                {currentStatus as AUDIT_STATUS_ENUM === AUDIT_STATUS_ENUM.COMPLETED ? 'Ansehen' : 'Prüfen'}
+                              </button>
+                            </td>
                           </tr>
                         );
                       })}
@@ -474,9 +502,6 @@ const QuarterlySelectionComponent: React.FC = () => {
                   </table>
                 </div>
               )}
-              
-              {/* Always show this message when no quarterly audits have been selected */}
-              <p className="no-data">Keine Audits für dieses Quartal ausgewählt.</p>
             </div>
           ) : (
             <table>
@@ -485,6 +510,7 @@ const QuarterlySelectionComponent: React.FC = () => {
                   <th data-testid="case-id-header">CaseID</th>
                   <th data-testid="quarter-header">Quartal</th>
                   <th data-testid="responsible-user-header">Verantwortlicher Fallbearbeiter</th>
+                  <th data-testid="coverage-amount-header">Schadenssumme</th>
                   <th data-testid="completion-result-header">Prüfergebnis</th>
                   <th data-testid="verifier-header">Prüfer</th>
                   <th data-testid="actions-header">Aktionen</th>
@@ -513,6 +539,7 @@ const QuarterlySelectionComponent: React.FC = () => {
                       <td>{audit.id}</td>
                       <td>{audit.quarter}</td>
                       <td>{user ? user.displayName : 'Unknown'}</td>
+                      <td>{audit.coverageAmount?.toLocaleString()} {audit.notifiedCurrency ?? CURRENCY.CHF}</td>
                       <td>{currentStatus as AUDIT_STATUS_ENUM === AUDIT_STATUS_ENUM.COMPLETED ? 'Geprüft' : 
                            currentStatus as AUDIT_STATUS_ENUM === AUDIT_STATUS_ENUM.IN_PROGRESS ? 'In Bearbeitung' : 'Nicht geprüft'}</td>
                       <td>{getUserInitials(currentAuditor ?? '')}</td>
@@ -551,6 +578,7 @@ const QuarterlySelectionComponent: React.FC = () => {
                       <td>{audit.id}</td>
                       <td>{audit.quarter}</td>
                       <td>{user ? user.displayName : 'Unknown'}</td>
+                      <td>{audit.coverageAmount?.toLocaleString()} {audit.notifiedCurrency ?? CURRENCY.CHF}</td>
                       <td>{currentStatus as AUDIT_STATUS_ENUM === AUDIT_STATUS_ENUM.COMPLETED ? 'Geprüft' : 
                            currentStatus as AUDIT_STATUS_ENUM === AUDIT_STATUS_ENUM.IN_PROGRESS ? 'In Bearbeitung' : 'Nicht geprüft'}</td>
                       <td>{getUserInitials(currentAuditor ?? '')}</td>
@@ -590,6 +618,7 @@ const QuarterlySelectionComponent: React.FC = () => {
                       <td>{audit.id}</td>
                       <td>{audit.quarter}</td>
                       <td>{user ? user.displayName : audit.userId}</td>
+                      <td>{audit.coverageAmount?.toLocaleString()} {audit.notifiedCurrency ?? CURRENCY.CHF}</td>
                       <td>{currentStatus as AUDIT_STATUS_ENUM === AUDIT_STATUS_ENUM.COMPLETED ? 'Geprüft' : 
                            currentStatus as AUDIT_STATUS_ENUM === AUDIT_STATUS_ENUM.IN_PROGRESS ? 'In Bearbeitung' : 'Nicht geprüft'}</td>
                       <td>{getUserInitials(currentAuditor ?? '')}</td>

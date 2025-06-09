@@ -26,6 +26,7 @@ import {
   auditStore,
   caseToAudit,
   caseToCaseObj,
+  caseToAuditedCaseObj,
   generateFindings,
   getNumericId,
   getPreviousQuarterInfo,
@@ -536,12 +537,20 @@ export const handlers: MSWHandler[] = [
         return HttpResponse.json([], { status: 200 });
       }
       
-      // Filter ALL cases for the requested quarter
+      // Filter cases for the requested quarter that have been audited (completed or in progress)
       const quarterCases = mockCases.filter(caseItem => {
         try {
           const { quarterNum, year } = getQuarterFromDate(caseItem.notificationDate);
-          return quarterNum === parsedQuarter.quarterNum && 
+          const matchesQuarter = quarterNum === parsedQuarter.quarterNum && 
                 year === parsedQuarter.year;
+          
+          // Only include cases that have been audited:
+          // - isCompleted is true (audit completed), OR
+          // - auditor is assigned (audit in progress)
+          const hasBeenAudited = caseItem.isCompleted || 
+                                (caseItem.auditor && caseItem.auditor.trim() !== '');
+          
+          return matchesQuarter && hasBeenAudited;
         } catch {
           return false;
         }
@@ -549,11 +558,11 @@ export const handlers: MSWHandler[] = [
       
       console.log(`[MSW] Found ${quarterCases.length} cases for quarter Q${parsedQuarter.quarterNum}-${parsedQuarter.year}`);
       
-      // Convert to case object format
+      // Convert to case object format with audit information
       const cases = quarterCases
         .map(caseItem => {
           try {
-            return caseToCaseObj(caseItem);
+            return caseToAuditedCaseObj(caseItem);
           } catch {
             return null;
           }

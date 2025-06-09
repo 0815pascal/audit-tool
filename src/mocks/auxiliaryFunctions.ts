@@ -78,8 +78,12 @@ export const caseToCaseObj = (caseItem: Record<string, unknown>): ApiCaseRespons
   // Extract the actual userId from the case data, not the case ID
   const actualUserId = safeParseInt(caseItem.userId as string | number | undefined, 1);
   
+  // Use the actual caseNumber from the mock data if available, otherwise fallback to ID-based generation
+  const actualCaseNumber = caseItem.caseNumber as number | undefined;
+  const caseNumber = actualCaseNumber ? createCaseId(actualCaseNumber) : createCaseId(numericId);
+  
   return {
-    caseNumber: createCaseId(numericId),
+    caseNumber,
     claimOwner: {
       userId: actualUserId, // Use the actual userId from case data
       role: USER_ROLE_ENUM.SPECIALIST
@@ -89,6 +93,23 @@ export const caseToCaseObj = (caseItem: Record<string, unknown>): ApiCaseRespons
     caseStatus: CASE_STATUS_MAPPING.COMPENSATED,
     notificationDate,
     notifiedCurrency: (caseItem.notifiedCurrency as ValidCurrency) || CURRENCY.CHF
+  };
+};
+
+// Utility to convert audited case data to API case format with audit information
+export const caseToAuditedCaseObj = (caseItem: Record<string, unknown>): ApiCaseResponse & { 
+  auditor?: string; 
+  isCompleted?: boolean; 
+  comment?: string; 
+} => {
+  const basicCase = caseToCaseObj(caseItem);
+  
+  return {
+    ...basicCase,
+    // Include audit information if available
+    auditor: (caseItem.auditor as string) || '',
+    isCompleted: Boolean(caseItem.isCompleted),
+    comment: (caseItem.comment as string) || ''
   };
 };
 

@@ -158,11 +158,11 @@ export const mockCases: MockCaseData[] = [
     dossierRisk: 678901,
     dossierName: 'Wilson Tech Solutions',
     totalAmount: 1250,
-    isCompleted: false,
+    isCompleted: false, // IN-PROGRESS CASE
     claimsStatus: CLAIMS_STATUS_ENUM.PARTIAL_COVER,
     coverageAmount: 1250,
-    auditor: '',
-    comment: '',
+    auditor: '4', // Being audited by Emily Davis (User ID 4, Team Leader)
+    comment: 'Audit in progress - Jennifer Wilson case being reviewed by Emily Davis.',
     rating: '',
     specialFindings: createEmptySpecialFindings(),
     detailedFindings: createEmptyDetailedFindings(),

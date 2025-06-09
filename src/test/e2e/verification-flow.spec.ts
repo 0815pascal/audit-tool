@@ -32,7 +32,7 @@ test.describe('IKS Audit Tool - Verification Data Persistence', () => {
     let availableRow = null;
     for (let i = 0; i < rowCount; i++) {
       const row = allRows.nth(i);
-      const prueferCell = row.locator('td').nth(4); // Prüfer is the 5th column (0-indexed)
+      const prueferCell = row.locator('td').nth(5); // Prüfer is the 6th column (0-indexed) after adding Schadenssumme
       const prueferText = await prueferCell.textContent();
       
       if (prueferText?.trim() === '-') {

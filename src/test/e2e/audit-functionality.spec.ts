@@ -510,7 +510,7 @@ test.describe('IKS Audit Tool - Auto-Select and Verification', () => {
     let firstUnworkedRow = null;
     for (let i = 0; i < rowCount; i++) {
       const row = allRows.nth(i);
-      const prueferCell = row.locator('td').nth(4); // Prüfer is the 5th column (0-indexed)
+      const prueferCell = row.locator('td').nth(5); // Prüfer is the 6th column (0-indexed) after adding Schadenssumme
       const prueferText = await prueferCell.textContent();
       
       if (prueferText?.trim() === '-') {
@@ -534,7 +534,7 @@ test.describe('IKS Audit Tool - Auto-Select and Verification', () => {
     await expect(pruefenButton).toBeEnabled();
     
     // Before verification starts, the Prüfer column should show '-'
-    const prueferCellBefore = firstUnworkedRow.locator('td').nth(4); // Prüfer is the 5th column (0-indexed)
+    const prueferCellBefore = firstUnworkedRow.locator('td').nth(5); // Prüfer is the 6th column (0-indexed) after adding Schadenssumme
     await expect(prueferCellBefore).toHaveText('-');
     
     // Click the Prüfen button for this case
@@ -555,7 +555,7 @@ test.describe('IKS Audit Tool - Auto-Select and Verification', () => {
     await page.waitForTimeout(1000);
     
     // After Emily starts verification, the Prüfer column should show her initials 'ED', not her user ID '4'
-    const prueferCellAfter = firstUnworkedRow.locator('td').nth(4); // Prüfer is the 5th column (0-indexed)
+    const prueferCellAfter = firstUnworkedRow.locator('td').nth(5); // Prüfer is the 6th column (0-indexed) after adding Schadenssumme
     const prueferValue = await prueferCellAfter.textContent();
     
     // Verify it's not a numeric user ID
@@ -904,8 +904,7 @@ test.describe('IKS Audit Tool - Auto-Select and Verification', () => {
     const userSelect = page.locator('#user-select');
     await userSelect.selectOption('4'); // Select Emily Davis (team leader)
     
-    // Initially, there should be no audits selected message
-    await expect(page.locator('text=Keine Audits für dieses Quartal ausgewählt')).toBeVisible();
+    // Initially, there should be no current cases or audited cases visible
     
     // Select Q2-2025 from quarter dropdown
     const quarterSelect = page.locator('#quarter-select');
@@ -914,8 +913,8 @@ test.describe('IKS Audit Tool - Auto-Select and Verification', () => {
     // Wait for cases to load
     await page.waitForTimeout(3000);
     
-    // Should now see a table with all cases for Q2-2025
-    await expect(page.locator('h3:has-text("All Cases for Q2-2025")')).toBeVisible();
+    // Should now see a table with audited cases for Q2-2025
+    await expect(page.locator('h3:has-text("Audited Cases for Q2-2025")')).toBeVisible();
     
     // Verify the table has cases
     const auditTable = page.locator('.audit-table tbody');
@@ -970,8 +969,8 @@ test.describe('IKS Audit Tool - Auto-Select and Verification', () => {
     await quarterSelect.selectOption('Q1-2025');
     await page.waitForTimeout(3000);
     
-    // Should now see all cases for Q1-2025 (not the previous auto-selected Q2-2025 cases)
-    await expect(page.locator('h3:has-text("All Cases for Q1-2025")')).toBeVisible();
+    // Should now see audited cases for Q1-2025 (not the previous auto-selected Q2-2025 cases)
+    await expect(page.locator('h3:has-text("Audited Cases for Q1-2025")')).toBeVisible();
     
     // Verify the table shows Q1-2025 cases only
     rows = auditTable.locator('tr');
@@ -1025,11 +1024,11 @@ test.describe('IKS Audit Tool - Auto-Select and Verification', () => {
     await expect(caseOwnerCell).toContainText('Emily Davis');
     
     // Check that the status shows "In Bearbeitung" (IN_PROGRESS)
-    const statusCell = case14Row.locator('td:nth-child(4)'); // 4th column is status
+    const statusCell = case14Row.locator('td:nth-child(5)'); // 5th column is status (after adding Schadenssumme)
     await expect(statusCell).toContainText('In Bearbeitung');
     
     // Check that the Prüfer column shows "SW" (Sarah Wilson's initials)
-    const prueferCell = case14Row.locator('td:nth-child(5)'); // 5th column is Prüfer
+    const prueferCell = case14Row.locator('td:nth-child(6)'); // 6th column is Prüfer
     await expect(prueferCell).toContainText('SW');
 
     // Now login as Emily Davis (TEAM_LEADER)

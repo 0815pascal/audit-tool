@@ -170,7 +170,7 @@ export const useCaseAuditHandlers = () => {
       const cases = await getAllCasesByQuarter(quarterKey);
 
       // Convert cases to the format expected by Redux
-      const casesForStore = cases.map((caseObj) => {
+      const casesForStore = cases.map((caseObj: any) => {
         // Calculate the actual quarter from the notification date for display purposes
         const actualQuarter = caseObj.notificationDate ?
           getQuarterFromNotificationDate(caseObj.notificationDate) :
@@ -182,7 +182,11 @@ export const useCaseAuditHandlers = () => {
           coverageAmount: caseObj.coverageAmount,
           claimsStatus: String(caseObj.claimsStatus),
           quarter: actualQuarter,
-          notifiedCurrency: caseObj.notifiedCurrency ?? CURRENCY.CHF
+          notifiedCurrency: caseObj.notifiedCurrency ?? CURRENCY.CHF,
+          // Include audit information if available
+          auditor: String(caseObj.auditor || ''),
+          isCompleted: Boolean(caseObj.isCompleted),
+          comment: String(caseObj.comment || '')
         };
       });
 
