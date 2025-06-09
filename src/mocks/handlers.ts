@@ -107,60 +107,60 @@ export const handlers: MSWHandler[] = [
         // Filter by quarter
         const quarterValue = quarter;
         const parsedQuarter = parseQuarter(quarterValue);
-        
-        if (!parsedQuarter) {
-          console.log(`[MSW] Failed to parse quarter: ${quarterValue}`);
+      
+      if (!parsedQuarter) {
+        console.log(`[MSW] Failed to parse quarter: ${quarterValue}`);
           return createEnhancedResponse(request, [], 200, 'DYNAMIC');
         }
         
         // Get current quarter cases (6 cases - one per employee)
-        const currentQuarterCases = mockCases.filter(caseItem => {
-          try {
-            const { quarterNum, year } = getQuarterFromDate(caseItem.notificationDate);
-            return quarterNum === parsedQuarter.quarterNum && 
-                  year === parsedQuarter.year;
-          } catch {
-            return false;
-          }
-        });
-        
-        // Get previous quarter (2 random cases)
-        let previousQuarter = parsedQuarter.quarterNum - 1;
-        let previousYear = parsedQuarter.year;
-        if (previousQuarter < 1) {
-          previousQuarter = 4;
-          previousYear = parsedQuarter.year - 1;
+      const currentQuarterCases = mockCases.filter(caseItem => {
+        try {
+          const { quarterNum, year } = getQuarterFromDate(caseItem.notificationDate);
+          return quarterNum === parsedQuarter.quarterNum && 
+                year === parsedQuarter.year;
+        } catch {
+          return false;
         }
-        
-        const previousQuarterCases = mockCases.filter(caseItem => {
-          try {
-            const { quarterNum, year } = getQuarterFromDate(caseItem.notificationDate);
-            return quarterNum === previousQuarter && 
-                  year === previousYear;
-          } catch {
-            return false;
-          }
-        });
-        
+      });
+      
+        // Get previous quarter (2 random cases)
+      let previousQuarter = parsedQuarter.quarterNum - 1;
+      let previousYear = parsedQuarter.year;
+      if (previousQuarter < 1) {
+        previousQuarter = 4;
+        previousYear = parsedQuarter.year - 1;
+      }
+      
+      const previousQuarterCases = mockCases.filter(caseItem => {
+        try {
+          const { quarterNum, year } = getQuarterFromDate(caseItem.notificationDate);
+          return quarterNum === previousQuarter && 
+                year === previousYear;
+        } catch {
+          return false;
+        }
+      });
+      
         const selectedPreviousCases = shuffleArray(previousQuarterCases).slice(0, 2);
-        const combinedCases = [...currentQuarterCases, ...selectedPreviousCases];
-        
+      const combinedCases = [...currentQuarterCases, ...selectedPreviousCases];
+      
         const quarterAudits = combinedCases
-          .map(caseItem => {
-            try {
-              const caseObj = caseToCaseObj(caseItem);
+        .map(caseItem => {
+          try {
+            const caseObj = caseToCaseObj(caseItem);
               return caseToAudit(caseObj, quarterValue as QuarterPeriod);
-            } catch {
-              return null;
-            }
-          })
+          } catch {
+            return null;
+          }
+        })
           .filter((audit): audit is ApiAuditResponse => audit !== null);
-          
+      
         filteredAudits = quarterAudits;
           
         // Add stored audits for this quarter
-        for (const [, audit] of Array.from(auditStore.entries())) {
-          if (audit.quarter === quarter) {
+      for (const [, audit] of Array.from(auditStore.entries())) {
+        if (audit.quarter === quarter) {
             filteredAudits.push(audit);
           }
         }
@@ -749,8 +749,8 @@ export const handlers: MSWHandler[] = [
             caseNumber: createCaseId(safeParseInt((requestData.caseObj as Record<string, unknown>).caseNumber as string))
           } : {}),
           ...((requestData.caseObj as Record<string, unknown>)?.claimOwner ? {
-            claimOwner: {
-              ...existingAudit.caseObj.claimOwner,
+                claimOwner: {
+                  ...existingAudit.caseObj.claimOwner,
               ...((requestData.caseObj as Record<string, unknown>).claimOwner as Record<string, unknown>)?.userId !== undefined ? {
                 userId: safeParseInt(String(((requestData.caseObj as Record<string, unknown>).claimOwner as Record<string, unknown>).userId))
               } : {},
@@ -770,7 +770,7 @@ export const handlers: MSWHandler[] = [
           } : {}),
           ...((requestData.caseObj as Record<string, unknown>)?.notifiedCurrency ? {
             notifiedCurrency: (requestData.caseObj as Record<string, unknown>).notifiedCurrency as ValidCurrency
-          } : {})
+            } : {})
         }} : {}),
         ...(requestData.auditor && typeof requestData.auditor === 'object' ? { auditor: {
           ...existingAudit.auditor,
@@ -1069,9 +1069,9 @@ export const handlers: MSWHandler[] = [
     }));
 
     console.log(`[MSW] Serving ${preLoadedCases.length} pre-loaded cases`);
-    
-    return HttpResponse.json({
-      success: true,
+      
+      return HttpResponse.json({
+        success: true,
       data: preLoadedCases
     });
   }),

@@ -47,11 +47,4 @@ main {
   flex: 1;
 }
 
-/* BEM Block: App */
-.app__title {
-  background: var(--gradient-app-title);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  text-shadow: var(--text-shadow-sm);
-}
+

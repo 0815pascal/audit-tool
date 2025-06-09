@@ -1,0 +1,153 @@
+/* Debug Controls Component - BEM Style */
+
+/* Block: Debug Controls */
+.debug-controls {
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--border-radius-large);
+  margin-bottom: var(--spacing-xl);
+  box-shadow: var(--box-shadow-light);
+}
+
+/* Element: Header */
+.debug-controls__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-lg);
+  border-bottom: 1px solid #e2e8f0;
+  background-color: #f1f5f9;
+  border-radius: var(--border-radius-large) var(--border-radius-large) 0 0;
+}
+
+/* Element: Title */
+.debug-controls__title {
+  margin: 0;
+  font-size: var(--font-size-md);
+  color: var(--text-primary);
+  font-weight: var(--font-weight-medium);
+}
+
+/* Element: Actions */
+.debug-controls__actions {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+/* Element: Toggle Button */
+.debug-controls__toggle {
+  background-color: var(--secondary-color);
+  color: var(--text-primary);
+  border: 1px solid #d1d5db;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--border-radius);
+  font-size: var(--font-size-xs);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.debug-controls__toggle:hover {
+  background-color: #e5e7eb;
+}
+
+/* Modifier: Active toggle */
+.debug-controls__toggle--active {
+  background-color: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+}
+
+.debug-controls__toggle--active:hover {
+  background-color: var(--primary-hover);
+}
+
+/* Element: Reset Button */
+.debug-controls__reset {
+  background-color: #f59e0b;
+  color: white;
+  border: none;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--border-radius);
+  font-size: var(--font-size-xs);
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.debug-controls__reset:hover {
+  background-color: #d97706;
+}
+
+/* Element: Content */
+.debug-controls__content {
+  padding: var(--spacing-lg);
+}
+
+/* Element: Info Container */
+.debug-controls__info {
+  background-color: white;
+  border: 1px solid #e5e7eb;
+  border-radius: var(--border-radius);
+  padding: var(--spacing-lg);
+  margin-top: var(--spacing-md);
+}
+
+/* Element: Info Section */
+.debug-controls__info-section {
+  margin-bottom: var(--spacing-lg);
+}
+
+.debug-controls__info-section:last-child {
+  margin-bottom: 0;
+}
+
+.debug-controls__info-section h4 {
+  margin: 0 0 var(--spacing-sm) 0;
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+  font-weight: var(--font-weight-medium);
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: var(--spacing-xs);
+}
+
+/* Element: Info Grid */
+.debug-controls__info-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--spacing-xs);
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  font-family: monospace;
+}
+
+.debug-controls__info-grid > div {
+  padding: var(--spacing-xs);
+  background-color: #f9fafb;
+  border-radius: var(--border-radius);
+  border: 1px solid #f3f4f6;
+}
+
+/* Responsive Design */
+@media (max-width: calc(var(--breakpoint-tablet) * 1px)) {
+  .debug-controls__header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-sm);
+  }
+  
+  .debug-controls__actions {
+    align-self: stretch;
+    justify-content: flex-end;
+  }
+  
+  .debug-controls {
+    margin-bottom: var(--spacing-lg);
+  }
+  
+  .debug-controls__content {
+    padding: var(--spacing-md);
+  }
+  
+  .debug-controls__info {
+    padding: var(--spacing-md);
+  }
+} 

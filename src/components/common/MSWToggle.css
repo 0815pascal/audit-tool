@@ -1,0 +1,202 @@
+/* MSW Toggle Component - BEM Style */
+
+/* Block: MSW Toggle */
+.msw-toggle {
+  padding: var(--spacing-lg);
+  border: 1px solid var(--border-modal);
+  border-radius: var(--border-radius-large);
+  background-color: white;
+  box-shadow: var(--box-shadow-light);
+  margin-bottom: var(--spacing-md);
+}
+
+/* Element: Header */
+.msw-toggle__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-sm);
+}
+
+/* Element: Label */
+.msw-toggle__label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-weight: var(--font-weight-medium);
+  font-size: var(--font-size-sm);
+}
+
+/* Element: Checkbox (hidden) */
+.msw-toggle__checkbox {
+  opacity: 0;
+  position: absolute;
+  pointer-events: none;
+}
+
+/* Element: Toggle Slider */
+.msw-toggle__slider {
+  position: relative;
+  display: inline-block;
+  width: 3rem;
+  height: 1.5rem;
+  background-color: var(--secondary-color);
+  border-radius: 0.75rem;
+  margin-right: var(--spacing-md);
+  transition: background-color 0.3s;
+}
+
+.msw-toggle__slider::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 1.25rem;
+  height: 1.25rem;
+  background-color: white;
+  border-radius: 50%;
+  transition: transform 0.3s;
+  box-shadow: var(--box-shadow-light);
+}
+
+/* Modifier: Checked state */
+.msw-toggle__checkbox:checked + .msw-toggle__slider {
+  background-color: var(--primary-color);
+}
+
+.msw-toggle__checkbox:checked + .msw-toggle__slider::before {
+  transform: translateX(1.5rem);
+}
+
+/* Modifier: Disabled state */
+.msw-toggle__checkbox:disabled + .msw-toggle__slider {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.msw-toggle__checkbox:disabled + .msw-toggle__slider + .msw-toggle__text {
+  opacity: 0.6;
+}
+
+/* Element: Toggle Text */
+.msw-toggle__text {
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+}
+
+/* Element: Status */
+.msw-toggle__status {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+/* Element: Status Icon */
+.msw-toggle__status-icon {
+  font-size: var(--font-size-sm);
+}
+
+/* Element: Status Text */
+.msw-toggle__status-text {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  font-weight: var(--font-weight-medium);
+  text-transform: uppercase;
+}
+
+/* Element: Error Container */
+.msw-toggle__error {
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: var(--border-radius);
+  padding: var(--spacing-md);
+  margin-top: var(--spacing-sm);
+}
+
+/* Element: Error Message */
+.msw-toggle__error-message {
+  color: #dc2626;
+  font-size: var(--font-size-xs);
+  margin-bottom: var(--spacing-sm);
+}
+
+/* Element: Retry Button */
+.msw-toggle__retry-button {
+  background-color: #dc2626;
+  color: white;
+  border: none;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--border-radius);
+  font-size: var(--font-size-xs);
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.msw-toggle__retry-button:hover:not(:disabled) {
+  background-color: #b91c1c;
+}
+
+.msw-toggle__retry-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Element: Debug Container */
+.msw-toggle__debug {
+  background-color: #f3f4f6;
+  border: 1px solid #d1d5db;
+  border-radius: var(--border-radius);
+  padding: var(--spacing-md);
+  margin-top: var(--spacing-sm);
+}
+
+/* Element: Debug Title */
+.msw-toggle__debug-title {
+  font-weight: var(--font-weight-medium);
+  font-size: var(--font-size-xs);
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-xs);
+}
+
+/* Element: Debug Info */
+.msw-toggle__debug-info {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  font-family: monospace;
+}
+
+.msw-toggle__debug-info > div {
+  margin-bottom: var(--spacing-micro);
+}
+
+/* Element: Info Container */
+.msw-toggle__info {
+  background-color: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: var(--border-radius);
+  padding: var(--spacing-md);
+  margin-top: var(--spacing-sm);
+}
+
+.msw-toggle__info small {
+  color: #0369a1;
+  font-size: var(--font-size-xs);
+  line-height: 1.4;
+}
+
+/* Responsive Design */
+@media (max-width: calc(var(--breakpoint-tablet) * 1px)) {
+  .msw-toggle {
+    padding: var(--spacing-md);
+  }
+  
+  .msw-toggle__header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-sm);
+  }
+  
+  .msw-toggle__status {
+    align-self: flex-end;
+  }
+} 

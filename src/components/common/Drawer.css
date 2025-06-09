@@ -1,0 +1,97 @@
+/* Generic Drawer Component Styles */
+
+/* Overlay */
+.drawer__overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: 1001;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Drawer Container */
+.drawer {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  max-width: 90vw;
+  background: white;
+  box-shadow: none; /* No shadow when drawer is closed */
+  z-index: 1002;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Right-positioned drawer (default) */
+.drawer--right {
+  right: 0;
+  transform: translateX(100%);
+}
+
+.drawer--right.drawer--open {
+  transform: translateX(0);
+  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15); /* Shadow extends to the left */
+}
+
+/* Left-positioned drawer */
+.drawer--left {
+  left: 0;
+  transform: translateX(-100%);
+}
+
+.drawer--left.drawer--open {
+  transform: translateX(0);
+  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.15); /* Shadow extends to the right */
+}
+
+/* Drawer Header */
+.drawer__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-3xl) var(--spacing-3xl) var(--spacing-md) var(--spacing-3xl);
+  border-bottom: var(--border-thin) var(--border-color);
+  background: var(--background-color);
+}
+
+.drawer__title {
+  margin: 0;
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--primary-color);
+}
+
+/* Close button uses .modal__close-button class from Modal.css for consistency */
+/* Ensure drawer close button has same hover behavior as modal */
+.drawer__header .modal__close-button:hover {
+  color: var(--modal-close-hover);
+  background-color: var(--modal-close-bg-hover);
+}
+
+/* Drawer Content */
+.drawer__content {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--spacing-3xl);
+  scroll-behavior: smooth;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .drawer {
+    width: 100vw !important; /* Override inline width on mobile */
+  }
+  
+  .drawer__content {
+    padding: var(--spacing-md);
+  }
+} 

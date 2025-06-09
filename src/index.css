@@ -137,8 +137,7 @@
   --text-shadow-sm: 2px 2px 4px rgba(0, 0, 0, 0.1);
   --text-shadow-md: 4px 4px 8px rgba(0, 0, 0, 0.15);
 
-  /* Gradients */
-  --gradient-app-title: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+
 
   /* Height System */
   --height-screen: 100vh;

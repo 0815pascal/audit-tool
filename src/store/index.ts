@@ -2,6 +2,7 @@ import { configureStore } from '@reduxjs/toolkit';
 import { setupListeners } from '@reduxjs/toolkit/query';
 import auditUIReducer from './caseAuditSlice';
 import userUIReducer from './userSlice';
+import uiReducer from './uiSlice';
 import api from './api';
 
 // Configure the Redux store
@@ -9,6 +10,7 @@ const store = configureStore({
   reducer: {
     auditUI: auditUIReducer,
     userUI: userUIReducer,
+    ui: uiReducer,
     // Single API reducer for all endpoints
     [api.reducerPath]: api.reducer,
   },

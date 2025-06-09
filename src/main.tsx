@@ -6,6 +6,7 @@ import App from './App.tsx';
 import './index.css';
 import store from './store';
 
+
 // Add global error handling
 window.addEventListener('error', (event) => {
   console.error('GLOBAL ERROR:', event.message, event.filename, event.lineno);
@@ -27,20 +28,22 @@ window.addEventListener('error', (event) => {
 
 // Start the app
 const startApp = async () => {
+  // Initialize MSW service with Redux dispatch
+  const { mswService } = await import('./services/mswService');
+  mswService.initialize(store.dispatch);
+  
+  // Make MSW service globally accessible in development for debugging
   if (import.meta.env.MODE === 'development') {
-    try {
-      const { worker } = await import('./mocks/browser');
-      
-      // Simplified MSW initialization
-      await worker.start({
-        onUnhandledRequest: 'bypass'
-      });
-      
-      console.log('[MSW] Browser service worker started successfully');
-    } catch (error) {
-      console.error('[MSW] Failed to start service worker:', error);
-      console.warn('[MSW] App will continue without mocking - some features may not work');
-    }
+    (window as any).__MSW_SERVICE__ = mswService;
+    (window as any).__REDUX_STORE__ = store;
+    console.log('🛠️ Debug: MSW Service and Redux Store available on window.__MSW_SERVICE__ and window.__REDUX_STORE__');
+  }
+  
+  // Check initial MSW state from Redux and start if enabled
+  const state = store.getState();
+  if (state.ui.isMswEnabled) {
+    console.log('[App] Starting MSW based on Redux state...');
+    await mswService.start();
   }
   
   ReactDOM.createRoot(document.getElementById('root')!).render(

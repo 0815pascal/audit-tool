@@ -1,0 +1,82 @@
+/* Debug Drawer Component Styles */
+
+/* Trigger Button - Cog-wheel positioned bottom right */
+.debug-drawer__trigger {
+  position: fixed;
+  bottom: var(--spacing-3xl);
+  right: var(--spacing-3xl);
+  z-index: 1000;
+  background: white;
+  color: var(--primary-color);
+  border: none;
+  border-radius: 50%;
+  width: 3rem;
+  height: 3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  cursor: pointer;
+  box-shadow: var(--box-shadow);
+  transition: all 0.2s ease;
+}
+
+.debug-drawer__trigger:hover:not(:disabled) {
+  background: white !important; /* Override global button:hover:not(:disabled) rule */
+  transform: scale(1.05);
+  box-shadow: var(--box-shadow-strong);
+}
+
+.debug-drawer__trigger:active {
+  transform: scale(0.95);
+}
+
+/* Debug-specific content wrapper */
+.debug-drawer__content-wrapper {
+  /* Show the debug controls header but modify it for drawer context */
+}
+
+.debug-drawer__content-wrapper .debug-controls__header {
+  /* Keep the header visible so users can toggle debug info */
+  background-color: transparent;
+  border-bottom: 1px solid var(--border-color);
+  border-radius: 0;
+  padding: var(--spacing-md) 0;
+}
+
+.debug-drawer__content-wrapper .debug-controls__title {
+  /* Make the title smaller since we already have a drawer title */
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+/* Adjust debug controls content for drawer */
+.debug-drawer__content-wrapper .debug-controls {
+  background: none;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  margin: 0;
+  box-shadow: none;
+}
+
+.debug-drawer__content-wrapper .debug-controls__content {
+  margin-top: 0;
+  padding: 0;
+}
+
+/* Ensure drawer content doesn't interfere with scroll */
+.debug-drawer__content-wrapper .debug-controls__info {
+  max-height: none;
+}
+
+/* Mobile responsiveness for trigger button */
+@media (max-width: 768px) {
+  .debug-drawer__trigger {
+    bottom: var(--spacing-md);
+    right: var(--spacing-md);
+    width: 2.5rem;
+    height: 2.5rem;
+    font-size: 1rem;
+  }
+} 
