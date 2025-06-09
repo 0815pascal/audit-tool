@@ -156,7 +156,7 @@ export interface StoredCaseAuditData extends CaseAuditData {
   year: number;
   caseType: CaseType;
   coverageAmount: number;
-  claimsStatus: ClaimsStatus;
+  claimStatus: ClaimStatus;
   dossierName: string;
   lastUpdated?: string;
   notifiedCurrency?: ValidCurrency; // Currency code for the case (e.g., CHF, EUR, USD)
@@ -181,7 +181,7 @@ interface CaseAuditCore extends BaseEntity<CaseAuditId> {
   coverageAmount: number;
   isCompleted: boolean;
   isSpecialist: boolean;
-  claimsStatus: ClaimsStatus;
+  claimStatus: ClaimStatus;
   quarter: QuarterPeriod;
   year: number;
   caseType: CaseType;
@@ -202,7 +202,7 @@ export type UserRole = USER_ROLE_ENUM;
 export type CaseType = CASE_TYPE_ENUM;
 
 // Types using enums for stronger typing - Keep only ones that are used
-export type ClaimsStatus = CLAIMS_STATUS_ENUM;
+export type ClaimStatus = CLAIMS_STATUS_ENUM;
 
 export type RatingValue = RATING_VALUE_ENUM | '';
 export type FindingType = DETAILED_FINDING_ENUM | SPECIAL_FINDING_ENUM;
@@ -274,7 +274,7 @@ export interface AuditForSelection extends BaseEntity<CaseAuditId> {
   userId: string;
   status?: AUDIT_STATUS_ENUM;
   coverageAmount: number;
-  claimsStatus?: string;
+  claimStatus?: string;
   auditor?: string;
   comment?: string;
   rating?: string;
@@ -336,7 +336,7 @@ interface AuditItem {
   auditor: string;
   coverageAmount: number;
   isCompleted: boolean;
-  claimsStatus: string;
+  claimStatus: string;
   quarter: string;
   notifiedCurrency?: ValidCurrency;
   caseType: string;
@@ -360,7 +360,7 @@ interface QuarterCaseItem {
   id: string;
   userId: string;
   coverageAmount: number;
-  claimsStatus: string;
+  claimStatus: string;
   quarter: string;
   notifiedCurrency?: ValidCurrency;
 }
@@ -386,7 +386,7 @@ interface PreLoadedCaseItem {
   specialFindings: Record<string, boolean>;
   detailedFindings: Record<string, boolean>;
   coverageAmount: number;
-  claimsStatus: string;
+  claimStatus: string;
   quarter: string;
   notifiedCurrency: ValidCurrency;
 }
@@ -532,7 +532,7 @@ export interface PreLoadedCase {
   specialFindings: FindingsRecord;
   detailedFindings: FindingsRecord;
   coverageAmount: number;
-  claimsStatus: string;
+  claimStatus: string;
   quarter: string;
   notifiedCurrency: ValidCurrency;
 }

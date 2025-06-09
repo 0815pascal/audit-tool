@@ -11,7 +11,7 @@ import { USER_ROLE_ENUM, CLAIMS_STATUS_ENUM, CASE_STATUS_ENUM } from '../enums';
 
 // Type aliases for easier use in this file
 type UserRole = USER_ROLE_ENUM;
-type ClaimsStatus = CLAIMS_STATUS_ENUM;
+type ClaimStatus = CLAIMS_STATUS_ENUM;
 type CaseStatus = CASE_STATUS_ENUM;
 
 // Finding ID branded type
@@ -29,7 +29,7 @@ interface ClaimOwner {
  * A CaseObj is the central entity being audited in the system. It contains:
  * 1. Case identification (caseNumber)
  * 2. Information about who owns the case (claimOwner)
- * 3. Status and financial information (claimsStatus, coverageAmount, caseStatus)
+ * 3. Status and financial information (claimStatus, coverageAmount, caseStatus)
  * 4. Notification date for quarter calculation (notificationDate)
  * 5. Currency information for proper formatting (notifiedCurrency)
  * 
@@ -39,7 +39,7 @@ interface ClaimOwner {
 export interface CaseObj {
   caseNumber: CaseId;
   claimOwner: ClaimOwner;
-  claimsStatus: ClaimsStatus;
+  claimStatus: ClaimStatus;
   coverageAmount: number;
   caseStatus: CaseStatus;
   notificationDate: string; // Date when the case was notified, used for quarter calculation

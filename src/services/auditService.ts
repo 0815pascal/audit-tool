@@ -39,7 +39,7 @@ export const getAuditsByQuarter = async (quarter: QuarterPeriod): Promise<UserAu
       auditor: String(audit.auditor ?? ''),
       coverageAmount: Number(audit.coverageAmount) || 0,
       isCompleted: Boolean(audit.isCompleted),
-      claimsStatus: String(audit.claimsStatus) || 'FULL_COVER',
+      claimStatus: String(audit.claimStatus) || 'FULL_COVER',
       notifiedCurrency: String(audit.notifiedCurrency) || CURRENCY.CHF
     }));
   } catch (error) {
@@ -69,7 +69,7 @@ export const getAllCasesByQuarter = async (quarter: QuarterPeriod): Promise<Case
         role: (caseData.claimOwner && (caseData.claimOwner as Record<string, unknown>).role) ?? 'STAFF'
       },
       coverageAmount: Number(caseData.coverageAmount) || 0,
-      claimsStatus: String(caseData.claimsStatus) || 'FULL_COVER',
+      claimStatus: String(caseData.claimStatus) || 'FULL_COVER',
       caseStatus: String(caseData.caseStatus) || 'COMPENSATED',
       notificationDate: String(caseData.notificationDate),
       notifiedCurrency: String(caseData.notifiedCurrency) || CURRENCY.CHF
@@ -106,7 +106,7 @@ export const getAuditsByAuditor = async (auditorId: UserId): Promise<UserAuditFo
       auditor: String(audit.auditor ?? ''),
       coverageAmount: Number(audit.coverageAmount) || 0,
       isCompleted: Boolean(audit.isCompleted),
-      claimsStatus: String(audit.claimsStatus) || 'FULL_COVER',
+      claimStatus: String(audit.claimStatus) || 'FULL_COVER',
       notifiedCurrency: String(audit.notifiedCurrency) || CURRENCY.CHF
     }));
   } catch (error) {
@@ -144,7 +144,7 @@ export const createAudit = async (payload: Record<string, unknown>): Promise<Aud
       auditor: data.auditor ?? '',
       coverageAmount: data.coverageAmount ?? 0,
       isCompleted: Boolean(data.isCompleted),
-      claimsStatus: data.claimsStatus ?? 'FULL_COVER',
+      claimStatus: data.claimStatus ?? 'FULL_COVER',
       notifiedCurrency: data.notifiedCurrency ?? CURRENCY.CHF
     };
   } catch (error) {
@@ -182,7 +182,7 @@ export const updateAudit = async (caseAuditId: CaseAuditId, payload: Record<stri
       auditor: data.auditor ?? '',
       coverageAmount: data.coverageAmount ?? 0,
       isCompleted: Boolean(data.isCompleted),
-      claimsStatus: data.claimsStatus ?? 'FULL_COVER',
+      claimStatus: data.claimStatus ?? 'FULL_COVER',
       notifiedCurrency: data.notifiedCurrency ?? CURRENCY.CHF
     };
   } catch (error) {
@@ -260,7 +260,7 @@ export const selectCasesForAudit = async (quarterPeriod: QuarterPeriod, preLoade
         role: (caseData.claimOwner && (caseData.claimOwner as Record<string, unknown>).role) ?? 'STAFF'
       },
       coverageAmount: Number(caseData.coverageAmount) || 0,
-      claimsStatus: String(caseData.claimsStatus) || 'FULL_COVER',
+      claimStatus: String(caseData.claimStatus) || 'FULL_COVER',
       caseStatus: String(caseData.caseStatus) || 'COMPENSATED',
       notificationDate: String(caseData.notificationDate),
       notifiedCurrency: String(caseData.notifiedCurrency) || CURRENCY.CHF

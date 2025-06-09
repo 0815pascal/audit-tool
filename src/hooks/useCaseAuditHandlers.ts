@@ -187,7 +187,7 @@ export const useCaseAuditHandlers = () => {
           id: String(caseObj.caseNumber),
           userId: String(caseObj.claimOwner.userId),
           coverageAmount: caseObj.coverageAmount,
-          claimsStatus: String(caseObj.claimsStatus),
+          claimStatus: String(caseObj.claimStatus),
           quarter: actualQuarter,
           notifiedCurrency: caseObj.notifiedCurrency ?? CURRENCY.CHF,
           // Include audit information if available
@@ -233,7 +233,7 @@ export const useCaseAuditHandlers = () => {
             auditor: auditorString,
             coverageAmount: 0,
             isCompleted: false,
-            claimsStatus: 'FULL_COVER',
+            claimStatus: 'FULL_COVER',
             quarter: selectedQuarter ?? 'Q1-2025',
             caseType: 'USER_QUARTERLY',
             comment: caseAuditData.comment,
@@ -415,7 +415,7 @@ export const useCaseAuditHandlers = () => {
           auditor: '', // No auditor assigned yet
           coverageAmount: caseObj.coverageAmount,
           isCompleted: false,
-          claimsStatus: String(caseObj.claimsStatus), // Convert to string
+          claimStatus: String(caseObj.claimStatus), // Convert to string
           quarter: actualQuarter, // Use the actual quarter from notification date for display
           notifiedCurrency: caseObj.notifiedCurrency ?? CURRENCY.CHF, // Include the currency from API response
           caseType: String(caseType) // Set caseType based on whether it's current or previous quarter
@@ -504,7 +504,7 @@ export const useCaseAuditHandlers = () => {
           'Auditor': auditorUser ? auditorUser.displayName : (currentAuditor || '-'),
           'Coverage Amount': audit.coverageAmount ? audit.coverageAmount.toLocaleString('de-CH') : '-',
           'Currency': audit.notifiedCurrency ?? 'CHF',
-          'Claims Status': audit.claimsStatus ?? '-',
+          'Claims Status': audit.claimStatus ?? '-',
           'Rating': ratingText,
           'Comment': latestAuditData?.comment || audit.comment || '',
           'Completion Date': latestAuditData?.completionDate ?
@@ -574,7 +574,7 @@ export const useCaseAuditHandlers = () => {
       isSpecialist: false,
       quarter: selectedQuarter ?? 'Q1-2025',
       year: filteredYear,
-      claimsStatus: audit.claimsStatus ?? CLAIMS_STATUS_ENUM.FULL_COVER,
+      claimStatus: audit.claimStatus ?? CLAIMS_STATUS_ENUM.FULL_COVER,
       auditor: ensureUserId(audit.auditor ?? ''),
       comment: audit.comment ?? '',
       rating: (audit.rating ?? '') as RatingValue,

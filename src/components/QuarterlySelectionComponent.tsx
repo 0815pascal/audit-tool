@@ -3,7 +3,7 @@ import {
   CaseAudit,
   CaseAuditData,
   CaseType,
-  ClaimsStatus,
+  ClaimStatus,
   QuarterNumber,
   QuarterPeriod,
   RatingValue,
@@ -234,9 +234,9 @@ const QuarterlySelectionComponent: React.FC = () => {
         isSpecialist: false,
         quarter: (audit.quarter as QuarterPeriod) || (selectedQuarter), // Use audit's quarter or fallback
         year: audit.year ?? parseInt(selectedQuarter?.split('-')[1] || String(new Date().getFullYear())),
-        claimsStatus: (audit.claimsStatus as ClaimsStatus) || CLAIMS_STATUS_ENUM.FULL_COVER,
+        claimStatus: (audit.claimStatus as ClaimStatus) || CLAIMS_STATUS_ENUM.FULL_COVER,
         auditor: audit.auditor ? ensureUserId(audit.auditor) : ensureUserId(currentUserId),
-        status: audit.status ? (audit.status) : (audit.isCompleted ? AUDIT_STATUS_ENUM.COMPLETED : AUDIT_STATUS_ENUM.PENDING),
+        status: audit.status ? (audit.status as AUDIT_STATUS_ENUM) : (audit.isCompleted ? AUDIT_STATUS_ENUM.COMPLETED : AUDIT_STATUS_ENUM.PENDING),
         // Use latest data from Redux if available, otherwise fall back to audit data
         comment: (latestAuditData?.comment || audit.comment) ?? '',
         rating: ((latestAuditData?.rating || audit.rating) ?? '') as RatingValue,

@@ -421,7 +421,7 @@ describe('API Endpoints - MSW Handler Coverage', () => {
             userId: 3,
             role: 'SPECIALIST'
           },
-          claimsStatus: 'FULL_COVER',
+          claimStatus: 'FULL_COVER',
           coverageAmount: 25000.50,
           caseStatus: 'COMPENSATED',
           notificationDate: '2025-02-15',
@@ -451,7 +451,7 @@ describe('API Endpoints - MSW Handler Coverage', () => {
       // Validate nested caseObj structure
       expect(responseData.caseObj).toHaveProperty('caseNumber');
       expect(responseData.caseObj).toHaveProperty('claimOwner');
-      expect(responseData.caseObj).toHaveProperty('claimsStatus');
+      expect(responseData.caseObj).toHaveProperty('claimStatus');
       expect(responseData.caseObj).toHaveProperty('coverageAmount');
       expect(responseData.caseObj).toHaveProperty('caseStatus');
       expect(responseData.caseObj).toHaveProperty('notificationDate');
@@ -476,7 +476,7 @@ describe('API Endpoints - MSW Handler Coverage', () => {
         quarter: 'Q3-2025',
         caseObj: {
           caseNumber: 54321,
-          claimsStatus: 'PARTIAL_COVER',
+          claimStatus: 'PARTIAL_COVER',
           coverageAmount: 35000.75,
           caseStatus: 'IN_PROGRESS'
         },
@@ -507,14 +507,14 @@ describe('API Endpoints - MSW Handler Coverage', () => {
       
       // Validate nested object structure
       expect(updateAuditPayload.caseObj).toHaveProperty('caseNumber');
-      expect(updateAuditPayload.caseObj).toHaveProperty('claimsStatus');
+      expect(updateAuditPayload.caseObj).toHaveProperty('claimStatus');
       expect(updateAuditPayload.caseObj).toHaveProperty('coverageAmount');
       expect(updateAuditPayload.auditor).toHaveProperty('userId');
       expect(updateAuditPayload.auditor).toHaveProperty('role');
       
       // Validate data types of nested properties
       expect(typeof updateAuditPayload.caseObj.caseNumber).toBe('number');
-      expect(typeof updateAuditPayload.caseObj.claimsStatus).toBe('string');
+      expect(typeof updateAuditPayload.caseObj.claimStatus).toBe('string');
       expect(typeof updateAuditPayload.caseObj.coverageAmount).toBe('number');
       expect(typeof updateAuditPayload.auditor.userId).toBe('number');
       expect(typeof updateAuditPayload.auditor.role).toBe('string');

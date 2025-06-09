@@ -33,7 +33,7 @@ describe('Audit Filtering', () => {
       expect(auditedCase.caseNumber).toBe('30050345'); // Jennifer Wilson's case number
       expect(auditedCase.claimOwner.userId).toBe('6'); // Sarah Wilson (User ID 6)
       expect(auditedCase.coverageAmount).toBe(1250);
-      expect(auditedCase.claimsStatus).toBe('PARTIAL_COVER');
+      expect(auditedCase.claimStatus).toBe('PARTIAL_COVER');
     });
 
     it('should return audited cases for Q2-2025 (should return completed and in-progress cases)', async () => {

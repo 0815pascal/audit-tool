@@ -113,7 +113,7 @@ describe('Currency Functionality Test', () => {
       const firstCase = data[0];
       expect(firstCase).toHaveProperty('caseNumber');
       expect(firstCase).toHaveProperty('claimOwner');
-      expect(firstCase).toHaveProperty('claimsStatus');
+      expect(firstCase).toHaveProperty('claimStatus');
       expect(firstCase).toHaveProperty('coverageAmount');
       expect(firstCase).toHaveProperty('caseStatus');
       expect(firstCase).toHaveProperty('notificationDate');

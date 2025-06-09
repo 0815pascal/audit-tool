@@ -306,7 +306,7 @@ const createDefaultCaseAuditData = (userId: string): StoredCaseAuditData => {
               status: AUDIT_STATUS_ENUM.PENDING,
     caseType: CASE_TYPE_ENUM.USER_QUARTERLY,
     coverageAmount: 0,
-    claimsStatus: CLAIMS_STATUS_ENUM.FULL_COVER,
+    claimStatus: CLAIMS_STATUS_ENUM.FULL_COVER,
     dossierName: 'Default Dossier',
     notifiedCurrency: CURRENCY.CHF
   };
@@ -442,10 +442,10 @@ const auditUISlice = createSlice({
           isIncorrect: false,
           completionDate: null,
           userId: ensureUserId(audit.userId),
-          quarter: audit.quarter,
-          year: parseInt(audit.quarter.split('-')[1]),
+          quarter: audit.quarter ?? 'Q1-2025',
+          year: parseInt((audit.quarter ?? 'Q1-2025').split('-')[1]),
           steps: {},
-          auditor: ensureUserId(audit.auditor),
+          auditor: ensureUserId(audit.auditor ?? ''),
           comment: audit.comment ?? '',
           rating: (audit.rating ?? '') as RatingValue,
           specialFindings: convertToFindingsRecord(audit.specialFindings),
@@ -453,7 +453,7 @@ const auditUISlice = createSlice({
           status: audit.status as AUDIT_STATUS_ENUM,
           caseType: audit.caseType as CASE_TYPE_ENUM,
           coverageAmount: audit.coverageAmount,
-          claimsStatus: audit.claimsStatus as CLAIMS_STATUS_ENUM,
+          claimStatus: audit.claimStatus as CLAIMS_STATUS_ENUM,
           dossierName: 'Generated Audit',
           notifiedCurrency: audit.notifiedCurrency ?? CURRENCY.CHF
         };
@@ -509,7 +509,7 @@ const auditUISlice = createSlice({
           status: status,
           caseType: CASE_TYPE_ENUM.QUARTER_DISPLAY, // New case type for quarter display
           coverageAmount: caseData.coverageAmount,
-          claimsStatus: caseData.claimsStatus as CLAIMS_STATUS_ENUM,
+          claimStatus: caseData.claimStatus as CLAIMS_STATUS_ENUM,
           dossierName: `Case ${caseData.id}`,
           notifiedCurrency: caseData.notifiedCurrency ?? CURRENCY.CHF
         };
@@ -563,7 +563,7 @@ const auditUISlice = createSlice({
           status: status,
           caseType: CASE_TYPE_ENUM.PRE_LOADED,
           coverageAmount: caseData.coverageAmount,
-          claimsStatus: caseData.claimsStatus as CLAIMS_STATUS_ENUM,
+          claimStatus: caseData.claimStatus as CLAIMS_STATUS_ENUM,
           dossierName: `Case ${caseData.id}`,
           notifiedCurrency: caseData.notifiedCurrency ?? CURRENCY.CHF
         };

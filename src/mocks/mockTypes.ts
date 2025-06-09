@@ -1,5 +1,5 @@
 import { 
-  ClaimsStatus, 
+  ClaimStatus, 
   QuarterPeriod,
   CaseType,
   RatingValue,
@@ -31,7 +31,7 @@ export interface MockCaseData extends Record<string, unknown> {
   dossierName: string;
   totalAmount: number;
   isCompleted: boolean;
-  claimsStatus: ClaimsStatus;
+  claimStatus: ClaimStatus;
   coverageAmount: number;
   auditor: string;
   comment: string;
@@ -52,7 +52,7 @@ export interface ApiCaseResponse {
     userId: UserId | number;
     role: UserRole;
   };
-  claimsStatus: ClaimsStatus;
+  claimStatus: ClaimStatus;
   coverageAmount: number;
   caseStatus: CASE_STATUS_ENUM;
   notificationDate: string;
@@ -81,7 +81,7 @@ export interface ApiAuditRequestPayload {
       userId?: string | number;
       role?: UserRole;
     };
-    claimsStatus?: ClaimsStatus;
+    claimStatus?: ClaimStatus;
     coverageAmount?: number;
     caseStatus?: CASE_STATUS_ENUM;
     notifiedCurrency?: string;

@@ -279,7 +279,7 @@ describe('IKS Audit Business Logic', () => {
           specialFindings: { feedback: true, communication: true },
           detailedFindings: {},
           coverageAmount: 1500,
-          claimsStatus: 'FULL_COVER',
+          claimStatus: 'FULL_COVER',
           quarter: 'Q2-2025',
           notifiedCurrency: 'CHF'
         },
@@ -293,7 +293,7 @@ describe('IKS Audit Business Logic', () => {
           specialFindings: {},
           detailedFindings: {},
           coverageAmount: 775,
-          claimsStatus: 'PARTIAL_COVER',
+          claimStatus: 'PARTIAL_COVER',
           quarter: 'Q2-2025',
           notifiedCurrency: 'EUR'
         },
@@ -307,7 +307,7 @@ describe('IKS Audit Business Logic', () => {
           specialFindings: {},
           detailedFindings: {},
           coverageAmount: 1200,
-          claimsStatus: 'FULL_COVER',
+          claimStatus: 'FULL_COVER',
           quarter: 'Q2-2025',
           notifiedCurrency: 'CHF'
         }

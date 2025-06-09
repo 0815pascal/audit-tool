@@ -17,7 +17,7 @@ import {
   CACHE_STRATEGIES
 } from '../utils/restUtils';
 import { CURRENCY, ValidCurrency } from '../types/currencyTypes';
-import {ClaimsStatus, QuarterPeriod, AuditCompletionParams} from '../types/types';
+import {ClaimStatus, QuarterPeriod, AuditCompletionParams} from '../types/types';
 import {createCaseId, createUserId, isQuarterPeriod,} from '../types/typeHelpers';
 import {API_BASE_PATH, CASE_STATUS_MAPPING, CLAIMS_STATUS} from '../constants';
 import {CASE_STATUS_ENUM, USER_ROLE_ENUM} from '../enums';
@@ -652,7 +652,7 @@ export const handlers: MSWHandler[] = [
               ? requestData.caseObj.claimOwner.role
               : USER_ROLE_ENUM.TEAM_LEADER
           },
-          claimsStatus: (requestData.caseObj?.claimsStatus as ClaimsStatus) || CLAIMS_STATUS.FULL_COVER,
+          claimStatus: (requestData.caseObj?.claimStatus as ClaimStatus) || CLAIMS_STATUS.FULL_COVER,
           coverageAmount: requestData.caseObj?.coverageAmount ?? 10000.00,
           caseStatus: (requestData.caseObj?.caseStatus as CASE_STATUS_ENUM) || CASE_STATUS_MAPPING.COMPENSATED,
           notificationDate: getCurrentDateString(),
@@ -732,7 +732,7 @@ export const handlers: MSWHandler[] = [
               userId: 1,
               role: USER_ROLE_ENUM.TEAM_LEADER
             },
-            claimsStatus: CLAIMS_STATUS.FULL_COVER,
+            claimStatus: CLAIMS_STATUS.FULL_COVER,
             coverageAmount: 10000.00,
             caseStatus: CASE_STATUS_MAPPING.COMPENSATED,
             notificationDate: getCurrentDateString(),
@@ -766,8 +766,8 @@ export const handlers: MSWHandler[] = [
               } : {}
             }
           } : {}),
-          ...((requestData.caseObj as Record<string, unknown>)?.claimsStatus ? {
-            claimsStatus: (requestData.caseObj as Record<string, unknown>).claimsStatus
+          ...((requestData.caseObj as Record<string, unknown>)?.claimStatus ? {
+            claimStatus: (requestData.caseObj as Record<string, unknown>).claimStatus
           } : {}),
           ...((requestData.caseObj as Record<string, unknown>)?.coverageAmount !== undefined ? {
             coverageAmount: safeParseInt((requestData.caseObj as Record<string, unknown>).coverageAmount as string | number, existingAudit.caseObj.coverageAmount)
@@ -1071,7 +1071,7 @@ export const handlers: MSWHandler[] = [
       specialFindings: caseItem.specialFindings,
       detailedFindings: caseItem.detailedFindings,
       coverageAmount: caseItem.coverageAmount,
-      claimsStatus: caseItem.claimsStatus,
+      claimStatus: caseItem.claimStatus,
       quarter: `Q${caseItem.quarter}-${caseItem.year}`,
       notifiedCurrency: caseItem.notifiedCurrency
     }));

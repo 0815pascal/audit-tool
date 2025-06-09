@@ -34,7 +34,7 @@ export const mockCases: MockCaseData[] = [
     dossierName: 'Matrix Incorporated',
     totalAmount: 525,
     isCompleted: false,
-    claimsStatus: CLAIMS_STATUS_ENUM.FULL_COVER,
+    claimStatus: CLAIMS_STATUS_ENUM.FULL_COVER,
     coverageAmount: 525,
     auditor: '',
     comment: '',
@@ -58,7 +58,7 @@ export const mockCases: MockCaseData[] = [
     dossierName: 'Wonderland Holdings',
     totalAmount: 360,
     isCompleted: false,
-    claimsStatus: CLAIMS_STATUS_ENUM.FULL_COVER,
+    claimStatus: CLAIMS_STATUS_ENUM.FULL_COVER,
     coverageAmount: 360,
     auditor: '',
     comment: '',
@@ -82,7 +82,7 @@ export const mockCases: MockCaseData[] = [
     dossierName: 'Wilson Family Trust',
     totalAmount: 440,
     isCompleted: false,
-    claimsStatus: CLAIMS_STATUS_ENUM.PARTIAL_COVER,
+    claimStatus: CLAIMS_STATUS_ENUM.PARTIAL_COVER,
     coverageAmount: 440,
     auditor: '',
     comment: '',
@@ -106,7 +106,7 @@ export const mockCases: MockCaseData[] = [
     dossierName: 'Miller Automotive Group',
     totalAmount: 875,
     isCompleted: false,
-    claimsStatus: CLAIMS_STATUS_ENUM.FULL_COVER,
+    claimStatus: CLAIMS_STATUS_ENUM.FULL_COVER,
     coverageAmount: 875,
     auditor: '',
     comment: '',
@@ -130,7 +130,7 @@ export const mockCases: MockCaseData[] = [
     dossierName: 'Brown Construction Ltd',
     totalAmount: 1100,
     isCompleted: false,
-    claimsStatus: CLAIMS_STATUS_ENUM.FULL_COVER,
+    claimStatus: CLAIMS_STATUS_ENUM.FULL_COVER,
     coverageAmount: 1100,
     auditor: '',
     comment: '',
@@ -154,7 +154,7 @@ export const mockCases: MockCaseData[] = [
     dossierName: 'Wilson Financial Services',
     totalAmount: 950,
     isCompleted: false,
-    claimsStatus: CLAIMS_STATUS_ENUM.PARTIAL_COVER,
+    claimStatus: CLAIMS_STATUS_ENUM.PARTIAL_COVER,
     coverageAmount: 950,
     auditor: '',
     comment: '',
@@ -178,7 +178,7 @@ export const mockCases: MockCaseData[] = [
     dossierName: 'Thompson Legal Group',
     totalAmount: 2100,
     isCompleted: false,
-    claimsStatus: CLAIMS_STATUS_ENUM.FULL_COVER,
+    claimStatus: CLAIMS_STATUS_ENUM.FULL_COVER,
     coverageAmount: 2100,
     auditor: '',
     comment: '',
@@ -202,7 +202,7 @@ export const mockCases: MockCaseData[] = [
     dossierName: 'Garcia & Associates',
     totalAmount: 750,
     isCompleted: false,
-    claimsStatus: CLAIMS_STATUS_ENUM.PARTIAL_COVER,
+    claimStatus: CLAIMS_STATUS_ENUM.PARTIAL_COVER,
     coverageAmount: 750,
     auditor: '',
     comment: '',
@@ -228,7 +228,7 @@ export const mockCases: MockCaseData[] = [
     dossierName: 'Brown Medical Associates',
     totalAmount: 970,
     isCompleted: false,
-    claimsStatus: CLAIMS_STATUS_ENUM.FULL_COVER,
+    claimStatus: CLAIMS_STATUS_ENUM.FULL_COVER,
     coverageAmount: 970,
     auditor: '',
     comment: '',
@@ -252,7 +252,7 @@ export const mockCases: MockCaseData[] = [
     dossierName: 'Wilson Tech Solutions',
     totalAmount: 1250,
     isCompleted: false, // IN-PROGRESS CASE
-    claimsStatus: CLAIMS_STATUS_ENUM.PARTIAL_COVER,
+    claimStatus: CLAIMS_STATUS_ENUM.PARTIAL_COVER,
     coverageAmount: 1250,
     auditor: '4', // Being audited by Emily Davis (User ID 4, Team Leader)
     comment: 'Audit in progress - Jennifer Wilson case being reviewed by Emily Davis.',
@@ -276,7 +276,7 @@ export const mockCases: MockCaseData[] = [
     dossierName: 'Thompson Industries',
     totalAmount: 800,
     isCompleted: false,
-    claimsStatus: CLAIMS_STATUS_ENUM.FULL_COVER,
+    claimStatus: CLAIMS_STATUS_ENUM.FULL_COVER,
     coverageAmount: 800,
     auditor: '',
     comment: '',
@@ -300,7 +300,7 @@ export const mockCases: MockCaseData[] = [
     dossierName: 'Garcia Consulting',
     totalAmount: 650,
     isCompleted: false,
-    claimsStatus: CLAIMS_STATUS_ENUM.FULL_COVER,
+    claimStatus: CLAIMS_STATUS_ENUM.FULL_COVER,
     coverageAmount: 650,
     auditor: '',
     comment: '',
@@ -324,7 +324,7 @@ export const mockCases: MockCaseData[] = [
     dossierName: 'Smith Enterprises',
     totalAmount: 1800,
     isCompleted: false,
-    claimsStatus: CLAIMS_STATUS_ENUM.FULL_COVER,
+    claimStatus: CLAIMS_STATUS_ENUM.FULL_COVER,
     coverageAmount: 1800,
     auditor: '',
     comment: '',
@@ -348,7 +348,7 @@ export const mockCases: MockCaseData[] = [
     dossierName: 'Doe Manufacturing',
     totalAmount: 1375,
     isCompleted: false,
-    claimsStatus: CLAIMS_STATUS_ENUM.PARTIAL_COVER,
+    claimStatus: CLAIMS_STATUS_ENUM.PARTIAL_COVER,
     coverageAmount: 1375,
     auditor: '',
     comment: '',
@@ -374,7 +374,7 @@ export const mockCases: MockCaseData[] = [
     dossierName: 'Johnson Holdings',
     totalAmount: 2250,
     isCompleted: false,
-    claimsStatus: CLAIMS_STATUS_ENUM.FULL_COVER,
+    claimStatus: CLAIMS_STATUS_ENUM.FULL_COVER,
     coverageAmount: 2250,
     auditor: '',
     comment: '',
@@ -398,7 +398,7 @@ export const mockCases: MockCaseData[] = [
     dossierName: 'Davis Financial',
     totalAmount: 925,
     isCompleted: false,
-    claimsStatus: CLAIMS_STATUS_ENUM.PARTIAL_COVER,
+    claimStatus: CLAIMS_STATUS_ENUM.PARTIAL_COVER,
     coverageAmount: 925,
     auditor: '',
     comment: '',
@@ -424,7 +424,7 @@ export const mockCases: MockCaseData[] = [
     dossierName: 'Matrix Alpha Division',
     totalAmount: 3200,
     isCompleted: false,
-    claimsStatus: CLAIMS_STATUS_ENUM.FULL_COVER,
+    claimStatus: CLAIMS_STATUS_ENUM.FULL_COVER,
     coverageAmount: 3200,
     auditor: '',
     comment: '',
@@ -448,7 +448,7 @@ export const mockCases: MockCaseData[] = [
     dossierName: 'Brown Manufacturing',
     totalAmount: 1680,
     isCompleted: false,
-    claimsStatus: CLAIMS_STATUS_ENUM.PARTIAL_COVER,
+    claimStatus: CLAIMS_STATUS_ENUM.PARTIAL_COVER,
     coverageAmount: 1680,
     auditor: '',
     comment: '',
@@ -474,7 +474,7 @@ export const mockCases: MockCaseData[] = [
     dossierName: 'Zion Technologies',
     totalAmount: 1500,
     isCompleted: true, // VERIFIED CASE
-    claimsStatus: CLAIMS_STATUS_ENUM.FULL_COVER,
+    claimStatus: CLAIMS_STATUS_ENUM.FULL_COVER,
     coverageAmount: 1500,
     auditor: '4', // Verified by Emily Davis (User ID 4, Team Leader)
     comment: 'Audit completed successfully with excellent documentation and proper procedures followed.',
@@ -502,7 +502,7 @@ export const mockCases: MockCaseData[] = [
     dossierName: 'Nebuchadnezzar Corp',
     totalAmount: 775,
     isCompleted: false, // IN-PROGRESS CASE
-    claimsStatus: CLAIMS_STATUS_ENUM.PARTIAL_COVER,
+    claimStatus: CLAIMS_STATUS_ENUM.PARTIAL_COVER,
     coverageAmount: 775,
     auditor: '6', // In progress by Sarah Wilson (User ID 6, Specialist)
     comment: 'Audit in progress - Emily Davis case being reviewed by Sarah Wilson.',
@@ -527,7 +527,7 @@ export const mockCases: MockCaseData[] = [
     dossierName: 'Red Pill Industries',
     totalAmount: 1200,
     isCompleted: false, // IN-PROGRESS by Emily for E2E test
-    claimsStatus: CLAIMS_STATUS_ENUM.FULL_COVER,
+    claimStatus: CLAIMS_STATUS_ENUM.FULL_COVER,
     coverageAmount: 1200,
     auditor: '4', // In progress by Emily Davis (User ID 4, Team Leader) - for E2E test
     comment: 'Emily is working on this audit - data persistence test case.',
@@ -550,7 +550,7 @@ const quarterlyAuditSelectionData: Record<string, Array<{
     displayName: string;
   };
   coverageAmount: number;
-  claimsStatus: typeof CLAIMS_STATUS.FULL_COVER;
+  claimStatus: typeof CLAIMS_STATUS.FULL_COVER;
   notificationDate: string;
   notifiedCurrency: ValidCurrency;
 }>> = {
@@ -559,7 +559,7 @@ const quarterlyAuditSelectionData: Record<string, Array<{
       caseNumber: 30049234,
       claimOwner: { userId: '5', displayName: 'Michael Brown' },
       coverageAmount: 970,
-      claimsStatus: CLAIMS_STATUS.FULL_COVER,
+      claimStatus: CLAIMS_STATUS.FULL_COVER,
       notificationDate: '2025-01-15',
       notifiedCurrency: CURRENCY.EUR
     },
@@ -567,7 +567,7 @@ const quarterlyAuditSelectionData: Record<string, Array<{
       caseNumber: 30050345,
       claimOwner: { userId: '6', displayName: 'Sarah Wilson' },
       coverageAmount: 1250,
-      claimsStatus: CLAIMS_STATUS.FULL_COVER,
+      claimStatus: CLAIMS_STATUS.FULL_COVER,
       notificationDate: '2025-02-10',
       notifiedCurrency: CURRENCY.USD
     },
@@ -575,7 +575,7 @@ const quarterlyAuditSelectionData: Record<string, Array<{
       caseNumber: 30051456,
       claimOwner: { userId: '7', displayName: 'David Thompson' },
       coverageAmount: 800,
-      claimsStatus: CLAIMS_STATUS.FULL_COVER,
+      claimStatus: CLAIMS_STATUS.FULL_COVER,
       notificationDate: '2025-03-20',
       notifiedCurrency: CURRENCY.CHF
     },
@@ -583,7 +583,7 @@ const quarterlyAuditSelectionData: Record<string, Array<{
       caseNumber: 30052567,
       claimOwner: { userId: '8', displayName: 'Lisa Garcia' },
       coverageAmount: 650,
-      claimsStatus: CLAIMS_STATUS.FULL_COVER,
+      claimStatus: CLAIMS_STATUS.FULL_COVER,
       notificationDate: '2025-03-25',
       notifiedCurrency: CURRENCY.EUR
     },
@@ -591,7 +591,7 @@ const quarterlyAuditSelectionData: Record<string, Array<{
       caseNumber: 30060222,
       claimOwner: { userId: '1', displayName: 'John Smith' },
       coverageAmount: 1800,
-      claimsStatus: CLAIMS_STATUS.FULL_COVER,
+      claimStatus: CLAIMS_STATUS.FULL_COVER,
       notificationDate: '2025-01-08',
       notifiedCurrency: CURRENCY.USD
     },
@@ -599,7 +599,7 @@ const quarterlyAuditSelectionData: Record<string, Array<{
       caseNumber: 30061333,
       claimOwner: { userId: '2', displayName: 'Jane Doe' },
       coverageAmount: 1375,
-      claimsStatus: CLAIMS_STATUS.FULL_COVER,
+      claimStatus: CLAIMS_STATUS.FULL_COVER,
       notificationDate: '2025-02-14',
       notifiedCurrency: CURRENCY.CHF
     }
@@ -609,7 +609,7 @@ const quarterlyAuditSelectionData: Record<string, Array<{
       caseNumber: 30045678,
       claimOwner: { userId: '1', displayName: 'John Smith' },
       coverageAmount: 525,
-      claimsStatus: CLAIMS_STATUS.FULL_COVER,
+      claimStatus: CLAIMS_STATUS.FULL_COVER,
       notificationDate: '2025-04-20',
       notifiedCurrency: CURRENCY.CHF
     },
@@ -617,7 +617,7 @@ const quarterlyAuditSelectionData: Record<string, Array<{
       caseNumber: 30046789,
       claimOwner: { userId: '2', displayName: 'Jane Doe' },
       coverageAmount: 360,
-      claimsStatus: CLAIMS_STATUS.FULL_COVER,
+      claimStatus: CLAIMS_STATUS.FULL_COVER,
       notificationDate: '2025-04-25',
       notifiedCurrency: CURRENCY.EUR
     },
@@ -625,7 +625,7 @@ const quarterlyAuditSelectionData: Record<string, Array<{
       caseNumber: 30047891,
       claimOwner: { userId: '3', displayName: 'Robert Johnson' },
       coverageAmount: 440,
-      claimsStatus: CLAIMS_STATUS.FULL_COVER,
+      claimStatus: CLAIMS_STATUS.FULL_COVER,
       notificationDate: '2025-05-15',
       notifiedCurrency: CURRENCY.USD
     },
@@ -633,7 +633,7 @@ const quarterlyAuditSelectionData: Record<string, Array<{
       caseNumber: 30048012,
       claimOwner: { userId: '4', displayName: 'Emily Davis' },
       coverageAmount: 875,
-      claimsStatus: CLAIMS_STATUS.FULL_COVER,
+      claimStatus: CLAIMS_STATUS.FULL_COVER,
       notificationDate: '2025-06-10',
       notifiedCurrency: CURRENCY.CHF
     },
@@ -641,7 +641,7 @@ const quarterlyAuditSelectionData: Record<string, Array<{
       caseNumber: 30053678,
       claimOwner: { userId: '5', displayName: 'Michael Brown' },
       coverageAmount: 1100,
-      claimsStatus: CLAIMS_STATUS.FULL_COVER,
+      claimStatus: CLAIMS_STATUS.FULL_COVER,
       notificationDate: '2025-05-22',
       notifiedCurrency: CURRENCY.CHF
     },
@@ -649,7 +649,7 @@ const quarterlyAuditSelectionData: Record<string, Array<{
       caseNumber: 30054789,
       claimOwner: { userId: '6', displayName: 'Sarah Wilson' },
       coverageAmount: 950,
-      claimsStatus: CLAIMS_STATUS.FULL_COVER,
+      claimStatus: CLAIMS_STATUS.FULL_COVER,
       notificationDate: '2025-06-18',
       notifiedCurrency: CURRENCY.USD
     },
@@ -657,7 +657,7 @@ const quarterlyAuditSelectionData: Record<string, Array<{
       caseNumber: 30058000,
       claimOwner: { userId: '7', displayName: 'David Thompson' },
       coverageAmount: 2100,
-      claimsStatus: CLAIMS_STATUS.FULL_COVER,
+      claimStatus: CLAIMS_STATUS.FULL_COVER,
       notificationDate: '2025-04-05',
       notifiedCurrency: CURRENCY.EUR
     },
@@ -665,7 +665,7 @@ const quarterlyAuditSelectionData: Record<string, Array<{
       caseNumber: 30059111,
       claimOwner: { userId: '8', displayName: 'Lisa Garcia' },
       coverageAmount: 750,
-      claimsStatus: CLAIMS_STATUS.FULL_COVER,
+      claimStatus: CLAIMS_STATUS.FULL_COVER,
       notificationDate: '2025-06-30',
       notifiedCurrency: CURRENCY.CHF
     }
@@ -675,7 +675,7 @@ const quarterlyAuditSelectionData: Record<string, Array<{
       caseNumber: 30064666,
       claimOwner: { userId: '1', displayName: 'John Smith' },
       coverageAmount: 3200,
-      claimsStatus: CLAIMS_STATUS.FULL_COVER,
+      claimStatus: CLAIMS_STATUS.FULL_COVER,
       notificationDate: '2024-07-18',
       notifiedCurrency: CURRENCY.USD
     },
@@ -683,7 +683,7 @@ const quarterlyAuditSelectionData: Record<string, Array<{
       caseNumber: 30065777,
       claimOwner: { userId: '5', displayName: 'Michael Brown' },
       coverageAmount: 1680,
-      claimsStatus: CLAIMS_STATUS.FULL_COVER,
+      claimStatus: CLAIMS_STATUS.FULL_COVER,
       notificationDate: '2024-08-25',
       notifiedCurrency: CURRENCY.EUR
     }
@@ -693,7 +693,7 @@ const quarterlyAuditSelectionData: Record<string, Array<{
       caseNumber: 30062444,
       claimOwner: { userId: '3', displayName: 'Robert Johnson' },
       coverageAmount: 2250,
-      claimsStatus: CLAIMS_STATUS.FULL_COVER,
+      claimStatus: CLAIMS_STATUS.FULL_COVER,
       notificationDate: '2024-10-15',
       notifiedCurrency: CURRENCY.EUR
     },
@@ -701,7 +701,7 @@ const quarterlyAuditSelectionData: Record<string, Array<{
       caseNumber: 30063555,
       claimOwner: { userId: '4', displayName: 'Emily Davis' },
       coverageAmount: 925,
-      claimsStatus: CLAIMS_STATUS.FULL_COVER,
+      claimStatus: CLAIMS_STATUS.FULL_COVER,
       notificationDate: '2024-11-22',
       notifiedCurrency: CURRENCY.CHF
     }
@@ -749,24 +749,24 @@ const staticUserQuarterlyAudits: Record<string, Array<{
   dossierId: number;
   userId: string;
   coverageAmount: number;
-  claimsStatus: string;
+  claimStatus: string;
   quarter: string;
   year: number;
   caseType: string;
 }>> = {
   'Q2-2025': [
-    { id: 40001, auditId: 40001, dossierId: 40001, userId: 'user-1', coverageAmount: 25000, claimsStatus: CLAIMS_STATUS.FULL_COVER, quarter: 'Q2-2025', year: 2025, caseType: 'USER_QUARTERLY' },
-    { id: 40002, auditId: 40002, dossierId: 40002, userId: 'user-2', coverageAmount: 18000, claimsStatus: CLAIMS_STATUS.FULL_COVER, quarter: 'Q2-2025', year: 2025, caseType: 'USER_QUARTERLY' },
-    { id: 40003, auditId: 40003, dossierId: 40003, userId: 'user-3', coverageAmount: 22000, claimsStatus: CLAIMS_STATUS.FULL_COVER, quarter: 'Q2-2025', year: 2025, caseType: 'USER_QUARTERLY' },
-    { id: 40004, auditId: 40004, dossierId: 40004, userId: 'user-4', coverageAmount: 35000, claimsStatus: CLAIMS_STATUS.FULL_COVER, quarter: 'Q2-2025', year: 2025, caseType: 'USER_QUARTERLY' },
-    { id: 40005, auditId: 40005, dossierId: 40005, userId: 'user-5', coverageAmount: 15000, claimsStatus: CLAIMS_STATUS.FULL_COVER, quarter: 'Q2-2025', year: 2025, caseType: 'USER_QUARTERLY' },
-    { id: 40006, auditId: 40006, dossierId: 40006, userId: 'user-6', coverageAmount: 28000, claimsStatus: CLAIMS_STATUS.FULL_COVER, quarter: 'Q2-2025', year: 2025, caseType: 'USER_QUARTERLY' },
-    { id: 40007, auditId: 40007, dossierId: 40007, userId: 'user-7', coverageAmount: 20000, claimsStatus: CLAIMS_STATUS.FULL_COVER, quarter: 'Q2-2025', year: 2025, caseType: 'USER_QUARTERLY' },
-    { id: 40008, auditId: 40008, dossierId: 40008, userId: 'user-8', coverageAmount: 16000, claimsStatus: CLAIMS_STATUS.FULL_COVER, quarter: 'Q2-2025', year: 2025, caseType: 'USER_QUARTERLY' }
+    { id: 40001, auditId: 40001, dossierId: 40001, userId: 'user-1', coverageAmount: 25000, claimStatus: CLAIMS_STATUS.FULL_COVER, quarter: 'Q2-2025', year: 2025, caseType: 'USER_QUARTERLY' },
+    { id: 40002, auditId: 40002, dossierId: 40002, userId: 'user-2', coverageAmount: 18000, claimStatus: CLAIMS_STATUS.FULL_COVER, quarter: 'Q2-2025', year: 2025, caseType: 'USER_QUARTERLY' },
+    { id: 40003, auditId: 40003, dossierId: 40003, userId: 'user-3', coverageAmount: 22000, claimStatus: CLAIMS_STATUS.FULL_COVER, quarter: 'Q2-2025', year: 2025, caseType: 'USER_QUARTERLY' },
+    { id: 40004, auditId: 40004, dossierId: 40004, userId: 'user-4', coverageAmount: 35000, claimStatus: CLAIMS_STATUS.FULL_COVER, quarter: 'Q2-2025', year: 2025, caseType: 'USER_QUARTERLY' },
+    { id: 40005, auditId: 40005, dossierId: 40005, userId: 'user-5', coverageAmount: 15000, claimStatus: CLAIMS_STATUS.FULL_COVER, quarter: 'Q2-2025', year: 2025, caseType: 'USER_QUARTERLY' },
+    { id: 40006, auditId: 40006, dossierId: 40006, userId: 'user-6', coverageAmount: 28000, claimStatus: CLAIMS_STATUS.FULL_COVER, quarter: 'Q2-2025', year: 2025, caseType: 'USER_QUARTERLY' },
+    { id: 40007, auditId: 40007, dossierId: 40007, userId: 'user-7', coverageAmount: 20000, claimStatus: CLAIMS_STATUS.FULL_COVER, quarter: 'Q2-2025', year: 2025, caseType: 'USER_QUARTERLY' },
+    { id: 40008, auditId: 40008, dossierId: 40008, userId: 'user-8', coverageAmount: 16000, claimStatus: CLAIMS_STATUS.FULL_COVER, quarter: 'Q2-2025', year: 2025, caseType: 'USER_QUARTERLY' }
   ],
   'Q1-2025': [
-    { id: 40101, auditId: 40101, dossierId: 40101, userId: 'user-1', coverageAmount: 24000, claimsStatus: CLAIMS_STATUS.FULL_COVER, quarter: 'Q1-2025', year: 2025, caseType: 'USER_QUARTERLY' },
-    { id: 40102, auditId: 40102, dossierId: 40102, userId: 'user-2', coverageAmount: 19000, claimsStatus: CLAIMS_STATUS.FULL_COVER, quarter: 'Q1-2025', year: 2025, caseType: 'USER_QUARTERLY' }
+    { id: 40101, auditId: 40101, dossierId: 40101, userId: 'user-1', coverageAmount: 24000, claimStatus: CLAIMS_STATUS.FULL_COVER, quarter: 'Q1-2025', year: 2025, caseType: 'USER_QUARTERLY' },
+    { id: 40102, auditId: 40102, dossierId: 40102, userId: 'user-2', coverageAmount: 19000, claimStatus: CLAIMS_STATUS.FULL_COVER, quarter: 'Q1-2025', year: 2025, caseType: 'USER_QUARTERLY' }
   ]
 };
 
@@ -777,18 +777,18 @@ const staticPreviousQuarterAudits: Record<string, Array<{
   auditId: number;
   userId: string;
   coverageAmount: number;
-  claimsStatus: string;
+  claimStatus: string;
   quarter: string;
   year: number;
   caseType: string;
 }>> = {
   'Q1-2025': [
-    { id: 30101, dossierId: 30101, auditId: 30101, userId: 'user-3', coverageAmount: 45000, claimsStatus: CLAIMS_STATUS.FULL_COVER, quarter: 'Q1-2025', year: 2025, caseType: 'PREVIOUS_QUARTER_RANDOM' },
-    { id: 30102, dossierId: 30102, auditId: 30102, userId: 'user-5', coverageAmount: 38000, claimsStatus: CLAIMS_STATUS.FULL_COVER, quarter: 'Q1-2025', year: 2025, caseType: 'PREVIOUS_QUARTER_RANDOM' }
+    { id: 30101, dossierId: 30101, auditId: 30101, userId: 'user-3', coverageAmount: 45000, claimStatus: CLAIMS_STATUS.FULL_COVER, quarter: 'Q1-2025', year: 2025, caseType: 'PREVIOUS_QUARTER_RANDOM' },
+    { id: 30102, dossierId: 30102, auditId: 30102, userId: 'user-5', coverageAmount: 38000, claimStatus: CLAIMS_STATUS.FULL_COVER, quarter: 'Q1-2025', year: 2025, caseType: 'PREVIOUS_QUARTER_RANDOM' }
   ],
   'Q4-2024': [
-    { id: 30201, dossierId: 30201, auditId: 30201, userId: 'user-1', coverageAmount: 52000, claimsStatus: CLAIMS_STATUS.FULL_COVER, quarter: 'Q4-2024', year: 2024, caseType: 'PREVIOUS_QUARTER_RANDOM' },
-    { id: 30202, dossierId: 30202, auditId: 30202, userId: 'user-7', coverageAmount: 41000, claimsStatus: CLAIMS_STATUS.FULL_COVER, quarter: 'Q4-2024', year: 2024, caseType: 'PREVIOUS_QUARTER_RANDOM' }
+    { id: 30201, dossierId: 30201, auditId: 30201, userId: 'user-1', coverageAmount: 52000, claimStatus: CLAIMS_STATUS.FULL_COVER, quarter: 'Q4-2024', year: 2024, caseType: 'PREVIOUS_QUARTER_RANDOM' },
+    { id: 30202, dossierId: 30202, auditId: 30202, userId: 'user-7', coverageAmount: 41000, claimStatus: CLAIMS_STATUS.FULL_COVER, quarter: 'Q4-2024', year: 2024, caseType: 'PREVIOUS_QUARTER_RANDOM' }
   ]
 };
 
@@ -836,7 +836,7 @@ export const generateMockCurrentQuarterCase = (
       userId: user.id,
       role: user.authorities
     },
-    claimsStatus: index % 2 === 0 ? CLAIMS_STATUS.FULL_COVER : CLAIMS_STATUS.PARTIAL_COVER,
+    claimStatus: index % 2 === 0 ? CLAIMS_STATUS.FULL_COVER : CLAIMS_STATUS.PARTIAL_COVER,
     coverageAmount: [1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500][index % 8], // Fixed amounts
     caseStatus: CASE_STATUS_MAPPING.COMPENSATED,
     notificationDate: `${year}-${String(quarterNum * 3).padStart(2, '0')}-15`, // Fixed date in quarter
@@ -861,7 +861,7 @@ export const generateMockPreviousQuarterCase = (
       userId: user.id,
       role: user.authorities
     },
-    claimsStatus: index % 2 === 0 ? CLAIMS_STATUS.FULL_COVER : CLAIMS_STATUS.PARTIAL_COVER,
+    claimStatus: index % 2 === 0 ? CLAIMS_STATUS.FULL_COVER : CLAIMS_STATUS.PARTIAL_COVER,
     coverageAmount: [5000, 5500, 6000, 6500, 7000, 7500, 8000, 8500][index % 8], // Fixed amounts
     caseStatus: CASE_STATUS_MAPPING.COMPENSATED,
     notificationDate: `${year}-${String(quarterNum * 3).padStart(2, '0')}-15`, // Fixed date in quarter
@@ -972,7 +972,7 @@ export const getFallbackAudit = () => ({
       userId: 1,
       role: USER_ROLE_ENUM.TEAM_LEADER
     },
-    claimsStatus: CLAIMS_STATUS.FULL_COVER,
+    claimStatus: CLAIMS_STATUS.FULL_COVER,
     coverageAmount: 10000.00,
     caseStatus: CASE_STATUS_MAPPING.COMPENSATED,
     notificationDate: getCurrentDateString(),

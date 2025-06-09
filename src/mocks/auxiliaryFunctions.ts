@@ -86,7 +86,7 @@ export const caseToCaseObj = (caseItem: Record<string, unknown>): ApiCaseRespons
       userId: actualUserId,
       role: userRole
     },
-    claimsStatus: (caseItem.claimsStatus as typeof CLAIMS_STATUS.FULL_COVER) || CLAIMS_STATUS.FULL_COVER,
+    claimStatus: (caseItem.claimStatus as typeof CLAIMS_STATUS.FULL_COVER) || CLAIMS_STATUS.FULL_COVER,
     coverageAmount: (caseItem.coverageAmount as number) || 0,
     caseStatus: CASE_STATUS_MAPPING.COMPENSATED,
     notificationDate: (caseItem.notificationDate as string) || '',
@@ -120,7 +120,7 @@ export const caseToAudit = (caseObj: ApiCaseResponse, quarter: QuarterPeriod): A
     caseObj: {
       ...caseObj,
       caseStatus: CASE_STATUS_MAPPING.COMPENSATED,
-      claimsStatus: caseObj.claimsStatus || CLAIMS_STATUS.FULL_COVER,
+      claimStatus: caseObj.claimStatus || CLAIMS_STATUS.FULL_COVER,
       coverageAmount: caseObj.coverageAmount || 0,
       notificationDate: caseObj.notificationDate,
       notifiedCurrency: caseObj.notifiedCurrency || CURRENCY.CHF

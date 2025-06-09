@@ -76,7 +76,7 @@ describe('NotificationDate API Functionality', () => {
           userId: 1,
           role: USER_ROLE_ENUM.TEAM_LEADER
         },
-        claimsStatus: CLAIMS_STATUS_ENUM.FULL_COVER,
+        claimStatus: CLAIMS_STATUS_ENUM.FULL_COVER,
         coverageAmount: 25000.00,
         caseStatus: 'COMPENSATED',
         notificationDate: '2025-04-20'
@@ -97,7 +97,7 @@ describe('NotificationDate API Functionality', () => {
       const apiResponse = {
         caseNumber: 123,
         claimOwner: { userId: 1, role: USER_ROLE_ENUM.TEAM_LEADER },
-        claimsStatus: CLAIMS_STATUS_ENUM.FULL_COVER,
+        claimStatus: CLAIMS_STATUS_ENUM.FULL_COVER,
         coverageAmount: 25000.00,
         caseStatus: 'COMPENSATED',
         notificationDate: '2025-04-20' // New field
@@ -106,7 +106,7 @@ describe('NotificationDate API Functionality', () => {
       // Verify all existing fields are still present
       expect(apiResponse).toHaveProperty('caseNumber');
       expect(apiResponse).toHaveProperty('claimOwner');
-      expect(apiResponse).toHaveProperty('claimsStatus');
+      expect(apiResponse).toHaveProperty('claimStatus');
       expect(apiResponse).toHaveProperty('coverageAmount');
       expect(apiResponse).toHaveProperty('caseStatus');
       
@@ -124,7 +124,7 @@ describe('NotificationDate API Functionality', () => {
         date: '2025-04-10',
         notificationDate: '2025-04-20', // Quarter deduction should use this
         caseNumber: 30045678,
-        claimsStatus: CLAIMS_STATUS_ENUM.FULL_COVER,
+        claimStatus: CLAIMS_STATUS_ENUM.FULL_COVER,
         coverageAmount: 525,
         caseStatus: 'COMPENSATED'
       };

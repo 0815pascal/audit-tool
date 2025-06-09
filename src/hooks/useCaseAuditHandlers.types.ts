@@ -1,4 +1,4 @@
-import { ClaimsStatus, FindingsRecord } from '../types/types';
+import { ClaimStatus, FindingsRecord } from '../types/types';
 
 /**
  * Interface for external audit data with optional properties
@@ -10,7 +10,7 @@ export interface ExternalAuditData {
   status?: string;
   auditor?: string;
   coverageAmount?: number;
-  claimsStatus?: ClaimsStatus;
+  claimStatus?: ClaimStatus;
   comment?: string;
   rating?: string;
   specialFindings?: FindingsRecord;

@@ -137,7 +137,7 @@ Constants are organized in two ways:
 For enum values in code:
 ```typescript
 // In code logic
-if (audit.claimsStatus === CLAIMS_STATUS.FULL_COVER) {
+if (audit.claimStatus === CLAIMS_STATUS.FULL_COVER) {
   // Do something
 }
 ```
@@ -145,7 +145,7 @@ if (audit.claimsStatus === CLAIMS_STATUS.FULL_COVER) {
 For display purposes:
 ```typescript
 // In UI components
-<span>{CLAIMS_STATUS_DISPLAY[audit.claimsStatus]}</span>
+<span>{CLAIMS_STATUS_DISPLAY[audit.claimStatus]}</span>
 ```
 
 ### Available Constants
