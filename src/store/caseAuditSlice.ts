@@ -38,7 +38,8 @@ import {
   formatQuarterPeriod,
   createEmptyFindings,
   createISODateString,
-  convertToFindingsRecord
+  convertToFindingsRecord,
+  createCaseAuditId
 } from '../types/typeHelpers';
 import api from './api';
 
@@ -314,9 +315,9 @@ const createDefaultCaseAuditData = (userId: string): StoredCaseAuditData => {
 
 // Initialize UI state
 const initialUIState: AuditUIState = {
-  currentUserId: '',
+  currentUserId: createUserId(''),
   selectedQuarter: null,
-  filteredYear: new Date().getFullYear(),
+  filteredYear: createValidYear(new Date().getFullYear()),
   auditData: {},
   userQuarterlyStatus: {},
   userRoles: {},
@@ -341,7 +342,7 @@ const auditUISlice = createSlice({
 
     // Set filtered year
     setFilteredYear: (state, action: PayloadAction<number>) => {
-      state.filteredYear = action.payload;
+      state.filteredYear = createValidYear(action.payload);
     },
 
     // Update audit status locally
@@ -387,8 +388,8 @@ const auditUISlice = createSlice({
         auditData.detailedFindings = detailedFindings ?? createEmptyFindings();
         auditData.completionDate = createISODateString(new Date());
         
-        const quarterKey = auditData.quarter;
-        const userId = auditData.userId.toString();
+        const quarterKey = auditData.quarter as QuarterPeriod;
+        const userId = auditData.userId; // Keep as UserId branded type
         
         if (!state.userQuarterlyStatus[userId]) {
           state.userQuarterlyStatus[userId] = {};
@@ -422,9 +423,10 @@ const auditUISlice = createSlice({
         
         // Remove existing audits that have the same quarters as the new selection
         // This prevents accumulation when Auto-Select is clicked multiple times
-        Object.keys(state.auditData).forEach(auditId => {
+        Object.keys(state.auditData).forEach(auditIdStr => {
+          const auditId = createCaseAuditId(auditIdStr);
           const existingAudit = state.auditData[auditId];
-          if (existingAudit && quartersInNewSelection.has(existingAudit.quarter)) {
+          if (existingAudit && quartersInNewSelection.has(existingAudit.quarter as QuarterPeriod)) {
             // Only remove if it's a quarterly selection audit (not manually added audits or PRE_LOADED)
             if (existingAudit.caseType === CASE_TYPE_ENUM.USER_QUARTERLY || 
                 existingAudit.caseType === CASE_TYPE_ENUM.PREVIOUS_QUARTER_RANDOM) {
@@ -466,7 +468,8 @@ const auditUISlice = createSlice({
       
       // Clear ALL existing audit cases (including pre-loaded cases)
       // When user selects a quarter from dropdown, show only cases from that quarter
-      Object.keys(state.auditData).forEach(auditId => {
+      Object.keys(state.auditData).forEach(auditIdStr => {
+        const auditId = createCaseAuditId(auditIdStr);
         const existingAudit = state.auditData[auditId];
         if (existingAudit && (
           existingAudit.caseType === CASE_TYPE_ENUM.QUARTER_DISPLAY ||
@@ -493,7 +496,7 @@ const auditUISlice = createSlice({
           status = AUDIT_STATUS_ENUM.PENDING;
         }
         
-        state.auditData[caseData.id] = {
+        state.auditData[createCaseAuditId(caseData.id)] = {
           isCompleted: isCompleted,
           isIncorrect: false,
           completionDate: isCompleted ? createISODateString(new Date()) : null,
@@ -547,7 +550,7 @@ const auditUISlice = createSlice({
           status = AUDIT_STATUS_ENUM.PENDING;
         }
         
-        state.auditData[caseData.id] = {
+        state.auditData[createCaseAuditId(caseData.id)] = {
           isCompleted: caseData.isCompleted,
           isIncorrect: false,
           completionDate: caseData.isCompleted ? createISODateString(new Date()) : null,
@@ -594,7 +597,7 @@ const selectUserRoles = (state: RootState) => state.auditUI.userRoles;
 export const selectUserRole = createSelector(
   [selectUserRoles, (_state: RootState, userId: string) => userId],
   (userRoles, userId) => {
-    return userRoles[userId] ?? { role: USER_ROLE_ENUM.STAFF, department: '' };
+    return userRoles[ensureUserId(userId)] ?? { role: USER_ROLE_ENUM.STAFF, department: '' };
   }
 );
 
@@ -614,7 +617,7 @@ export const selectQuarterlyAuditsForPeriod = createSelector(
 
     // Get all audits stored in Redux
     const allAudits = Object.entries(auditData)
-      .map(([id, audit]) => ({ id, ...audit }))
+      .map(([id, audit]) => ({ id: createCaseAuditId(id), ...audit }))
       .filter(audit => audit); // Only keep valid audits
     
     // Separate by case type - but always include PRE_LOADED cases regardless of quarter

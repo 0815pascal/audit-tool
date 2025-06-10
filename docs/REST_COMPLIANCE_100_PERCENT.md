@@ -396,67 +396,17 @@ const createProblemDetails = (
 ## 🎯 **Implementation Summary**
 
 ### **Types Added:**
-```typescript
-// HATEOAS support
-export interface HATEOASLink {
-  href: string;
-  method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
-  type?: string;
-  title?: string;
-}
-
-export interface HATEOASLinks {
-  self?: HATEOASLink;
-  next?: HATEOASLink;
-  prev?: HATEOASLink;
-  edit?: HATEOASLink;
-  delete?: HATEOASLink;
-  [key: string]: HATEOASLink | HATEOASLink[] | undefined;
-}
-
-// RFC 7807 Problem Details
-export interface ProblemDetails {
-  type: string;
-  title: string;
-  status: number;
-  detail?: string;
-  instance?: string;
-  [key: string]: any;
-}
-
-// Enhanced status codes
-export enum RestStatusCode {
-  OK = 200,
-  CREATED = 201,
-  NO_CONTENT = 204,
-  BAD_REQUEST = 400,
-  UNAUTHORIZED = 401,
-  FORBIDDEN = 403,
-  NOT_FOUND = 404,
-  CONFLICT = 409,
-  UNPROCESSABLE_ENTITY = 422,
-  INTERNAL_SERVER_ERROR = 500
-}
-```
+Implementation details available in `src/types/types.ts`:
+- **HATEOASLink & HATEOASLinks**: Support for hypermedia navigation
+- **ProblemDetails**: RFC 7807 standard error format
+- **RestStatusCode**: Comprehensive HTTP status codes
+- **Enhanced API Response types**: Unified response structure
 
 ### **Utility Functions Added:**
-```typescript
-// HATEOAS link generators
-export const generateAuditLinks = (auditId: string): HATEOASLinks
-export const generateUserLinks = (userId: string): HATEOASLinks
-export const generateCompletionLinks = (auditId: string): HATEOASLinks
-export const generatePaginationLinks = (...): HATEOASLinks
-
-// RFC 7807 problem creators
-export const createValidationProblem = (...): ProblemDetails
-export const createBusinessLogicProblem = (...): ProblemDetails
-export const createNotFoundProblem = (...): ProblemDetails
-export const createConflictProblem = (...): ProblemDetails
-
-// Enhanced response creators
-export const createSuccessResponse = <T>(...): EnhancedApiResponse<T>
-export const createErrorResponse = (...): EnhancedApiResponse<never>
-```
+Implementation details available in `src/utils/restUtils.ts`:
+- **HATEOAS link generators**: For audit, user, completion, and pagination links
+- **RFC 7807 problem creators**: For validation, business logic, not found, and conflict errors  
+- **Enhanced response creators**: For success and error responses with full REST compliance
 
 ---
 

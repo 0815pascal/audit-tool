@@ -7,8 +7,10 @@ import {
   QuarterNumber,
   QuarterPeriod,
   RatingValue,
-  User
+  User,
+  StoredCaseAuditData
 } from '../types/types';
+import { CaseAuditId } from '../types/brandedTypes';
 import {
   createCaseAuditId,
   createCaseId,
@@ -94,7 +96,7 @@ const QuarterlySelectionComponent: React.FC = () => {
     const user = usersList.find(u => u.id === userId);
     if (user) {
       dispatch(setUserRole({
-        userId: userId,
+        userId: ensureUserId(userId),
         role: user.authorities,
         department: user.department ?? 'Unknown'
       }));
@@ -408,7 +410,7 @@ const QuarterlySelectionComponent: React.FC = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {quarterlyDossiers.preLoadedCases.map((audit: AuditItem) => {
+                      {quarterlyDossiers.preLoadedCases.map((audit: StoredCaseAuditData & { id: CaseAuditId }) => {
                         const user = findUserById(audit.userId);
                         const latestAuditData = auditData[audit.id];
                         const currentStatus = latestAuditData?.status || audit.status;
@@ -462,7 +464,7 @@ const QuarterlySelectionComponent: React.FC = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {quarterlyDossiers.quarterDisplayCases.map((caseItem: AuditItem) => {
+                      {quarterlyDossiers.quarterDisplayCases.map((caseItem: StoredCaseAuditData & { id: CaseAuditId }) => {
                         const user = findUserById(caseItem.userId);
                         // Get the latest audit data from Redux to ensure we show current status
                         const latestAuditData = auditData[caseItem.id];
@@ -518,7 +520,7 @@ const QuarterlySelectionComponent: React.FC = () => {
               </thead>
               <tbody>
                 {/* Preloaded Cases (verified and in-progress cases) */}
-                {quarterlyDossiers.preLoadedCases && quarterlyDossiers.preLoadedCases.map((audit: AuditItem) => {
+                {quarterlyDossiers.preLoadedCases && quarterlyDossiers.preLoadedCases.map((audit: StoredCaseAuditData & { id: CaseAuditId }) => {
                   const user = findUserById(audit.userId);
                   // Get the latest audit data from Redux to ensure we show current status
                   const latestAuditData = auditData[audit.id];
@@ -557,7 +559,7 @@ const QuarterlySelectionComponent: React.FC = () => {
                 })}
                 
                 {/* User Quarterly Audits */}
-                {quarterlyDossiers.userQuarterlyAudits.map((audit: AuditItem) => {
+                {quarterlyDossiers.userQuarterlyAudits.map((audit: StoredCaseAuditData & { id: CaseAuditId }) => {
                   const user = findUserById(audit.userId);
                   // Get the latest audit data from Redux to ensure we show current status
                   const latestAuditData = auditData[audit.id];
@@ -596,7 +598,7 @@ const QuarterlySelectionComponent: React.FC = () => {
                 })}
                 
                 {/* Random Previous Quarter Audits */}
-                {quarterlyDossiers.previousQuarterRandomAudits.map((audit: AuditItem) => {
+                {quarterlyDossiers.previousQuarterRandomAudits.map((audit: StoredCaseAuditData & { id: CaseAuditId }) => {
                   const user = findUserById(audit.userId);
                   // Get the latest audit data from Redux to ensure we show current status
                   const latestAuditData = auditData[audit.id];

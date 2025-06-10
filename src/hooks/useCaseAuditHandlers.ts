@@ -30,6 +30,7 @@ import {
   CaseAuditData,
   CaseAuditId,
   CaseAuditStatus,
+  ClaimStatus,
   createCaseAuditId,
   createCaseId,
   createEmptyFindings,
@@ -110,7 +111,7 @@ export const useCaseAuditHandlers = () => {
     if (currentUser && (!currentUserId || currentUserId === '')) {
       dispatch(setCurrentUser(currentUser.id.toString()));
       dispatch(setUserRole({
-        userId: currentUser.id.toString(),
+        userId: ensureUserId(currentUser.id.toString()),
         role: currentUser.authorities,
         department: currentUser.department ?? 'Unknown'
       }));
@@ -149,7 +150,7 @@ export const useCaseAuditHandlers = () => {
     const user = usersList.find(u => u.id === userIdString);
     if (user) {
       dispatch(setUserRole({
-        userId: userIdString,
+        userId: ensureUserId(userIdString),
         role: user.authorities,
         department: user.department ?? 'Unknown'
       }));
@@ -187,7 +188,7 @@ export const useCaseAuditHandlers = () => {
           id: String(caseObj.caseNumber),
           userId: String(caseObj.claimOwner.userId),
           coverageAmount: caseObj.coverageAmount,
-          claimStatus: String(caseObj.claimStatus),
+          claimStatus: caseObj.claimStatus as ClaimStatus,
           quarter: actualQuarter,
           notifiedCurrency: caseObj.notifiedCurrency ?? CURRENCY.CHF,
           // Include audit information if available
@@ -222,20 +223,21 @@ export const useCaseAuditHandlers = () => {
       const auditorString = typeof auditor === 'string' ? auditor : String(auditor);
 
       // First, ensure the audit exists in Redux state before trying to complete it
-      const currentAuditData = auditData[auditIdString];
+      const auditIdBranded = createCaseAuditId(auditIdString);
+      const currentAuditData = auditData[auditIdBranded];
       if (!currentAuditData) {
         // Create a default audit entry if it doesn't exist
         dispatch(storeQuarterlyAudits({
           audits: [{
-            id: auditIdString,
-            userId: currentUserId ?? '1',
-            status: 'pending',
-            auditor: auditorString,
+            id: auditIdBranded,
+            userId: ensureUserId(currentUserId ?? '1'),
+            status: AUDIT_STATUS_ENUM.PENDING,
+            auditor: ensureUserId(auditorString),
             coverageAmount: 0,
             isCompleted: false,
-            claimStatus: 'FULL_COVER',
+            claimStatus: CLAIMS_STATUS_ENUM.FULL_COVER,
             quarter: selectedQuarter ?? 'Q1-2025',
-            caseType: 'USER_QUARTERLY',
+            caseType: CASE_TYPE_ENUM.USER_QUARTERLY,
             comment: caseAuditData.comment,
             rating: caseAuditData.rating,
             specialFindings: caseAuditData.specialFindings,
@@ -248,13 +250,13 @@ export const useCaseAuditHandlers = () => {
 
       // Call the RTK Query mutation to make the actual API call
       await completeAuditMutation({
-        auditId: auditIdString,
-        auditor: auditorString,
+        auditId: auditIdBranded,
+        auditor: ensureUserId(auditorString),
         rating: caseAuditData.rating,
         comment: caseAuditData.comment,
         specialFindings: caseAuditData.specialFindings,
         detailedFindings: caseAuditData.detailedFindings,
-        status: 'completed',
+        status: AUDIT_STATUS_ENUM.COMPLETED,
         isCompleted: true
       }).unwrap();
 
@@ -408,17 +410,17 @@ export const useCaseAuditHandlers = () => {
           CASE_TYPE_ENUM.PREVIOUS_QUARTER_RANDOM;
 
         return {
-          id: String(caseObj.caseNumber), // Convert to string
+          id: createCaseAuditId(String(caseObj.caseNumber)), // Convert to CaseAuditId
           auditId: createCaseAuditId(String(caseObj.caseNumber)),
-          userId: String(caseObj.claimOwner.userId), // Convert to string
-          status: String(AUDIT_STATUS_ENUM.PENDING), // Convert to string
-          auditor: '', // No auditor assigned yet
+          userId: ensureUserId(String(caseObj.claimOwner.userId)), // Convert to UserId
+          status: AUDIT_STATUS_ENUM.PENDING,
+          auditor: ensureUserId(''), // No auditor assigned yet
           coverageAmount: caseObj.coverageAmount,
           isCompleted: false,
-          claimStatus: String(caseObj.claimStatus), // Convert to string
+          claimStatus: caseObj.claimStatus,
           quarter: actualQuarter, // Use the actual quarter from notification date for display
           notifiedCurrency: caseObj.notifiedCurrency ?? CURRENCY.CHF, // Include the currency from API response
-          caseType: String(caseType) // Set caseType based on whether it's current or previous quarter
+          caseType: caseType // Set caseType based on whether it's current or previous quarter
         };
       });
 

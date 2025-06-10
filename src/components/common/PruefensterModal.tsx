@@ -287,7 +287,7 @@ export const PruefensterModal: React.FC<PruefensterModalProps> = ({
         comment: comment,
         specialFindings: selectedFindings,
         detailedFindings: selectedDetailedFindings,
-        status: 'in_progress',
+        status: AUDIT_STATUS_ENUM.IN_PROGRESS,
         isCompleted: false
       }).unwrap();
     } catch (error) {

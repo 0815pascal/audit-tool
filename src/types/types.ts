@@ -227,20 +227,8 @@ export interface CachedItem<T> {
   timestamp: number;
 }
 
-// API response handling
-interface ApiSuccessResponse<T> {
-  success: true;
-  data: T;
-  message?: string;
-}
-
-interface ApiErrorResponse {
-  success: false;
-  error: string;
-  code?: number;
-}
-
-export type ApiResponse<T> = ApiSuccessResponse<T> | ApiErrorResponse;
+// API response handling - use EnhancedApiResponse for new code
+export type ApiResponse<T> = EnhancedApiResponse<T>;
 
 
 
@@ -274,15 +262,15 @@ export interface AuditForSelection extends BaseEntity<CaseAuditId> {
   userId: string;
   status?: AUDIT_STATUS_ENUM;
   coverageAmount: number;
-  claimStatus?: string;
+  claimStatus?: ClaimStatus;
   auditor?: string;
   comment?: string;
-  rating?: string;
+  rating?: RatingValue;
   specialFindings?: FindingsRecord;
   detailedFindings?: FindingsRecord;
   isCompleted?: boolean;
-  quarter?: string; // Quarter calculated from notification date
-  notifiedCurrency?: string; // Currency code for the case (e.g., CHF, EUR, USD)
+  quarter?: QuarterPeriod; // Quarter calculated from notification date
+  notifiedCurrency?: ValidCurrency; // Currency code for the case (e.g., CHF, EUR, USD)
 }
 
 // Type for user audit selection with userId
@@ -326,31 +314,10 @@ export type RatingOption = SelectOption<RatingValue>;
 // =============================================
 
 /**
- * Represents a single audit item in API responses and Redux actions
- * Used for both userQuarterlyAudits and previousQuarterRandomAudits
- */
-interface AuditItem {
-  id: string;
-  userId: string;
-  status: string;
-  auditor: string;
-  coverageAmount: number;
-  isCompleted: boolean;
-  claimStatus: string;
-  quarter: string;
-  notifiedCurrency?: ValidCurrency;
-  caseType: string;
-  comment?: string;
-  rating?: string;
-  specialFindings?: Record<string, boolean>;
-  detailedFindings?: Record<string, boolean>;
-}
-
-/**
  * Payload for storeQuarterlyAudits Redux action
  */
 export interface StoreQuarterlyAuditsPayload {
-  audits: AuditItem[];
+  audits: import('../components/QuarterlySelectionComponent.types').AuditItem[];
 }
 
 /**
@@ -360,8 +327,8 @@ interface QuarterCaseItem {
   id: string;
   userId: string;
   coverageAmount: number;
-  claimStatus: string;
-  quarter: string;
+  claimStatus: ClaimStatus;
+  quarter: QuarterPeriod;
   notifiedCurrency?: ValidCurrency;
 }
 
@@ -369,32 +336,33 @@ interface QuarterCaseItem {
  * Payload for storeAllCasesForQuarter Redux action
  */
 export interface StoreAllCasesForQuarterPayload {
-  quarter: string;
+  quarter: QuarterPeriod;
   cases: QuarterCaseItem[];
 }
 
 /**
  * Represents a pre-loaded case with full audit data
+ * (Consolidated interface - removing duplicate)
  */
-interface PreLoadedCaseItem {
+export interface PreLoadedCase {
   id: string;
   userId: string;
   auditor: string;
   isCompleted: boolean;
   comment: string;
-  rating: string;
-  specialFindings: Record<string, boolean>;
-  detailedFindings: Record<string, boolean>;
+  rating: RatingValue;
+  specialFindings: FindingsRecord;
+  detailedFindings: FindingsRecord;
   coverageAmount: number;
-  claimStatus: string;
-  quarter: string;
+  claimStatus: ClaimStatus;
+  quarter: QuarterPeriod;
   notifiedCurrency: ValidCurrency;
 }
 
 /**
  * Payload for loadPreLoadedCases Redux action
  */
-export type LoadPreLoadedCasesPayload = PreLoadedCaseItem[];
+export type LoadPreLoadedCasesPayload = PreLoadedCase[];
 
 // =============================================
 // API Response Types
@@ -404,10 +372,10 @@ export type LoadPreLoadedCasesPayload = PreLoadedCaseItem[];
  * Response structure for quarterly audits API endpoints
  */
 export interface QuarterlyAuditsData {
-  quarterKey: string;
-  userQuarterlyAudits: AuditItem[];
-  previousQuarterRandomAudits: AuditItem[];
-  lastSelectionDate: string;
+  quarterKey: QuarterPeriod;
+  userQuarterlyAudits: import('../components/QuarterlySelectionComponent.types').AuditItem[];
+  previousQuarterRandomAudits: import('../components/QuarterlySelectionComponent.types').AuditItem[];
+  lastSelectionDate: ISODateString;
 }
 
 /**
@@ -431,13 +399,13 @@ export interface QuarterlyAuditsResponse {
  */
 export interface AuditCompletionResponse {
   success: boolean;
-  auditId: string;
-  status: string;
-  completionDate?: string;
+  auditId: CaseAuditId;
+  status: CaseAuditStatus;
+  completionDate?: ISODateString;
   message?: string;
   _links?: HATEOASLinks;
   _meta?: {
-    timestamp?: string;
+    timestamp?: ISODateString;
   };
 }
 
@@ -457,13 +425,13 @@ export interface CurrentUserResponse {
  * Parameters for audit completion mutations
  */
 export interface AuditCompletionParams {
-  auditId: string;
-  auditor: string;
-  rating: string;
+  auditId: CaseAuditId;
+  auditor: UserId;
+  rating: RatingValue;
   comment: string;
-  specialFindings: Record<string, boolean>;
-  detailedFindings: Record<string, boolean>;
-  status: string;
+  specialFindings: FindingsRecord;
+  detailedFindings: FindingsRecord;
+  status: CaseAuditStatus;
   isCompleted: boolean;
 }
 
@@ -476,7 +444,7 @@ export interface AuditCompletionParams {
  */
 interface UserRoleInfo {
   role: UserRole;
-  department: string;
+  department: Department;
 }
 
 /**
@@ -484,19 +452,19 @@ interface UserRoleInfo {
  */
 interface QuarterlyCompletionStatus {
   completed: boolean;
-  lastCompleted?: string;
+  lastCompleted?: ISODateString;
 }
 
 /**
  * Interface for the audit UI slice state
  */
 export interface AuditUIState {
-  currentUserId: string;
+  currentUserId: UserId;
   selectedQuarter: QuarterPeriod | null;
-  filteredYear: number;
-  auditData: Record<string, StoredCaseAuditData>;
-  userQuarterlyStatus: Record<string, Record<string, QuarterlyCompletionStatus>>;
-  userRoles: Record<string, UserRoleInfo>;
+  filteredYear: ValidYear;
+  auditData: Record<CaseAuditId, StoredCaseAuditData>;
+  userQuarterlyStatus: Record<UserId, Record<QuarterPeriod, QuarterlyCompletionStatus>>;
+  userRoles: Record<UserId, UserRoleInfo>;
   loading: boolean;
   error: string | null;
 }
@@ -505,37 +473,21 @@ export interface AuditUIState {
  * Payload for updating audit status
  */
 export interface UpdateAuditStatusPayload {
-  auditId: string;
+  auditId: CaseAuditId;
   status: AUDIT_STATUS_ENUM;
-  userId: string;
+  userId: UserId;
 }
 
 /**
- * Payload for setting user role
+ * Payload for setting user roles
  */
 export interface SetUserRolePayload {
-  userId: string;
+  userId: UserId;
   role: UserRole;
-  department: string;
+  department: Department;
 }
 
-/**
- * RTK Query response for pre-loaded cases endpoint
- */
-export interface PreLoadedCase {
-  id: string;
-  userId: string;
-  auditor: string;
-  isCompleted: boolean;
-  comment: string;
-  rating: string;
-  specialFindings: FindingsRecord;
-  detailedFindings: FindingsRecord;
-  coverageAmount: number;
-  claimStatus: string;
-  quarter: string;
-  notifiedCurrency: ValidCurrency;
-}
+// PreLoadedCase interface consolidated above to avoid duplication
 
 /**
  * API response wrapper for pre-loaded cases
@@ -548,19 +500,19 @@ export interface PreLoadedCasesResponse {
  * RTK Query mutation parameters for add audit finding
  */
 export interface AddAuditFindingParams {
-  auditId: string;
-  findingType: string;
+  auditId: CaseAuditId;
+  findingType: FindingType;
   findingDescription: string;
 }
 
 /**
- * Return type for quarterly audits selector
+ * Selector interface for quarterly audits data
  */
 export interface QuarterlyAuditsSelector {
-  userQuarterlyAudits: Array<StoredCaseAuditData & { id: string }>;
-  previousQuarterRandomAudits: Array<StoredCaseAuditData & { id: string }>;
-  quarterDisplayCases: Array<StoredCaseAuditData & { id: string }>;
-  preLoadedCases: Array<StoredCaseAuditData & { id: string }>;
-  lastSelectionDate: string | null;
+  userQuarterlyAudits: Array<StoredCaseAuditData & { id: CaseAuditId }>;
+  previousQuarterRandomAudits: Array<StoredCaseAuditData & { id: CaseAuditId }>;
+  quarterDisplayCases: Array<StoredCaseAuditData & { id: CaseAuditId }>;
+  preLoadedCases: Array<StoredCaseAuditData & { id: CaseAuditId }>;
+  lastSelectionDate: ISODateString | null;
 }
 
